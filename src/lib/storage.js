@@ -5,6 +5,11 @@ import { storage } from './firebase';
 const MAX_BYTES = 20 * 1024 * 1024;
 const ALLOWED_EXTS = ['mp3', 'm4a', 'wav'];
 const ALLOWED_MIME_PREFIX = 'audio/';
+const MIME_BY_EXT = {
+  mp3: 'audio/mpeg',
+  m4a: 'audio/mp4',
+  wav: 'audio/wav',
+};
 
 export const validateAudioFile = (file) => {
   if (!file) return '音声ファイルを選択してください。';
@@ -22,12 +27,20 @@ export const validateAudioFile = (file) => {
 };
 
 export const uploadLessonAudio = async ({ file }) => {
+  const ext = file.name.split('.').pop()?.toLowerCase() || '';
   const filename = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
   const audioPath = `users/${LOCAL_USER_ID}/lesson-audio/${filename}`;
   const storageRef = ref(storage, audioPath);
-  await uploadBytes(storageRef, file, { contentType: file.type });
+  const contentType = MIME_BY_EXT[ext] || file.type || 'audio/mpeg';
+  await uploadBytes(storageRef, file, { contentType });
   const audioUrl = await getDownloadURL(storageRef);
   return { audioPath, audioUrl };
+};
+
+export const getAudioDownloadUrlByPath = async (audioPath) => {
+  if (!audioPath) return '';
+  const storageRef = ref(storage, audioPath);
+  return getDownloadURL(storageRef);
 };
 
 export const deleteAudioByPath = async (audioPath) => {

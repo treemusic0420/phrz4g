@@ -1,10 +1,23 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const SPEEDS = [0.8, 1.0, 1.2];
 
-export default function AudioControls({ audioUrl }) {
+export default function AudioControls({ audioUrl, onStatusChange, onErrorMessage }) {
   const audioRef = useRef(null);
   const [speed, setSpeed] = useState(1);
+  const [localError, setLocalError] = useState('');
+
+  useEffect(() => {
+    if (!audioUrl) {
+      setLocalError('音声URLがありません');
+      onStatusChange?.('idle');
+      onErrorMessage?.('音声URLがありません');
+      return;
+    }
+    setLocalError('');
+    onStatusChange?.('loading');
+    onErrorMessage?.('');
+  }, [audioUrl, onErrorMessage, onStatusChange]);
 
   const rewind = () => {
     if (!audioRef.current) return;
@@ -16,9 +29,38 @@ export default function AudioControls({ audioUrl }) {
     if (audioRef.current) audioRef.current.playbackRate = newSpeed;
   };
 
+  const handleAudioError = () => {
+    const mediaError = audioRef.current?.error;
+    const codeMap = {
+      1: 'MEDIA_ERR_ABORTED',
+      2: 'MEDIA_ERR_NETWORK',
+      3: 'MEDIA_ERR_DECODE',
+      4: 'MEDIA_ERR_SRC_NOT_SUPPORTED',
+    };
+    const detail = mediaError?.code ? `${codeMap[mediaError.code] || 'UNKNOWN'}(${mediaError.code})` : 'unknown';
+    const message = `音声を読み込めませんでした: ${detail}`;
+    setLocalError(message);
+    onStatusChange?.('error');
+    onErrorMessage?.(message);
+  };
+
   return (
     <div className="audio-box">
-      <audio controls ref={audioRef} src={audioUrl} />
+      {audioUrl ? (
+        <audio
+          controls
+          ref={audioRef}
+          src={audioUrl}
+          onLoadStart={() => {
+            onStatusChange?.('loading');
+            onErrorMessage?.('');
+          }}
+          onLoadedMetadata={() => onStatusChange?.('loadedmetadata')}
+          onCanPlay={() => onStatusChange?.('canplay')}
+          onError={handleAudioError}
+        />
+      ) : null}
+      {localError ? <p className="audio-debug">{localError}</p> : null}
       <div className="row gap-sm">
         <button type="button" onClick={rewind}>
           5秒戻る
