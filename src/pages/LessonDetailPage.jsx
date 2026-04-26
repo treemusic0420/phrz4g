@@ -2,21 +2,20 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import AudioControls from '../components/AudioControls';
 import { fetchLessonById } from '../lib/firestore';
-import { useAuth } from '../contexts/AuthContext';
+import { LOCAL_USER_ID } from '../lib/auth';
 import { formatDateTime, formatSeconds } from '../utils/format';
 
 export default function LessonDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [lesson, setLesson] = useState(null);
 
   useEffect(() => {
     fetchLessonById(id).then((doc) => {
-      if (!doc || doc.userId !== user.uid) return navigate('/lessons');
+      if (!doc || doc.userId !== LOCAL_USER_ID) return navigate('/lessons');
       setLesson(doc);
     });
-  }, [id, navigate, user.uid]);
+  }, [id, navigate, LOCAL_USER_ID]);
 
   if (!lesson) return <p>読み込み中...</p>;
 

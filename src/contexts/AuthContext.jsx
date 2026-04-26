@@ -1,49 +1,33 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { auth } from '../lib/firebase';
+import { createContext, useContext, useMemo, useState } from 'react';
+import { AUTH_STORAGE_KEY, LOCAL_USER_ID } from '../lib/auth';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [blockedMessage, setBlockedMessage] = useState('');
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (!firebaseUser) {
-        setUser(null);
-        setBlockedMessage('');
-        setLoading(false);
-        return;
-      }
-
-      const allowed = (import.meta.env.VITE_ALLOWED_EMAIL || '').toLowerCase().trim();
-      const email = (firebaseUser.email || '').toLowerCase().trim();
-
-      if (allowed && email !== allowed) {
-        await signOut(auth);
-        setUser(null);
-        setBlockedMessage(`このアカウント (${email || 'メールなし'}) は利用できません。許可されたメールアドレスでログインしてください。`);
-      } else {
-        setUser(firebaseUser);
-        setBlockedMessage('');
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
+  const [authenticated, setAuthenticated] = useState(localStorage.getItem(AUTH_STORAGE_KEY) === 'true');
 
   const value = useMemo(
     () => ({
-      user,
-      loading,
-      blockedMessage,
-      signIn: (email, password) => signInWithEmailAndPassword(auth, email, password),
-      logout: () => signOut(auth),
+      user: authenticated ? { uid: LOCAL_USER_ID } : null,
+      loading: false,
+      isAuthenticated: authenticated,
+      loginWithPasscode: (passcode) => {
+        const expected = (import.meta.env.VITE_APP_PASSCODE || '').trim();
+        if (!expected) {
+          throw new Error('VITE_APP_PASSCODE が未設定です。');
+        }
+        if (passcode !== expected) {
+          throw new Error('パスコードが一致しません。');
+        }
+        localStorage.setItem(AUTH_STORAGE_KEY, 'true');
+        setAuthenticated(true);
+      },
+      logout: () => {
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+        setAuthenticated(false);
+      },
     }),
-    [user, loading, blockedMessage],
+    [authenticated],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

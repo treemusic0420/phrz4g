@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import AudioControls from '../components/AudioControls';
-import { useAuth } from '../contexts/AuthContext';
+import { LOCAL_USER_ID } from '../lib/auth';
 import {
   createDictationAttempt,
   createStudyLog,
@@ -12,7 +12,6 @@ import { diffWords } from '../utils/diff';
 
 export default function DictationPage() {
   const { id } = useParams();
-  const { user } = useAuth();
   const navigate = useNavigate();
   const [lesson, setLesson] = useState(null);
   const [inputText, setInputText] = useState('');
@@ -21,10 +20,10 @@ export default function DictationPage() {
 
   useEffect(() => {
     fetchLessonById(id).then((doc) => {
-      if (!doc || doc.userId !== user.uid) return navigate('/lessons');
+      if (!doc || doc.userId !== LOCAL_USER_ID) return navigate('/lessons');
       setLesson(doc);
     });
-  }, [id, navigate, user.uid]);
+  }, [id, navigate, LOCAL_USER_ID]);
 
   const diff = useMemo(() => diffWords(inputText, lesson?.scriptEn || ''), [inputText, lesson?.scriptEn]);
 
@@ -34,7 +33,7 @@ export default function DictationPage() {
     const durationSeconds = Math.max(1, Math.floor((endedAt - startedAt) / 1000));
 
     await createStudyLog({
-      userId: user.uid,
+      userId: LOCAL_USER_ID,
       lessonId: lesson.id,
       trainingType: 'dictation',
       startedAt,
@@ -44,7 +43,7 @@ export default function DictationPage() {
     });
 
     await createDictationAttempt({
-      userId: user.uid,
+      userId: LOCAL_USER_ID,
       lessonId: lesson.id,
       inputText,
       correctText: lesson.scriptEn,

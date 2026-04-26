@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { createLesson, fetchLessonById, updateLesson } from '../lib/firestore';
 import { deleteAudioByPath, uploadLessonAudio, validateAudioFile } from '../lib/storage';
-import { useAuth } from '../contexts/AuthContext';
+import { LOCAL_USER_ID } from '../lib/auth';
 
 const defaultForm = {
   title: '',
@@ -18,7 +18,6 @@ const defaultForm = {
 export default function LessonFormPage({ mode }) {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { user } = useAuth();
   const [form, setForm] = useState(defaultForm);
   const [audioFile, setAudioFile] = useState(null);
   const [error, setError] = useState('');
@@ -27,10 +26,10 @@ export default function LessonFormPage({ mode }) {
     if (mode !== 'edit' || !id) return;
     fetchLessonById(id).then((lesson) => {
       if (!lesson) return;
-      if (lesson.userId !== user.uid) return navigate('/lessons');
+      if (lesson.userId !== LOCAL_USER_ID) return navigate('/lessons');
       setForm((prev) => ({ ...prev, ...lesson }));
     });
-  }, [id, mode, navigate, user.uid]);
+  }, [id, mode, navigate, LOCAL_USER_ID]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -41,7 +40,7 @@ export default function LessonFormPage({ mode }) {
       if (audioFile) {
         const message = validateAudioFile(audioFile);
         if (message) throw new Error(message);
-        const uploaded = await uploadLessonAudio({ userId: user.uid, file: audioFile });
+        const uploaded = await uploadLessonAudio({ file: audioFile });
         audioUrl = uploaded.audioUrl;
         audioPath = uploaded.audioPath;
         if (mode === 'edit' && form.audioPath && form.audioPath !== uploaded.audioPath) {
@@ -50,7 +49,7 @@ export default function LessonFormPage({ mode }) {
       }
 
       const payload = {
-        userId: user.uid,
+        userId: LOCAL_USER_ID,
         title: form.title,
         category: form.category,
         scriptEn: form.scriptEn,

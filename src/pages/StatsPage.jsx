@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { LOCAL_USER_ID } from '../lib/auth';
 import { fetchLessons, fetchStudyLogs } from '../lib/firestore';
 import { formatDateTime, formatSeconds, toDate } from '../utils/format';
 
@@ -13,14 +13,13 @@ const startOfWeek = (d) => {
 };
 
 export default function StatsPage() {
-  const { user } = useAuth();
   const [logs, setLogs] = useState([]);
   const [lessons, setLessons] = useState([]);
 
   useEffect(() => {
-    fetchStudyLogs(user.uid).then(setLogs);
-    fetchLessons(user.uid).then(setLessons);
-  }, [user.uid]);
+    fetchStudyLogs(LOCAL_USER_ID).then(setLogs);
+    fetchLessons(LOCAL_USER_ID).then(setLessons);
+  }, [LOCAL_USER_ID]);
 
   const stats = useMemo(() => {
     const now = new Date();

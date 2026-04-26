@@ -8,7 +8,7 @@ const navItems = [
 
 export default function Layout({ children }) {
   const { pathname } = useLocation();
-  const { user, logout } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
 
   return (
     <div className="container">
@@ -17,15 +17,14 @@ export default function Layout({ children }) {
           <h1>Phrz4g</h1>
           <p className="muted">自分専用ディクテーション / シャドーイング</p>
         </div>
-        {user ? (
+        {isAuthenticated ? (
           <div className="header-right">
-            <small>{user.email}</small>
             <button onClick={logout}>ログアウト</button>
           </div>
         ) : null}
       </header>
       <main>{children}</main>
-      {user ? (
+      {isAuthenticated ? (
         <nav className="bottom-nav">
           {navItems.map((item) => (
             <Link key={item.to} className={pathname.startsWith(item.to) ? 'active' : ''} to={item.to}>
