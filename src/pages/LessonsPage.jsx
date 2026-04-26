@@ -4,12 +4,37 @@ import { fetchLessons } from '../lib/firestore';
 import { LOCAL_USER_ID } from '../lib/auth';
 import { formatDateTime, formatSeconds } from '../utils/format';
 
+const toMillis = (value) => {
+  if (!value) return 0;
+  if (typeof value?.toMillis === 'function') return value.toMillis();
+  if (typeof value?.toDate === 'function') return value.toDate().getTime();
+  if (value instanceof Date) return value.getTime();
+  const parsed = new Date(value).getTime();
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
+
 export default function LessonsPage() {
   const [lessons, setLessons] = useState([]);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchLessons(LOCAL_USER_ID).then(setLessons);
-  }, [LOCAL_USER_ID]);
+    const loadLessons = async () => {
+      setError(null);
+      try {
+        const fetched = await fetchLessons(LOCAL_USER_ID);
+        const sorted = [...fetched].sort((a, b) => {
+          const aTime = Math.max(toMillis(a.updatedAt), toMillis(a.createdAt));
+          const bTime = Math.max(toMillis(b.updatedAt), toMillis(b.createdAt));
+          return bTime - aTime;
+        });
+        setLessons(sorted);
+      } catch (fetchError) {
+        setLessons([]);
+        setError(fetchError);
+      }
+    };
+    loadLessons();
+  }, []);
 
   return (
     <section className="stack">
@@ -19,7 +44,21 @@ export default function LessonsPage() {
           教材追加
         </Link>
       </div>
-      {lessons.length === 0 ? <p className="card">教材がありません。まず1件作成してください。</p> : null}
+      <article className="card">
+        <p>debug.userId: {LOCAL_USER_ID}</p>
+        <p>debug.lessonCount: {lessons.length}</p>
+        {error ? (
+          <p className="error">
+            debug.error: {error?.code || 'unknown'} / {error?.message || '不明なエラー'}
+          </p>
+        ) : null}
+      </article>
+      {error ? (
+        <p className="card error">
+          教材一覧の取得に失敗しました: {error?.code || 'unknown'} / {error?.message || '不明なエラー'}
+        </p>
+      ) : null}
+      {!error && lessons.length === 0 ? <p className="card">教材がありません。まず1件作成してください。</p> : null}
       {lessons.map((lesson) => (
         <article className="card" key={lesson.id}>
           <h3>{lesson.title}</h3>
