@@ -36,7 +36,7 @@ const mapLesson = (snap) => {
 };
 
 export const fetchLessons = async (userId) => {
-  const q = query(collection(db, 'lessons'), where('userId', '==', userId), orderBy('updatedAt', 'desc'));
+  const q = query(collection(db, 'lessons'), where('userId', '==', userId));
   const snap = await getDocs(q);
   return snap.docs.map(mapLesson);
 };
