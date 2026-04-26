@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
-import { auth, googleProvider } from '../lib/firebase';
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { auth } from '../lib/firebase';
 
 const AuthContext = createContext(null);
 
@@ -40,7 +40,7 @@ export const AuthProvider = ({ children }) => {
       user,
       loading,
       blockedMessage,
-      signIn: () => signInWithPopup(auth, googleProvider),
+      signIn: (email, password) => signInWithEmailAndPassword(auth, email, password),
       logout: () => signOut(auth),
     }),
     [user, loading, blockedMessage],
