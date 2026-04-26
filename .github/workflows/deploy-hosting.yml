@@ -25,42 +25,21 @@ jobs:
       - name: Create .env for Vite build
         run: |
           cat <<ENVEOF > .env
-          VITE_FIREBASE_API_KEY=${{ secrets.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_AUTH_DOMAIN=${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
-          VITE_FIREBASE_PROJECT_ID=${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-          VITE_FIREBASE_STORAGE_BUCKET=${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
-          VITE_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
-          VITE_FIREBASE_APP_ID=${{ secrets.VITE_FIREBASE_APP_ID }}
           VITE_ALLOWED_EMAIL=${{ secrets.VITE_ALLOWED_EMAIL }}
           ENVEOF
 
-      - name: Validate VITE Firebase env values (no secrets output)
+      - name: Validate VITE_ALLOWED_EMAIL value (no secrets output)
         run: |
           node -e "
-          const required = [
-            'VITE_FIREBASE_API_KEY',
-            'VITE_FIREBASE_AUTH_DOMAIN',
-            'VITE_FIREBASE_PROJECT_ID',
-            'VITE_FIREBASE_STORAGE_BUCKET',
-            'VITE_FIREBASE_MESSAGING_SENDER_ID',
-            'VITE_FIREBASE_APP_ID',
-          ];
-          for (const key of required) {
-            const value = process.env[key];
-            const exists = !!value;
-            console.log(key + '_EXISTS=' + exists);
-            if (!exists || value === 'undefined') {
-              throw new Error(key + ' is missing or invalid');
-            }
+          const value = process.env.VITE_ALLOWED_EMAIL;
+          const exists = !!value;
+          console.log('VITE_ALLOWED_EMAIL_EXISTS=' + exists);
+          if (!exists || value === 'undefined') {
+            throw new Error('VITE_ALLOWED_EMAIL is missing or invalid');
           }
           "
         env:
-          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
-          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
-          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
-          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+          VITE_ALLOWED_EMAIL: ${{ secrets.VITE_ALLOWED_EMAIL }}
 
       - name: Install dependencies
         run: npm install
