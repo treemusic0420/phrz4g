@@ -19,7 +19,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          # Use LTS for maximum action/dependency compatibility in CI.
+          node-version: 20
           cache: npm
 
       - name: Create .env for Vite build
