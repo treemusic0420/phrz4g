@@ -24,6 +24,7 @@ label { display: block; font-size: 14px; }
 pre { white-space: pre-wrap; background: #f9fafb; padding: 8px; border-radius: 8px; }
 .error { color: #b91c1c; }
 .audio-box audio { width: 100%; margin-bottom: 8px; }
+.audio-debug { color: #6b7280; font-size: 12px; margin: 4px 0; word-break: break-all; }
 .diff-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
 .diff-match { background: #dcfce7; padding: 2px 6px; border-radius: 999px; }
 .diff-miss { background: #fee2e2; padding: 2px 6px; border-radius: 999px; }

@@ -1,14 +1,18 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import AudioControls from '../components/AudioControls';
-import { fetchLessonById } from '../lib/firestore';
+import { fetchLessonById, updateLessonAudioUrl } from '../lib/firestore';
 import { LOCAL_USER_ID } from '../lib/auth';
+import { getAudioDownloadUrlByPath } from '../lib/storage';
 import { formatDateTime, formatSeconds } from '../utils/format';
 
 export default function LessonDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [lesson, setLesson] = useState(null);
+  const [resolvedAudioUrl, setResolvedAudioUrl] = useState('');
+  const [audioLoadStatus, setAudioLoadStatus] = useState('idle');
+  const [audioErrorMessage, setAudioErrorMessage] = useState('');
 
   useEffect(() => {
     fetchLessonById(id).then((doc) => {
@@ -16,6 +20,44 @@ export default function LessonDetailPage() {
       setLesson(doc);
     });
   }, [id, navigate, LOCAL_USER_ID]);
+
+  useEffect(() => {
+    if (!lesson) return;
+    let cancelled = false;
+
+    const resolveUrl = async () => {
+      setAudioErrorMessage('');
+      setAudioLoadStatus('idle');
+      if (lesson.audioUrl) {
+        setResolvedAudioUrl(lesson.audioUrl);
+        return;
+      }
+
+      if (!lesson.audioPath) {
+        setResolvedAudioUrl('');
+        setAudioErrorMessage('音声URLがありません');
+        return;
+      }
+
+      setAudioLoadStatus('loading');
+      try {
+        const url = await getAudioDownloadUrlByPath(lesson.audioPath);
+        if (cancelled) return;
+        setResolvedAudioUrl(url);
+        await updateLessonAudioUrl(lesson.id, url).catch(() => {});
+      } catch (err) {
+        if (cancelled) return;
+        setResolvedAudioUrl('');
+        setAudioLoadStatus('error');
+        setAudioErrorMessage(err.message || 'audioPathからURLを取得できませんでした');
+      }
+    };
+
+    resolveUrl();
+    return () => {
+      cancelled = true;
+    };
+  }, [lesson]);
 
   if (!lesson) return <p>読み込み中...</p>;
 
@@ -31,7 +73,18 @@ export default function LessonDetailPage() {
         <pre>{lesson.scriptJa || '-'}</pre>
         <p>メモ</p>
         <pre>{lesson.memo || '-'}</pre>
-        {lesson.audioUrl ? <AudioControls audioUrl={lesson.audioUrl} /> : null}
+        <AudioControls
+          audioUrl={resolvedAudioUrl}
+          onStatusChange={setAudioLoadStatus}
+          onErrorMessage={setAudioErrorMessage}
+        />
+        <div className="audio-debug">
+          <p>audioPath: {lesson.audioPath ? 'あり' : 'なし'}</p>
+          <p>audioUrl: {lesson.audioUrl ? 'あり' : 'なし'}</p>
+          <p>resolvedAudioUrl: {resolvedAudioUrl ? 'あり' : 'なし'}</p>
+          <p>audio load status: {audioLoadStatus}</p>
+          <p>audio error message: {audioErrorMessage || '-'}</p>
+        </div>
         <h3>学習概要</h3>
         <p>最終学習日: {formatDateTime(lesson.lastStudiedAt)}</p>
         <p>ディクテーション回数: {lesson.dictationCount || 0}</p>

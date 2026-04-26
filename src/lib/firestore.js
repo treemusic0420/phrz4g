@@ -69,6 +69,14 @@ export const updateLesson = async (lessonId, payload) => {
   });
 };
 
+export const updateLessonAudioUrl = async (lessonId, audioUrl) => {
+  if (!lessonId || !audioUrl) return;
+  return updateDoc(doc(db, 'lessons', lessonId), {
+    audioUrl,
+    updatedAt: serverTimestamp(),
+  });
+};
+
 export const createStudyLog = async (payload) => {
   return addDoc(collection(db, 'studyLogs'), {
     ...payload,
