@@ -46,6 +46,8 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          VITE_APP_PASSCODE: ${{ secrets.VITE_APP_PASSCODE }}
 
       - name: Create Firebase service account file
         run: |
