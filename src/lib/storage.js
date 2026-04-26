@@ -1,4 +1,5 @@
 import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { LOCAL_USER_ID } from './auth';
 import { storage } from './firebase';
 
 const MAX_BYTES = 20 * 1024 * 1024;
@@ -20,9 +21,9 @@ export const validateAudioFile = (file) => {
   return null;
 };
 
-export const uploadLessonAudio = async ({ userId, file }) => {
+export const uploadLessonAudio = async ({ file }) => {
   const filename = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
-  const audioPath = `users/${userId}/lesson-audio/${filename}`;
+  const audioPath = `users/${LOCAL_USER_ID}/lesson-audio/${filename}`;
   const storageRef = ref(storage, audioPath);
   await uploadBytes(storageRef, file, { contentType: file.type });
   const audioUrl = await getDownloadURL(storageRef);

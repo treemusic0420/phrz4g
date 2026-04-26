@@ -1,16 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchLessons } from '../lib/firestore';
-import { useAuth } from '../contexts/AuthContext';
+import { LOCAL_USER_ID } from '../lib/auth';
 import { formatDateTime, formatSeconds } from '../utils/format';
 
 export default function LessonsPage() {
-  const { user } = useAuth();
   const [lessons, setLessons] = useState([]);
 
   useEffect(() => {
-    fetchLessons(user.uid).then(setLessons);
-  }, [user.uid]);
+    fetchLessons(LOCAL_USER_ID).then(setLessons);
+  }, [LOCAL_USER_ID]);
 
   return (
     <section className="stack">

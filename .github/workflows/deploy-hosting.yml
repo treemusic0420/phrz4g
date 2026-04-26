@@ -25,21 +25,21 @@ jobs:
       - name: Create .env for Vite build
         run: |
           cat <<ENVEOF > .env
-          VITE_ALLOWED_EMAIL=${{ secrets.VITE_ALLOWED_EMAIL }}
+          VITE_APP_PASSCODE=${{ secrets.VITE_APP_PASSCODE }}
           ENVEOF
 
-      - name: Validate VITE_ALLOWED_EMAIL value (no secrets output)
+      - name: Validate VITE_APP_PASSCODE value (no secrets output)
         run: |
           node -e "
-          const value = process.env.VITE_ALLOWED_EMAIL;
+          const value = process.env.VITE_APP_PASSCODE;
           const exists = !!value;
-          console.log('VITE_ALLOWED_EMAIL_EXISTS=' + exists);
+          console.log('VITE_APP_PASSCODE_EXISTS=' + exists);
           if (!exists || value === 'undefined') {
-            throw new Error('VITE_ALLOWED_EMAIL is missing or invalid');
+            throw new Error('VITE_APP_PASSCODE is missing or invalid');
           }
           "
         env:
-          VITE_ALLOWED_EMAIL: ${{ secrets.VITE_ALLOWED_EMAIL }}
+          VITE_APP_PASSCODE: ${{ secrets.VITE_APP_PASSCODE }}
 
       - name: Install dependencies
         run: npm install

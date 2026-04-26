@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import AudioControls from '../components/AudioControls';
-import { useAuth } from '../contexts/AuthContext';
+import { LOCAL_USER_ID } from '../lib/auth';
 import { createStudyLog, fetchLessonById, updateLessonStats } from '../lib/firestore';
 
 export default function ShadowingPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [lesson, setLesson] = useState(null);
   const [showEn, setShowEn] = useState(true);
   const [showJa, setShowJa] = useState(false);
@@ -15,17 +14,17 @@ export default function ShadowingPage() {
 
   useEffect(() => {
     fetchLessonById(id).then((doc) => {
-      if (!doc || doc.userId !== user.uid) return navigate('/lessons');
+      if (!doc || doc.userId !== LOCAL_USER_ID) return navigate('/lessons');
       setLesson(doc);
     });
-  }, [id, navigate, user.uid]);
+  }, [id, navigate, LOCAL_USER_ID]);
 
   const complete = async () => {
     if (!lesson) return;
     const endedAt = new Date();
     const durationSeconds = Math.max(1, Math.floor((endedAt - startedAt) / 1000));
     await createStudyLog({
-      userId: user.uid,
+      userId: LOCAL_USER_ID,
       lessonId: lesson.id,
       trainingType: 'shadowing',
       startedAt,
