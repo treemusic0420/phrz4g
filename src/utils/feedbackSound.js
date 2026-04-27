@@ -36,3 +36,12 @@ export const playCorrectSound = async () => {
 export const playIncorrectSound = async () => {
   await playTone({ frequency: 220, duration: 0.14, type: 'triangle', gainValue: 0.05 });
 };
+
+export const playDictationCompleteSound = async () => {
+  await playTone({ frequency: 784, duration: 0.1, type: 'sine', gainValue: 0.02 });
+  await playTone({ frequency: 988, duration: 0.12, type: 'sine', gainValue: 0.02 });
+};
+
+export const playDictationWrongKeySound = async () => {
+  await playTone({ frequency: 196, duration: 0.09, type: 'triangle', gainValue: 0.015 });
+};

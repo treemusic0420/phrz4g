@@ -7,6 +7,9 @@ export default function AudioControls({
   audioContentType = 'audio/mpeg',
   onStatusChange,
   onErrorMessage,
+  shouldAutoPlay = false,
+  autoPlayToken = 0,
+  onAutoPlayBlocked,
 }) {
   const audioRef = useRef(null);
   const [speed, setSpeed] = useState(1);
@@ -23,6 +26,46 @@ export default function AudioControls({
     onStatusChange?.('loading');
     onErrorMessage?.('');
   }, [audioUrl, onErrorMessage, onStatusChange]);
+
+  useEffect(() => {
+    if (!audioUrl || !shouldAutoPlay) return undefined;
+    const audio = audioRef.current;
+    if (!audio) return undefined;
+
+    let canceled = false;
+    let rafId = 0;
+
+    const tryPlay = () => {
+      if (canceled) return;
+      audio.playbackRate = speed;
+      const playPromise = audio.play();
+      if (playPromise && typeof playPromise.catch === 'function') {
+        playPromise.catch(() => {
+          if (!canceled) onAutoPlayBlocked?.('Tap play to start the audio.');
+        });
+      }
+    };
+
+    if (audio.readyState >= 2) {
+      rafId = window.requestAnimationFrame(tryPlay);
+      return () => {
+        canceled = true;
+        window.cancelAnimationFrame(rafId);
+      };
+    }
+
+    const handleCanPlay = () => {
+      audio.removeEventListener('canplay', handleCanPlay);
+      tryPlay();
+    };
+    audio.addEventListener('canplay', handleCanPlay);
+
+    return () => {
+      canceled = true;
+      audio.removeEventListener('canplay', handleCanPlay);
+      if (rafId) window.cancelAnimationFrame(rafId);
+    };
+  }, [audioUrl, autoPlayToken, onAutoPlayBlocked, shouldAutoPlay, speed]);
 
   const rewind = () => {
     if (!audioRef.current) return;
@@ -61,6 +104,7 @@ export default function AudioControls({
           }}
           onLoadedMetadata={() => onStatusChange?.('loadedmetadata')}
           onCanPlay={() => onStatusChange?.('canplay')}
+          onPlay={() => onAutoPlayBlocked?.('')}
           onError={handleAudioError}
         >
           <source src={audioUrl} type={audioContentType || 'audio/mpeg'} />

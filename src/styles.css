@@ -215,6 +215,7 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
   display: inline-flex;
   flex-wrap: nowrap;
   gap: 3px;
+  margin-right: 10px;
 }
 .dictation-slot {
   width: 1.3em;
@@ -243,9 +244,22 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
   border-radius: 4px 4px 0 0;
 }
 .dictation-slot-correct {
-  background: #eef8f0;
-  border-bottom-color: #9bcf9f;
+  background: #edf6ff;
+  border-bottom-color: #8ab4f8;
   border-radius: 4px 4px 0 0;
+}
+.dictation-slot-wrong-pulse {
+  background: #fff2ea;
+  border-bottom-color: #f5a97f;
+  border-radius: 4px 4px 0 0;
+  animation: dictation-slot-shake 0.26s ease-in-out;
+}
+@keyframes dictation-slot-shake {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-1px); }
+  50% { transform: translateX(2px); }
+  75% { transform: translateX(-1px); }
+  100% { transform: translateX(0); }
 }
 .dictation-slot-incorrect {
   background: #fff3ee;
@@ -376,6 +390,31 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
   width: 100%;
 }
 
+.shadowing-rating-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.btn.shadowing-negative {
+  background: #f2f2f5;
+  color: #3c3c43;
+  border-color: #d8d8de;
+}
+
+.btn.shadowing-negative:hover {
+  background: #e9e9ef;
+}
+
+.btn.shadowing-positive {
+  background: linear-gradient(135deg, #0a84ff, #6d28d9);
+  color: #fff;
+}
+
+.btn.shadowing-positive:hover {
+  background: linear-gradient(135deg, #0478ea, #5a21ba);
+}
+
 @media (max-width: 640px) {
   .header-inner {
     padding: 7px 12px;
@@ -432,6 +471,7 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
   .row.between .btn { width: 100%; }
   .month-action-buttons { width: 100%; }
   .month-action-buttons .btn { width: 100%; }
+  .shadowing-rating-actions { grid-template-columns: 1fr; }
   .card { padding: 16px; border-radius: 18px; }
   .compact-lesson-link { padding: 11px 12px; }
   .difficulty-card::before { width: 3px; }
