@@ -111,6 +111,7 @@ export default function DictationPage() {
   const [isFinished, setIsFinished] = useState(false);
   const canPlayAudio = hasLessonAudio(lesson);
   const hiddenInputRef = useRef(null);
+  const nextButtonRef = useRef(null);
   const wrongInputTimeoutRef = useRef(null);
   const inputTextRef = useRef('');
   const isComposingRef = useRef(false);
@@ -148,7 +149,12 @@ export default function DictationPage() {
     const result = normalizeForDictation(nextText) === normalizeForDictation(lesson.scriptEn);
     setHasChecked(true);
     setIsCorrect(result);
-    if (result) await playDictationCompleteSound();
+    if (result) {
+      await playDictationCompleteSound();
+      window.requestAnimationFrame(() => {
+        nextButtonRef.current?.focus();
+      });
+    }
   };
 
   const applyInputChars = (candidateChars, options = {}) => {
@@ -408,19 +414,7 @@ export default function DictationPage() {
       <p className="section-subtle">
         {monthLabel} ・ {hasValidProgress ? monthIndex + 1 : '-'} / {monthLessons.length || '-'}
       </p>
-      <AudioControls
-        key={lesson.id}
-        audioUrl={lesson.audioUrl}
-        audioContentType={lesson.audioContentType || fallbackAudioContentType}
-        shouldAutoPlay={canPlayAudio}
-        autoPlayToken={autoPlayToken}
-        onAutoPlayBlocked={setAutoPlayMessage}
-        onAutoPlaySettled={focusDictationInput}
-      />
-      {autoPlayMessage ? <p className="section-subtle">{autoPlayMessage}</p> : null}
       <article className="card dictation-input-card">
-        <h3>Your Input</h3>
-        <p className="section-subtle">Type the next English character. Spaces are skipped automatically.</p>
         <div
           className="dictation-slot-container"
           onClick={focusDictationInput}
@@ -463,8 +457,19 @@ export default function DictationPage() {
           ))}
         </div>
       </article>
+      <AudioControls
+        key={lesson.id}
+        audioUrl={lesson.audioUrl}
+        audioContentType={lesson.audioContentType || fallbackAudioContentType}
+        shouldAutoPlay={canPlayAudio}
+        autoPlayToken={autoPlayToken}
+        onAutoPlayBlocked={setAutoPlayMessage}
+        onAutoPlaySettled={focusDictationInput}
+      />
+      {autoPlayMessage ? <p className="section-subtle">{autoPlayMessage}</p> : null}
       <div className="row gap-sm wrap">
         <button
+          ref={nextButtonRef}
           onClick={completeAndGoNext}
           type="button"
           disabled={!hasValidProgress}

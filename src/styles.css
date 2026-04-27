@@ -178,18 +178,16 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
 }
 .dictation-input-card {
   display: grid;
-  gap: 8px;
-}
-.dictation-input-card h3 {
-  margin: 0;
+  gap: 0;
+  padding: 12px;
 }
 .dictation-slot-container {
   position: relative;
-  min-height: 110px;
+  min-height: 96px;
   border: 1px solid #e5e7eb;
   border-radius: 14px;
   background: #fbfbfd;
-  padding: 12px;
+  padding: 10px;
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
@@ -393,10 +391,25 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
   width: 100%;
 }
 
+.shadowing-script-card pre {
+  margin-top: 0;
+}
+
 .shadowing-rating-actions {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
+}
+.shadowing-rating-actions .btn {
+  min-width: 0;
+}
+
+.shadowing-sub-actions {
+  margin-top: -2px;
+}
+
+.shadowing-translation-toggle {
+  min-width: 160px;
 }
 
 .btn.shadowing-negative {
@@ -474,7 +487,23 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
   .row.between .btn { width: 100%; }
   .month-action-buttons { width: 100%; }
   .month-action-buttons .btn { width: 100%; }
-  .shadowing-rating-actions { grid-template-columns: 1fr; }
+  .shadowing-rating-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .shadowing-rating-actions .btn {
+    padding: 10px 8px;
+    min-height: 40px;
+    font-size: 0.82rem;
+    white-space: nowrap;
+  }
+  .shadowing-sub-actions {
+    justify-content: flex-start;
+  }
+  .shadowing-translation-toggle {
+    min-width: 0;
+    width: auto;
+  }
   .card { padding: 16px; border-radius: 18px; }
   .compact-lesson-link { padding: 11px 12px; }
   .difficulty-card::before { width: 3px; }
@@ -493,8 +522,8 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
     width: 100%;
   }
   .dictation-slot-container {
-    min-height: 96px;
-    padding: 10px;
+    min-height: 90px;
+    padding: 9px;
     gap: 6px 2px;
   }
   .dictation-slot {
