@@ -1,24 +1,9 @@
 import { toDate } from './format';
+import { getRegisteredMonthLabel, resolveRegisteredMonthFields } from './registeredMonth';
 
-export const UNCATEGORIZED_LABEL = '未分類';
-export const UNCATEGORIZED_KEY = '__uncategorized__';
 export const LESSONS_PER_PAGE = 10;
-
-export const normalizeCategory = (category) => {
-  if (typeof category !== 'string') return UNCATEGORIZED_LABEL;
-  const trimmed = category.trim();
-  return trimmed ? trimmed : UNCATEGORIZED_LABEL;
-};
-
-export const categoryToKey = (categoryName) => {
-  if (categoryName === UNCATEGORIZED_LABEL) return UNCATEGORIZED_KEY;
-  return encodeURIComponent(categoryName);
-};
-
-export const keyToCategory = (categoryKey = '') => {
-  if (!categoryKey || categoryKey === UNCATEGORIZED_KEY) return UNCATEGORIZED_LABEL;
-  return decodeURIComponent(categoryKey);
-};
+export const UNSET_CATEGORY_LABEL = 'カテゴリ未設定';
+export const DELETED_CATEGORY_LABEL = '削除済みカテゴリ';
 
 const safeMillis = (value) => {
   const date = toDate(value);
@@ -36,32 +21,130 @@ export const getLessonSortTime = (lesson) => {
 export const sortLessonsByRecency = (lessons = []) =>
   [...lessons].sort((a, b) => getLessonSortTime(b) - getLessonSortTime(a));
 
-export const groupLessonsByCategory = (lessons = []) => {
+export const sortCategories = (categories = []) =>
+  [...categories].sort((a, b) => {
+    const orderDiff = (Number(a.order) || 0) - (Number(b.order) || 0);
+    if (orderDiff !== 0) return orderDiff;
+    return (a.name || '').localeCompare(b.name || '', 'ja');
+  });
+
+export const groupLessonsByCategory = (lessons = [], categories = []) => {
+  const sortedCategories = sortCategories(categories);
+  const grouped = new Map(
+    sortedCategories.map((category) => [
+      category.id,
+      {
+        id: category.id,
+        name: category.name,
+        slug: category.slug,
+        isActive: !!category.isActive,
+        order: Number(category.order) || 0,
+        count: 0,
+        monthCount: 0,
+        monthSet: new Set(),
+        totalStudySeconds: 0,
+        latestActivityTime: 0,
+      },
+    ]),
+  );
+
+  sortLessonsByRecency(lessons).forEach((lesson) => {
+    const categoryId = lesson.categoryId || '';
+    const monthFields = resolveRegisteredMonthFields(lesson);
+    if (!categoryId) {
+      const key = '__unset__';
+      if (!grouped.has(key)) {
+        grouped.set(key, {
+          id: key,
+          name: UNSET_CATEGORY_LABEL,
+          slug: '',
+          isActive: true,
+          order: 9999,
+          count: 0,
+          monthCount: 0,
+          monthSet: new Set(),
+          totalStudySeconds: 0,
+          latestActivityTime: 0,
+        });
+      }
+      const row = grouped.get(key);
+      const sortTime = getLessonSortTime(lesson);
+      row.count += 1;
+      row.monthSet.add(monthFields.registeredMonth);
+      row.totalStudySeconds += Number(lesson.totalStudySeconds) || 0;
+      row.latestActivityTime = Math.max(row.latestActivityTime, sortTime);
+      return;
+    }
+
+    if (!grouped.has(categoryId)) {
+      grouped.set(categoryId, {
+        id: categoryId,
+        name: DELETED_CATEGORY_LABEL,
+        slug: '',
+        isActive: true,
+        order: 9999,
+        count: 0,
+        monthCount: 0,
+        monthSet: new Set(),
+        totalStudySeconds: 0,
+        latestActivityTime: 0,
+      });
+    }
+
+    const row = grouped.get(categoryId);
+    const sortTime = getLessonSortTime(lesson);
+    row.count += 1;
+    row.monthSet.add(monthFields.registeredMonth);
+    row.totalStudySeconds += Number(lesson.totalStudySeconds) || 0;
+    row.latestActivityTime = Math.max(row.latestActivityTime, sortTime);
+  });
+
+  return Array.from(grouped.values())
+    .map((row) => ({ ...row, monthCount: row.monthSet.size }))
+    .filter((category) => category.count > 0 || category.isActive)
+    .sort((a, b) => {
+      if (a.count === 0 && b.count > 0) return 1;
+      if (b.count === 0 && a.count > 0) return -1;
+      if (a.latestActivityTime !== b.latestActivityTime) return b.latestActivityTime - a.latestActivityTime;
+      const orderDiff = (Number(a.order) || 0) - (Number(b.order) || 0);
+      if (orderDiff !== 0) return orderDiff;
+      return (a.name || '').localeCompare(b.name || '', 'ja');
+    });
+};
+
+export const groupLessonsByRegisteredMonth = (lessons = []) => {
   const grouped = new Map();
 
   sortLessonsByRecency(lessons).forEach((lesson) => {
-    const categoryName = normalizeCategory(lesson.category);
-    if (!grouped.has(categoryName)) {
-      grouped.set(categoryName, {
-        name: categoryName,
-        key: categoryToKey(categoryName),
-        lessons: [],
+    const monthFields = resolveRegisteredMonthFields(lesson);
+    const key = monthFields.registeredMonth;
+    if (!grouped.has(key)) {
+      grouped.set(key, {
+        registeredMonth: key,
+        registeredMonthLabel: monthFields.registeredMonthLabel || getRegisteredMonthLabel(key),
         count: 0,
         totalStudySeconds: 0,
         latestActivityTime: 0,
       });
     }
 
-    const row = grouped.get(categoryName);
-    const sortTime = getLessonSortTime(lesson);
-    row.lessons.push(lesson);
+    const row = grouped.get(key);
     row.count += 1;
     row.totalStudySeconds += Number(lesson.totalStudySeconds) || 0;
-    row.latestActivityTime = Math.max(row.latestActivityTime, sortTime);
+    row.latestActivityTime = Math.max(row.latestActivityTime, getLessonSortTime(lesson));
   });
 
-  return Array.from(grouped.values()).sort((a, b) => b.latestActivityTime - a.latestActivityTime);
+  return Array.from(grouped.values()).sort((a, b) =>
+    String(b.registeredMonth).localeCompare(String(a.registeredMonth)),
+  );
 };
+
+export const filterLessonsByCategoryAndMonth = (lessons = [], categoryId = '', registeredMonth = '') =>
+  lessons.filter((lesson) => {
+    if (lesson.categoryId !== categoryId) return false;
+    const monthFields = resolveRegisteredMonthFields(lesson);
+    return monthFields.registeredMonth === registeredMonth;
+  });
 
 export const paginateLessons = (lessons = [], currentPage = 1, perPage = LESSONS_PER_PAGE) => {
   const total = lessons.length;

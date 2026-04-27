@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import AudioControls from '../components/AudioControls';
-import { fetchLessonById, updateLessonAudioUrl } from '../lib/firestore';
+import { ensureInitialCategories, fetchLessonById, updateLessonAudioUrl } from '../lib/firestore';
 import { LOCAL_USER_ID } from '../lib/auth';
 import { getAudioDownloadUrlByPath } from '../lib/storage';
 import { formatDateTime, formatSeconds } from '../utils/format';
+import { getDifficultyLabel } from '../utils/difficulty';
 
 const getExtFromPath = (path = '') => path.split('.').pop()?.toLowerCase() || '';
 const inferTypeByExt = (ext) => {
@@ -22,6 +23,7 @@ export default function LessonDetailPage() {
   const [lesson, setLesson] = useState(null);
   const [resolvedAudioUrl, setResolvedAudioUrl] = useState('');
   const [audioLoadStatus, setAudioLoadStatus] = useState('idle');
+  const [categories, setCategories] = useState([]);
   const [audioErrorMessage, setAudioErrorMessage] = useState('');
   const fileExtension = getExtFromPath(lesson?.audioPath || '');
   const audioContentType = lesson?.audioContentType || inferTypeByExt(fileExtension);
@@ -33,6 +35,13 @@ export default function LessonDetailPage() {
       setLesson(doc);
     });
   }, [id, navigate, LOCAL_USER_ID]);
+
+
+  useEffect(() => {
+    ensureInitialCategories(LOCAL_USER_ID)
+      .then(setCategories)
+      .catch(() => setCategories([]));
+  }, []);
 
   useEffect(() => {
     if (!lesson) return;
@@ -82,8 +91,8 @@ export default function LessonDetailPage() {
     <section className="stack">
       <article className="card">
         <h2 className="section-title">{lesson.title}</h2>
-        <p>カテゴリ: {lesson.category || '-'}</p>
-        <p>難易度: {lesson.difficulty || '未設定'}</p>
+        <p>カテゴリ: {lesson.categoryId ? (categories.find((category) => category.id === lesson.categoryId)?.name || '削除済みカテゴリ') : 'カテゴリ未設定'}</p>
+        <p>難易度: {getDifficultyLabel(lesson.difficulty)}</p>
         <p className="section-subtle">英文</p>
         <pre className="mono">{lesson.scriptEn}</pre>
         <p>日本語訳</p>

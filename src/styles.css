@@ -8,11 +8,81 @@
 body { margin: 0; background: #f5f5f7; color: #1d1d1f; }
 a { color: inherit; text-decoration: none; }
 .app-shell { min-height: 100vh; }
-.container { max-width: 920px; margin: 0 auto; padding: 20px 18px 0; }
-.main-content { padding-bottom: 120px; }
-.header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; margin-bottom: 18px; }
-.app-title { margin: 0; font-size: clamp(2rem, 5.5vw, 2.9rem); letter-spacing: -0.03em; font-weight: 780; }
-.muted { color: #6e6e73; margin: 4px 0 0; font-size: 0.86rem; }
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(210, 210, 215, 0.7);
+}
+
+.header-inner {
+  max-width: 920px;
+  margin: 0 auto;
+  min-height: 52px;
+  padding: 8px 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand {
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.top-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.top-nav a {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #3a3a3c;
+  border: 1px solid transparent;
+}
+
+.top-nav a.active {
+  background: #1d1d1f;
+  color: #fff;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.add-btn {
+  white-space: nowrap;
+}
+
+.add-btn-short {
+  display: none;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.main-content {
+  padding: 12px 0 28px;
+}
+
+.container {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 8px 18px 0;
+}
+
 .card { background: #fff; border: 1px solid #e4e4e8; border-radius: 20px; padding: 20px; margin-bottom: 12px; box-shadow: 0 4px 18px rgba(15, 23, 42, 0.05); }
 .stack { display: grid; gap: 14px; }
 .row { display: flex; align-items: center; }
@@ -20,11 +90,13 @@ a { color: inherit; text-decoration: none; }
 .center { justify-content: center; }
 .gap-sm { gap: 10px; }
 .wrap { flex-wrap: wrap; }
-button, .btn { border: 1px solid transparent; background: #1d1d1f; color: #fff; padding: 10px 16px; border-radius: 999px; font-size: 0.9rem; font-weight: 600; cursor: pointer; display: inline-flex; justify-content: center; align-items: center; min-height: 42px; transition: all 0.2s ease; }
+button, .btn { border: 1px solid transparent; background: #1d1d1f; color: #fff; padding: 10px 16px; border-radius: 999px; font-size: 0.9rem; font-weight: 600; cursor: pointer; display: inline-flex; justify-content: center; align-items: center; min-height: 38px; transition: all 0.2s ease; }
 button:hover, .btn:hover { transform: translateY(-1px); background: #000; }
 button:focus-visible, .btn:focus-visible { outline: 3px solid rgba(10, 132, 255, 0.33); outline-offset: 2px; }
 .btn.ghost { background: #f5f5f7; color: #1d1d1f; border-color: #d2d2d7; }
 .btn.ghost:hover { background: #ececf1; }
+.btn.danger-ghost { background: #fff5f5; color: #b3261e; border-color: #f3c7c4; }
+.btn.danger-ghost:hover { background: #ffeaea; color: #8f1f18; }
 .active-btn { background: #0a84ff; }
 input, textarea, select { width: 100%; margin-top: 6px; padding: 11px 13px; border: 1px solid #d2d2d7; border-radius: 14px; background: #fbfbfd; font: inherit; color: #1d1d1f; }
 input:focus, textarea:focus, select:focus { border-color: #0a84ff; outline: 3px solid rgba(10, 132, 255, 0.2); }
@@ -41,10 +113,6 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
 .diff-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
 .diff-match { background: #dcfce7; padding: 2px 6px; border-radius: 999px; }
 .diff-miss { background: #fee2e2; padding: 2px 6px; border-radius: 999px; }
-.bottom-nav { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); display: flex; justify-content: center; gap: 8px; padding: 8px; background: rgba(255, 255, 255, 0.75); border: 1px solid rgba(210, 210, 215, 0.8); border-radius: 999px; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); box-shadow: 0 8px 28px rgba(0, 0, 0, 0.09); z-index: 10; }
-.bottom-nav a { padding: 8px 18px; border-radius: 999px; background: transparent; color: #3a3a3c; font-size: 0.92rem; font-weight: 600; }
-.bottom-nav a.active { background: #1d1d1f; color: #fff; }
-.safe-bottom-space { height: 92px; }
 .empty-state { text-align: center; padding: 28px 20px; }
 .category-card { display: grid; gap: 8px; }
 .category-card:hover { border-color: #c8c8ce; background: #fcfcff; }
@@ -53,17 +121,55 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
 .pill { background: #f1f1f4; border: 1px solid #dfdfe4; border-radius: 999px; padding: 4px 10px; font-size: 0.82rem; color: #3a3a3c; }
 .pagination-box { margin-bottom: 24px; }
 .pagination-box button[disabled] { opacity: 0.45; cursor: default; pointer-events: none; }
+.danger-zone { margin-top: 8px; padding-top: 12px; border-top: 1px dashed #f3c7c4; display: grid; gap: 8px; }
+
 @media (max-width: 640px) {
-  .container { padding: 18px 16px 0; }
-  .header { flex-direction: column; align-items: flex-start; }
-  .header-right { width: 100%; }
-  .header-right .btn { width: 100%; }
+  .header-inner {
+    padding: 7px 12px;
+    min-height: 48px;
+    gap: 6px;
+  }
+
+  .brand {
+    font-size: 1rem;
+    max-width: 68px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .top-nav {
+    gap: 4px;
+  }
+
+  .top-nav a {
+    padding: 5px 8px;
+    font-size: 0.74rem;
+  }
+
+  .header-actions {
+    gap: 6px;
+  }
+
+  .add-btn,
+  .compact-btn {
+    min-height: 32px;
+    padding: 7px 10px;
+    font-size: 0.76rem;
+  }
+
+  .add-btn-short {
+    display: inline;
+  }
+
+  .add-btn-label {
+    display: none;
+  }
+
+  .container { padding: 10px 12px 0; }
   .row.between { align-items: stretch; flex-direction: column; gap: 10px; }
   .row.between .btn { width: 100%; }
   .card { padding: 16px; border-radius: 18px; }
-  .bottom-nav { width: calc(100% - 24px); }
-  .bottom-nav a { flex: 1; text-align: center; padding: 9px 12px; }
-  .pagination-box { margin-bottom: 60px; }
+  .pagination-box { margin-bottom: 24px; }
   .pagination-box .row { justify-content: space-between; }
   .pagination-box .btn { min-width: 92px; }
   .pill { font-size: 0.78rem; }

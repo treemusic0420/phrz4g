@@ -3,8 +3,11 @@ import { useAuth } from '../contexts/AuthContext';
 
 const navItems = [
   { to: '/lessons', label: '教材' },
+  { to: '/categories', label: 'カテゴリ' },
   { to: '/stats', label: '履歴' },
 ];
+
+const isActivePath = (pathname, to) => pathname === to || pathname.startsWith(`${to}/`);
 
 export default function Layout({ children }) {
   const { pathname } = useLocation();
@@ -12,32 +15,36 @@ export default function Layout({ children }) {
 
   return (
     <div className="app-shell">
-      <div className="container">
-        <header className="header">
-          <div>
-            <h1 className="app-title">Phrz4g</h1>
-            <p className="muted">自分専用ディクテーション / シャドーイング</p>
-          </div>
+      <header className="app-header">
+        <div className="header-inner">
+          <Link className="brand" to={isAuthenticated ? '/lessons' : '/login'}>
+            Phrz4g
+          </Link>
           {isAuthenticated ? (
-            <div className="header-right">
-              <button className="btn ghost" onClick={logout} type="button">
-                ログアウト
-              </button>
-            </div>
+            <>
+              <nav className="top-nav" aria-label="主要ナビゲーション">
+                {navItems.map((item) => (
+                  <Link key={item.to} className={isActivePath(pathname, item.to) ? 'active' : ''} to={item.to}>
+                    {item.label}
+                  </Link>
+                ))}
+              </nav>
+              <div className="header-actions">
+                <Link className="btn add-btn" to="/lessons/new">
+                  <span className="add-btn-short" aria-hidden="true">+</span>
+                  <span className="add-btn-label">教材追加</span>
+                </Link>
+                <button className="btn ghost compact-btn" onClick={logout} type="button">
+                  ログアウト
+                </button>
+              </div>
+            </>
           ) : null}
-        </header>
-        <main className="main-content">{children}</main>
-      </div>
-      {isAuthenticated ? (
-        <nav className="bottom-nav">
-          {navItems.map((item) => (
-            <Link key={item.to} className={pathname.startsWith(item.to) ? 'active' : ''} to={item.to}>
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-      ) : null}
-      <div className="safe-bottom-space" />
+        </div>
+      </header>
+      <main className="main-content">
+        <div className="container">{children}</div>
+      </main>
     </div>
   );
 }
