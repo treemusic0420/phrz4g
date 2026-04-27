@@ -22,6 +22,8 @@ const defaultForm = {
   audioContentType: '',
 };
 
+const MP3_ONLY_ERROR = '現在はmp3ファイルのみ登録できます。m4a等はmp3に変換してから登録してください。';
+
 export default function LessonFormPage({ mode }) {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -48,8 +50,7 @@ export default function LessonFormPage({ mode }) {
     try {
       let audioUrl = form.audioUrl || '';
       let audioPath = form.audioPath || '';
-      let audioContentType =
-        form.audioContentType || getAudioContentTypeFromExtension(getFileExtension(form.audioPath));
+      let audioContentType = form.audioContentType || getAudioContentTypeFromExtension(getFileExtension(form.audioPath));
       if (audioFile) {
         const message = validateAudioFile(audioFile);
         if (message) throw new Error(message);
@@ -77,6 +78,9 @@ export default function LessonFormPage({ mode }) {
 
       if (!payload.title || !payload.scriptEn) throw new Error('タイトルと英文スクリプトは必須です。');
       if (!payload.audioUrl || !payload.audioPath) throw new Error('音声ファイルを登録してください。');
+      const savedExt = getFileExtension(payload.audioPath);
+      if (savedExt !== 'mp3') throw new Error(MP3_ONLY_ERROR);
+      payload.audioContentType = 'audio/mpeg';
 
       if (mode === 'create') {
         const docRef = await createLesson(payload);
@@ -101,24 +105,33 @@ export default function LessonFormPage({ mode }) {
         <label>日本語訳<textarea rows="3" value={form.scriptJa} onChange={(e) => setForm({ ...form, scriptJa: e.target.value })} /></label>
         <label>メモ<textarea rows="3" value={form.memo} onChange={(e) => setForm({ ...form, memo: e.target.value })} /></label>
         <label>
-          音声ファイル（mp3/m4a/wav, 20MB未満）
+          音声ファイル（mp3, 20MB未満）
           <input
-            accept="audio/mpeg,audio/mp3,audio/mp4,audio/x-m4a,audio/wav,.mp3,.m4a,.wav"
+            accept="audio/mpeg,.mp3"
             type="file"
             onChange={(e) => {
               const nextFile = e.target.files?.[0] || null;
-              setAudioFile(nextFile);
               if (!nextFile) {
+                setAudioFile(null);
+                setError('');
                 setAudioDebugInfo({ ext: '', contentType: '' });
                 return;
               }
               const ext = getFileExtension(nextFile.name);
-              const contentType = getAudioContentTypeFromExtension(ext) || nextFile.type || '';
+              const contentType = nextFile.type || '';
               setAudioDebugInfo({ ext, contentType });
+              const message = validateAudioFile(nextFile);
+              if (message) {
+                setAudioFile(null);
+                setError(message);
+                return;
+              }
+              setError('');
+              setAudioFile(nextFile);
             }}
           />
         </label>
-        <p className="section-subtle">再生できない場合は mp3 または m4a を再登録してください。</p>
+        <p className="section-subtle">現在はmp3ファイルのみ登録できます。</p>
         <details className="debug-panel">
           <summary>audio upload debug</summary>
           <p>extension: {audioDebugInfo.ext || '-'}</p>

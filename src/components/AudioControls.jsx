@@ -4,7 +4,7 @@ const SPEEDS = [0.8, 1.0, 1.2];
 
 export default function AudioControls({
   audioUrl,
-  audioContentType = 'audio/mp4',
+  audioContentType = 'audio/mpeg',
   onStatusChange,
   onErrorMessage,
 }) {
@@ -63,7 +63,7 @@ export default function AudioControls({
           onCanPlay={() => onStatusChange?.('canplay')}
           onError={handleAudioError}
         >
-          <source src={audioUrl} type={audioContentType || 'audio/mp4'} />
+          <source src={audioUrl} type={audioContentType || 'audio/mpeg'} />
         </audio>
       ) : null}
       {localError ? <p className="audio-debug">{localError}</p> : null}
