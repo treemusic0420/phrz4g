@@ -68,13 +68,15 @@ const normalizeTrainingType = (type = '') => {
   return 'Unknown';
 };
 
-const buildDashboardData = (lessons, logs) => {
+const buildDashboardData = (lessons, logs, options = {}) => {
+  const { canUseStudyLogs = true } = options;
   const now = new Date();
   const nowParts = getDatePartsInTz(now);
   const todayKey = getDateKeyInTz(now);
   const mondayParts = getMondayInTz(nowParts);
   const mondayKey = `${mondayParts.year}-${String(mondayParts.month).padStart(2, '0')}-${String(mondayParts.day).padStart(2, '0')}`;
   const monthPrefix = `${nowParts.year}-${String(nowParts.month).padStart(2, '0')}`;
+  const shouldUseLogsSummary = canUseStudyLogs && logs.length > 0;
 
   let today = 0;
   let week = 0;
@@ -85,7 +87,13 @@ const buildDashboardData = (lessons, logs) => {
   const perDaySeconds = new Map();
   const attemptsByLessonFromLogs = new Map();
 
-  logs.forEach((log) => {
+  const sortedLogs = [...logs].sort((a, b) => {
+    const aTime = toDate(a.createdAt)?.getTime() || 0;
+    const bTime = toDate(b.createdAt)?.getTime() || 0;
+    return bTime - aTime;
+  });
+
+  sortedLogs.forEach((log) => {
     const created = toDate(log.createdAt);
     if (!created || Number.isNaN(created.getTime())) return;
 
@@ -102,14 +110,24 @@ const buildDashboardData = (lessons, logs) => {
     attemptsByLessonFromLogs.set(log.lessonId, (attemptsByLessonFromLogs.get(log.lessonId) || 0) + 1);
   });
 
+  const lessonBasedTotal = lessons.reduce((sum, lesson) => sum + (Number(lesson.totalStudySeconds) || 0), 0);
+  if (!shouldUseLogsSummary) {
+    total = lessonBasedTotal;
+    today = 0;
+    week = 0;
+    month = 0;
+  }
+
   const dictationAttempts = lessons.reduce((sum, lesson) => sum + (Number(lesson.dictationCount) || 0), 0);
   const shadowingAttempts = lessons.reduce((sum, lesson) => sum + (Number(lesson.shadowingCount) || 0), 0);
 
   let streak = 0;
-  let cursor = { ...nowParts };
-  while (daySet.has(`${cursor.year}-${String(cursor.month).padStart(2, '0')}-${String(cursor.day).padStart(2, '0')}`)) {
-    streak += 1;
-    cursor = addDaysInTz(cursor, -1);
+  if (shouldUseLogsSummary) {
+    let cursor = { ...nowParts };
+    while (daySet.has(`${cursor.year}-${String(cursor.month).padStart(2, '0')}-${String(cursor.day).padStart(2, '0')}`)) {
+      streak += 1;
+      cursor = addDaysInTz(cursor, -1);
+    }
   }
 
   const last7Days = Array.from({ length: 7 }, (_, index) => {
@@ -145,7 +163,7 @@ const buildDashboardData = (lessons, logs) => {
 
   const lessonTitleById = new Map(lessons.map((lesson) => [lesson.id, lesson.title || 'Untitled lesson']));
 
-  const recentLogs = [...logs].slice(0, 10).map((log) => ({
+  const recentLogs = sortedLogs.slice(0, 10).map((log) => ({
     ...log,
     lessonTitle: lessonTitleById.get(log.lessonId) || 'Deleted lesson',
     trainingTypeLabel: normalizeTrainingType(log.trainingType),
@@ -209,25 +227,43 @@ const SimpleBarChart = ({ title, data, valueKey, emptyText, valueSuffix = '' }) 
 export default function StatsPage() {
   const [logs, setLogs] = useState([]);
   const [lessons, setLessons] = useState([]);
-  const [loadError, setLoadError] = useState('');
+  const [lessonsStatus, setLessonsStatus] = useState('idle');
+  const [studyLogsStatus, setStudyLogsStatus] = useState('idle');
+  const [lessonsError, setLessonsError] = useState('');
+  const [studyLogsError, setStudyLogsError] = useState('');
 
   useEffect(() => {
     let active = true;
 
     const load = async () => {
-      try {
-        setLoadError('');
-        const [loadedLogs, loadedLessons] = await Promise.all([
-          fetchStudyLogs(LOCAL_USER_ID),
-          fetchLessons(LOCAL_USER_ID),
-        ]);
+      setLessonsStatus('loading');
+      setStudyLogsStatus('loading');
+      setLessonsError('');
+      setStudyLogsError('');
 
-        if (!active) return;
-        setLogs(loadedLogs);
-        setLessons(loadedLessons);
-      } catch (error) {
-        if (!active) return;
-        setLoadError('Failed to load dashboard data.');
+      const [lessonsResult, logsResult] = await Promise.allSettled([
+        fetchLessons(LOCAL_USER_ID),
+        fetchStudyLogs(LOCAL_USER_ID),
+      ]);
+
+      if (!active) return;
+
+      if (lessonsResult.status === 'fulfilled') {
+        setLessons(lessonsResult.value);
+        setLessonsStatus('success');
+      } else {
+        setLessons([]);
+        setLessonsStatus('error');
+        setLessonsError(lessonsResult.reason?.message || 'Unknown error');
+      }
+
+      if (logsResult.status === 'fulfilled') {
+        setLogs(logsResult.value);
+        setStudyLogsStatus('success');
+      } else {
+        setLogs([]);
+        setStudyLogsStatus('error');
+        setStudyLogsError(logsResult.reason?.message || 'Unknown error');
       }
     };
 
@@ -237,7 +273,13 @@ export default function StatsPage() {
     };
   }, []);
 
-  const dashboard = useMemo(() => buildDashboardData(lessons, logs), [lessons, logs]);
+  const dashboard = useMemo(
+    () =>
+      buildDashboardData(lessons, logs, {
+        canUseStudyLogs: studyLogsStatus === 'success',
+      }),
+    [lessons, logs, studyLogsStatus],
+  );
 
   const summaryCards = [
     { label: 'Today', value: formatDurationCompact(dashboard.summary.today) },
@@ -252,7 +294,21 @@ export default function StatsPage() {
   return (
     <section className="stack dashboard-page">
       <h2 className="section-title">Study Dashboard</h2>
-      {loadError ? <p className="error">{loadError}</p> : null}
+      <details className="debug-panel">
+        <summary>Debug Info</summary>
+        <p>debug.userId: {LOCAL_USER_ID}</p>
+        <p>debug.lessonsStatus: {lessonsStatus}</p>
+        <p>debug.lessonsCount: {lessons.length}</p>
+        <p>debug.studyLogsStatus: {studyLogsStatus}</p>
+        <p>debug.studyLogsCount: {logs.length}</p>
+        {lessonsError ? <p className="error">debug.lessonsError: {lessonsError}</p> : null}
+        {studyLogsError ? <p className="error">debug.studyLogsError: {studyLogsError}</p> : null}
+      </details>
+
+      {lessonsStatus === 'error' ? <p className="error">Failed to load lessons.</p> : null}
+      {studyLogsStatus === 'error' ? (
+        <p className="error">Failed to load study logs. Lesson-based summary is still available.</p>
+      ) : null}
 
       <section className="dashboard-summary-grid" aria-label="Summary cards">
         {summaryCards.map((card) => (
@@ -301,7 +357,7 @@ export default function StatsPage() {
       <article className="card">
         <h3>Recent Study Logs</h3>
         {dashboard.recentLogs.length === 0 ? (
-          <p className="section-subtle">No study logs yet. Start a lesson to see your progress.</p>
+          <p className="section-subtle">No study logs yet.</p>
         ) : (
           <ul className="dashboard-list">
             {dashboard.recentLogs.map((log) => (

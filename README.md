@@ -79,6 +79,33 @@ Set the following in **Repository Secrets**.
 - Firestore: stores `userId: "local"` in `lessons`, `studyLogs`, and `dictationAttempts`
 - Storage: `users/local/lesson-audio/{filename}`
 
+## Firestore Rules for Dashboard Reads (MVP)
+`/stats` (Dashboard) reads both `lessons` and `studyLogs`. For MVP testing with `userId: "local"`, ensure these Rules allow reads:
+
+```txt
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /categories/{categoryId} {
+      allow read, write: if true;
+    }
+
+    match /lessons/{lessonId} {
+      allow read, write: if true;
+    }
+
+    match /studyLogs/{logId} {
+      allow read, write: if true;
+    }
+
+    match /dictationAttempts/{attemptId} {
+      allow read, write: if true;
+    }
+  }
+}
+```
+
 ## Supported Audio Format (MVP)
 - Currently, only **MP3** files are supported for lesson audio upload.
 - `m4a` files (for example from Apple Voice Memos) are not accepted as-is. Please convert them to MP3 first.

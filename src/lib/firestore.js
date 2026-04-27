@@ -5,7 +5,6 @@ import {
   doc,
   getDoc,
   getDocs,
-  orderBy,
   query,
   serverTimestamp,
   updateDoc,
@@ -145,7 +144,7 @@ export const createDictationAttempt = async (payload) => {
 };
 
 export const fetchStudyLogs = async (userId) => {
-  const q = query(collection(db, 'studyLogs'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
+  const q = query(collection(db, 'studyLogs'), where('userId', '==', userId));
   const snap = await getDocs(q);
   return snap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }));
 };
