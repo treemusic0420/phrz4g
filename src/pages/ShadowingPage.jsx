@@ -47,9 +47,12 @@ export default function ShadowingPage() {
 
   const monthIndex = monthLessons.findIndex((monthLesson) => monthLesson.id === id);
   const nextLesson = monthIndex >= 0 ? monthLessons[monthIndex + 1] : null;
+  const isLastLesson = monthLessons.length > 0 && monthIndex === monthLessons.length - 1;
+  const hasValidProgress = monthIndex >= 0 && monthLessons.length > 0;
   const monthLabel = getRegisteredMonthLabel(registeredMonth);
+  const [isFinished, setIsFinished] = useState(false);
 
-  const complete = async () => {
+  const completeAndGoNext = async () => {
     if (!lesson) return;
     const endedAt = new Date();
     const durationSeconds = Math.max(1, Math.floor((endedAt - startedAt) / 1000));
@@ -63,46 +66,65 @@ export default function ShadowingPage() {
       completed: true,
     });
     await updateLessonStats(lesson.id, 'shadowing', durationSeconds);
-    if (isMonthMode) return;
-    navigate(`/lessons/${lesson.id}`);
+    if (nextLesson) {
+      navigate(
+        `/lessons/${nextLesson.id}/shadowing?mode=month&categoryId=${categoryId}&registeredMonth=${registeredMonth}`,
+      );
+      return;
+    }
+    setIsFinished(true);
   };
+
+  if (!isMonthMode) {
+    return (
+      <section className="stack">
+        <article className="card">
+          <h2 className="section-title">Please start from a monthly lesson list.</h2>
+          <div className="row gap-sm wrap">
+            <Link className="btn ghost" to="/lessons">
+              Back to Lessons
+            </Link>
+          </div>
+        </article>
+      </section>
+    );
+  }
 
   if (!lesson) return <p>Loading...</p>;
 
-  return (
-    <section className="stack">
-      {isMonthMode ? (
+  if (isFinished) {
+    return (
+      <section className="stack">
         <article className="card">
-          <p className="section-subtle">Category ID: {categoryId}</p>
-          <p className="section-subtle">Registered Month: {monthLabel}</p>
-          <p className="section-subtle">
-            {monthIndex + 1 > 0 ? monthIndex + 1 : '-'} / {monthLessons.length || '-'}
-          </p>
+          <h2 className="section-title">Finished!</h2>
+          <p className="section-subtle">You completed all lessons in this month.</p>
           <div className="row gap-sm wrap">
-            {nextLesson ? (
-              <Link
-                className="btn"
-                to={`/lessons/${nextLesson.id}/shadowing?mode=month&categoryId=${categoryId}&registeredMonth=${registeredMonth}`}
-              >
-                Next
-              </Link>
-            ) : (
-              <Link className="btn ghost" to={`/lessons/category/${categoryId}/month/${registeredMonth}`}>
-                Finished
-              </Link>
-            )}
             <Link className="btn ghost" to={`/lessons/category/${categoryId}/month/${registeredMonth}`}>
               Back to Lesson List
             </Link>
           </div>
         </article>
-      ) : null}
+      </section>
+    );
+  }
+
+  return (
+    <section className="stack">
       <h2 className="section-title">Shadowing: {lesson.title}</h2>
-      <AudioControls audioUrl={lesson.audioUrl} audioContentType={lesson.audioContentType || fallbackAudioContentType} />
+      <p className="section-subtle">
+        {monthLabel} ・ {hasValidProgress ? monthIndex + 1 : '-'} / {monthLessons.length || '-'}
+      </p>
+      <AudioControls
+        key={lesson.id}
+        audioUrl={lesson.audioUrl}
+        audioContentType={lesson.audioContentType || fallbackAudioContentType}
+      />
       <div className="row gap-sm wrap">
         <button onClick={() => setShowEn((v) => !v)} type="button">English Script {showEn ? 'Hide' : 'Show'}</button>
         <button onClick={() => setShowJa((v) => !v)} type="button">Japanese Translation {showJa ? 'Hide' : 'Show'}</button>
-        <button onClick={complete} type="button">Complete</button>
+        <button onClick={completeAndGoNext} type="button" disabled={!hasValidProgress}>
+          {isLastLesson ? 'Finish' : 'Next'}
+        </button>
       </div>
       {showEn ? <article className="card"><h3>English Script</h3><pre>{lesson.scriptEn}</pre></article> : null}
       {showJa ? <article className="card"><h3>Japanese Translation</h3><pre>{lesson.scriptJa || '-'}</pre></article> : null}
