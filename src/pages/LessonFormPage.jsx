@@ -125,10 +125,11 @@ export default function LessonFormPage({ mode }) {
       if (!categoryOptions.length) throw new Error('No categories available. Please create a category first.');
       if (!payload.categoryId) throw new Error('Please select a category.');
       if (!form.difficulty) throw new Error('Please select a difficulty.');
-      if (!payload.audioUrl || !payload.audioPath) throw new Error('Please upload an audio file.');
-      const savedExt = getFileExtension(payload.audioPath);
-      if (savedExt !== 'mp3') throw new Error(MP3_ONLY_ERROR);
-      payload.audioContentType = 'audio/mpeg';
+      if (payload.audioPath || payload.audioUrl) {
+        const savedExt = getFileExtension(payload.audioPath);
+        if (savedExt !== 'mp3') throw new Error(MP3_ONLY_ERROR);
+        payload.audioContentType = 'audio/mpeg';
+      }
 
       if (mode === 'create') {
         const docRef = await createLesson(payload);
@@ -221,7 +222,7 @@ export default function LessonFormPage({ mode }) {
         <label>Translation<textarea rows="3" value={form.scriptJa} onChange={(e) => setForm({ ...form, scriptJa: e.target.value })} /></label>
         <label>Notes<textarea rows="3" value={form.memo} onChange={(e) => setForm({ ...form, memo: e.target.value })} /></label>
         <label>
-          Audio File (MP3, under 20MB)
+          Audio File (optional, MP3, under 20MB)
           <input
             accept="audio/mpeg,.mp3"
             type="file"
@@ -247,13 +248,16 @@ export default function LessonFormPage({ mode }) {
             }}
           />
         </label>
-        <p className="section-subtle">Only MP3 files are currently supported.</p>
+        <p className="section-subtle">You can add a lesson without audio. Audio can be added later from the edit screen.</p>
         <details className="debug-panel">
           <summary>audio upload debug</summary>
           <p>extension: {audioDebugInfo.ext || '-'}</p>
           <p>detected contentType: {audioDebugInfo.contentType || '-'}</p>
         </details>
         {form.audioUrl ? <audio controls src={form.audioUrl} /> : null}
+        {!form.audioUrl && !audioFile && mode === 'edit' ? (
+          <p className="section-subtle">No audio file yet.<br />You can upload an MP3 file.</p>
+        ) : null}
         {error ? <p className="error">{error}</p> : null}
         <div className="row gap-sm wrap">
           <button disabled={isDeleting} type="submit">Save</button>
