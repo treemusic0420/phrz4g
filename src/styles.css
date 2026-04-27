@@ -288,3 +288,132 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
   .pagination-box .btn { min-width: 92px; }
   .pill { font-size: 0.78rem; }
 }
+
+.dashboard-page {
+  gap: 12px;
+}
+
+.dashboard-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.dashboard-summary-card {
+  margin-bottom: 0;
+  padding: 14px;
+}
+
+.dashboard-card-label {
+  margin: 0;
+  color: #6e6e73;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dashboard-card-value {
+  margin: 6px 0 0;
+  font-size: clamp(1.12rem, 3.8vw, 1.48rem);
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.dashboard-chart-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.dashboard-chart-card {
+  margin-bottom: 0;
+}
+
+.dashboard-chart-card h3,
+.card h3 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+}
+
+.simple-bar-chart {
+  display: grid;
+  gap: 8px;
+}
+
+.simple-bar-row {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.simple-bar-label {
+  margin: 0;
+  font-size: 0.79rem;
+  color: #6e6e73;
+}
+
+.simple-bar-track {
+  height: 9px;
+  border-radius: 999px;
+  background: #ededf2;
+  overflow: hidden;
+}
+
+.simple-bar-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: #1d1d1f;
+}
+
+.simple-bar-value {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #3a3a3c;
+}
+
+.dashboard-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.dashboard-list-item {
+  border: 1px solid #ececf1;
+  border-radius: 14px;
+  background: #fbfbfd;
+  padding: 10px 12px;
+  display: grid;
+  gap: 2px;
+}
+
+.dashboard-list-title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .dashboard-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-chart-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .dashboard-summary-card {
+    padding: 12px;
+  }
+
+  .simple-bar-row {
+    grid-template-columns: 48px 1fr auto;
+    gap: 6px;
+  }
+}
