@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { LOCAL_USER_ID } from '../lib/auth';
 import { fetchLessons, fetchStudyLogs } from '../lib/firestore';
-import { formatDateTime, formatSeconds, toDate } from '../utils/format';
+import { formatDateTime, toDate } from '../utils/format';
+import { hasLessonAudio, sortLessonsForMonthTraining } from '../utils/lessons';
 
 const TZ = 'Asia/Tokyo';
 
@@ -85,7 +86,6 @@ const buildDashboardData = (lessons, logs, options = {}) => {
 
   const daySet = new Set();
   const perDaySeconds = new Map();
-  const attemptsByLessonFromLogs = new Map();
 
   const sortedLogs = [...logs].sort((a, b) => {
     const aTime = toDate(a.createdAt)?.getTime() || 0;
@@ -107,7 +107,6 @@ const buildDashboardData = (lessons, logs, options = {}) => {
 
     daySet.add(dayKey);
     perDaySeconds.set(dayKey, (perDaySeconds.get(dayKey) || 0) + seconds);
-    attemptsByLessonFromLogs.set(log.lessonId, (attemptsByLessonFromLogs.get(log.lessonId) || 0) + 1);
   });
 
   const lessonBasedTotal = lessons.reduce((sum, lesson) => sum + (Number(lesson.totalStudySeconds) || 0), 0);
@@ -144,27 +143,9 @@ const buildDashboardData = (lessons, logs, options = {}) => {
     };
   });
 
-  const topLessons = [...lessons]
-    .map((lesson) => {
-      const dictationCount = Number(lesson.dictationCount) || 0;
-      const shadowingCount = Number(lesson.shadowingCount) || 0;
-      const attempts = dictationCount + shadowingCount;
-      return {
-        lessonId: lesson.id,
-        title: lesson.title || 'Untitled lesson',
-        attempts,
-        dictationCount,
-        shadowingCount,
-        totalStudySeconds: Number(lesson.totalStudySeconds) || 0,
-        logAttempts: attemptsByLessonFromLogs.get(lesson.id) || 0,
-      };
-    })
-    .sort((a, b) => b.attempts - a.attempts || b.totalStudySeconds - a.totalStudySeconds)
-    .slice(0, 5);
-
   const lessonTitleById = new Map(lessons.map((lesson) => [lesson.id, lesson.title || 'Untitled lesson']));
 
-  const recentLogs = sortedLogs.slice(0, 10).map((log) => ({
+  const recentLogs = sortedLogs.slice(0, 5).map((log) => ({
     ...log,
     lessonTitle: lessonTitleById.get(log.lessonId) || 'Deleted lesson',
     trainingTypeLabel: normalizeTrainingType(log.trainingType),
@@ -185,7 +166,6 @@ const buildDashboardData = (lessons, logs, options = {}) => {
       { label: 'Dictation', value: dictationAttempts },
       { label: 'Shadowing', value: shadowingAttempts },
     ],
-    topLessons,
     recentLogs,
   };
 };
@@ -235,7 +215,13 @@ const SimpleBarChart = ({ title, data, valueKey, emptyText, valueSuffix = '', va
   );
 };
 
+const toMonthRoute = (lesson) => {
+  if (!lesson?.categoryId || !lesson?.registeredMonth) return '';
+  return `/lessons/category/${lesson.categoryId}/month/${lesson.registeredMonth}`;
+};
+
 export default function StatsPage() {
+  const navigate = useNavigate();
   const [logs, setLogs] = useState([]);
   const [lessons, setLessons] = useState([]);
   const [lessonsStatus, setLessonsStatus] = useState('idle');
@@ -292,19 +278,68 @@ export default function StatsPage() {
     [lessons, logs, studyLogsStatus],
   );
 
+  const lessonsById = useMemo(() => new Map(lessons.map((lesson) => [lesson.id, lesson])), [lessons]);
+
+  const latestStudiedLesson = useMemo(() => {
+    const recentLog = [...logs].sort((a, b) => (toDate(b.createdAt)?.getTime() || 0) - (toDate(a.createdAt)?.getTime() || 0))[0];
+    if (!recentLog?.lessonId) return null;
+    return lessonsById.get(recentLog.lessonId) || null;
+  }, [logs, lessonsById]);
+
+  const latestMonthLessons = useMemo(() => {
+    if (!latestStudiedLesson?.categoryId || !latestStudiedLesson?.registeredMonth) return [];
+    return lessons.filter(
+      (lesson) =>
+        lesson.categoryId === latestStudiedLesson.categoryId
+        && lesson.registeredMonth === latestStudiedLesson.registeredMonth
+        && hasLessonAudio(lesson),
+    );
+  }, [lessons, latestStudiedLesson]);
+
+  const firstTrainingLessonId = useMemo(
+    () => sortLessonsForMonthTraining(latestMonthLessons)[0]?.id || '',
+    [latestMonthLessons],
+  );
+
+  const continuePracticeRoute = toMonthRoute(latestStudiedLesson) || '/lessons';
+  const startDictationRoute = firstTrainingLessonId
+    ? `/lessons/${firstTrainingLessonId}/dictation?mode=month&categoryId=${latestStudiedLesson.categoryId}&registeredMonth=${latestStudiedLesson.registeredMonth}`
+    : '/lessons';
+  const startShadowingRoute = firstTrainingLessonId
+    ? `/lessons/${firstTrainingLessonId}/shadowing?mode=month&categoryId=${latestStudiedLesson.categoryId}&registeredMonth=${latestStudiedLesson.registeredMonth}`
+    : '/lessons';
+
+  const recentlyStudied = useMemo(
+    () =>
+      [...lessons]
+        .sort((a, b) => (toDate(b.lastStudiedAt)?.getTime() || 0) - (toDate(a.lastStudiedAt)?.getTime() || 0))
+        .filter((lesson) => toDate(lesson.lastStudiedAt))
+        .slice(0, 5),
+    [lessons],
+  );
+
+  const recentlyAdded = useMemo(
+    () => [...lessons].sort((a, b) => (toDate(b.createdAt)?.getTime() || 0) - (toDate(a.createdAt)?.getTime() || 0)).slice(0, 5),
+    [lessons],
+  );
+
+  const recommendedLessons = recentlyStudied.length > 0 ? recentlyStudied : recentlyAdded;
+
   const summaryCards = [
-    { label: 'Today', value: formatDurationCompact(dashboard.summary.today), tone: 'blue' },
     { label: 'This Week', value: formatDurationCompact(dashboard.summary.week), tone: 'indigo' },
     { label: 'This Month', value: formatDurationCompact(dashboard.summary.month), tone: 'purple' },
     { label: 'Total', value: formatDurationCompact(dashboard.summary.total), tone: 'gradient' },
-    { label: 'Study Streak', value: `${dashboard.summary.streak} days`, tone: 'purple' },
+    { label: 'Study Streak', value: `${dashboard.summary.streak} days`, tone: 'blue' },
     { label: 'Dictation Attempts', value: dashboard.summary.dictationAttempts, tone: 'blue' },
     { label: 'Shadowing Attempts', value: dashboard.summary.shadowingAttempts, tone: 'purple' },
   ];
 
+  const hasLessons = lessons.length > 0;
+
   return (
     <section className="stack dashboard-page">
       <h2 className="section-title">Study Dashboard</h2>
+
       <details className="debug-panel">
         <summary>Debug Info</summary>
         <p>debug.userId: {LOCAL_USER_ID}</p>
@@ -320,6 +355,42 @@ export default function StatsPage() {
       {studyLogsStatus === 'error' ? (
         <p className="error">Failed to load study logs. Lesson-based summary is still available.</p>
       ) : null}
+
+      <article className="card dashboard-hero-card">
+        <p className="dashboard-card-label">Today’s Study</p>
+        {hasLessons ? (
+          <>
+            <p className="dashboard-hero-time">{formatDurationCompact(dashboard.summary.today)}</p>
+            <p className="dashboard-hero-meta">
+              Dictation {dashboard.summary.dictationAttempts} · Shadowing {dashboard.summary.shadowingAttempts}
+            </p>
+            <p className="dashboard-hero-meta">Streak {dashboard.summary.streak} day{dashboard.summary.streak === 1 ? '' : 's'}</p>
+          </>
+        ) : (
+          <>
+            <p className="dashboard-hero-time">Start your first lesson</p>
+            <p className="dashboard-hero-meta">Add your first lesson and begin daily practice.</p>
+          </>
+        )}
+      </article>
+
+      <article className="card">
+        <h3>Quick Actions</h3>
+        <div className="dashboard-quick-actions">
+          <button className="btn" type="button" onClick={() => navigate(continuePracticeRoute)}>
+            Continue Practice
+          </button>
+          <button className="btn ghost" type="button" onClick={() => navigate(startDictationRoute)}>
+            Start Dictation
+          </button>
+          <button className="btn ghost" type="button" onClick={() => navigate(startShadowingRoute)}>
+            Start Shadowing
+          </button>
+          <Link className="btn ghost" to="/lessons/new">
+            Add Lesson
+          </Link>
+        </div>
+      </article>
 
       <section className="dashboard-summary-grid" aria-label="Summary cards">
         {summaryCards.map((card) => (
@@ -346,28 +417,23 @@ export default function StatsPage() {
         />
       </section>
 
-      <article className="card dashboard-top-lessons-card">
-        <h3>Top Lessons</h3>
-        {dashboard.topLessons.length === 0 ? (
-          <p className="section-subtle">No lessons yet.</p>
+      <article className="card">
+        <h3>{recentlyStudied.length > 0 ? 'Recently Studied' : 'Recently Added'}</h3>
+        {recommendedLessons.length === 0 ? (
+          <p className="section-subtle">No lessons yet. Add your first lesson to get recommendations.</p>
         ) : (
-          <ol className="dashboard-list">
-            {dashboard.topLessons.map((lesson, index) => (
-              <li className="dashboard-list-item" key={lesson.lessonId}>
-                <div className="dashboard-list-head">
-                  <span className="dashboard-rank-badge">#{index + 1}</span>
-                  <p className="dashboard-list-title">{lesson.title}</p>
-                  <span className="dashboard-attempts-badge">{lesson.attempts} attempts</span>
+          <ul className="dashboard-list">
+            {recommendedLessons.map((lesson) => (
+              <li className="dashboard-list-item" key={lesson.id}>
+                <p className="dashboard-list-title">{lesson.title || 'Untitled lesson'}</p>
+                <p className="section-subtle">Last studied: {formatDateTime(lesson.lastStudiedAt)}</p>
+                <div className="row gap-sm wrap">
+                  <Link className="btn ghost" to={`/lessons/${lesson.id}`}>Details</Link>
+                  <Link className="btn ghost" to={`/lessons/${lesson.id}/edit`}>Edit</Link>
                 </div>
-                <p className="section-subtle">
-                  {formatDurationCompact(lesson.totalStudySeconds)}
-                </p>
-                <p className="section-subtle">
-                  Dictation {lesson.dictationCount} · Shadowing {lesson.shadowingCount}
-                </p>
               </li>
             ))}
-          </ol>
+          </ul>
         )}
       </article>
 
@@ -388,8 +454,7 @@ export default function StatsPage() {
                     }`}
                   >
                     {log.trainingTypeLabel}
-                  </span>{' '}
-                  · {formatSeconds(log.durationSeconds)}
+                  </span>
                 </p>
                 <Link className="section-subtle" to={`/lessons/${log.lessonId}`}>
                   Open lesson

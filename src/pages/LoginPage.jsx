@@ -7,7 +7,7 @@ export default function LoginPage() {
   const [passcode, setPasscode] = useState('');
   const [loginError, setLoginError] = useState('');
 
-  if (!loading && isAuthenticated) return <Navigate to="/lessons" replace />;
+  if (!loading && isAuthenticated) return <Navigate to="/home" replace />;
 
   const handleSubmit = (event) => {
     event.preventDefault();

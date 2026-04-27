@@ -19,6 +19,14 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route
+          path="/home"
+          element={
+            <ProtectedRoute>
+              <StatsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/lessons"
           element={
             <ProtectedRoute>
@@ -106,15 +114,8 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/stats"
-          element={
-            <ProtectedRoute>
-              <StatsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="*" element={<Navigate to="/lessons" replace />} />
+        <Route path="/stats" element={<Navigate to="/home" replace />} />
+        <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>
     </Layout>
   );
