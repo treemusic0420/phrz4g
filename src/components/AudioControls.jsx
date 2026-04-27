@@ -2,7 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 
 const SPEEDS = [0.8, 1.0, 1.2];
 
-export default function AudioControls({ audioUrl, onStatusChange, onErrorMessage }) {
+export default function AudioControls({
+  audioUrl,
+  audioContentType = 'audio/mp4',
+  onStatusChange,
+  onErrorMessage,
+}) {
   const audioRef = useRef(null);
   const [speed, setSpeed] = useState(1);
   const [localError, setLocalError] = useState('');
@@ -50,7 +55,6 @@ export default function AudioControls({ audioUrl, onStatusChange, onErrorMessage
         <audio
           controls
           ref={audioRef}
-          src={audioUrl}
           onLoadStart={() => {
             onStatusChange?.('loading');
             onErrorMessage?.('');
@@ -58,16 +62,18 @@ export default function AudioControls({ audioUrl, onStatusChange, onErrorMessage
           onLoadedMetadata={() => onStatusChange?.('loadedmetadata')}
           onCanPlay={() => onStatusChange?.('canplay')}
           onError={handleAudioError}
-        />
+        >
+          <source src={audioUrl} type={audioContentType || 'audio/mp4'} />
+        </audio>
       ) : null}
       {localError ? <p className="audio-debug">{localError}</p> : null}
-      <div className="row gap-sm">
+      <div className="row gap-sm wrap">
         <button type="button" onClick={rewind}>
           5秒戻る
         </button>
         {SPEEDS.map((item) => (
           <button
-            className={speed === item ? 'active-btn' : ''}
+            className={speed === item ? 'active-btn' : 'btn ghost'}
             key={item}
             onClick={() => changeSpeed(item)}
             type="button"

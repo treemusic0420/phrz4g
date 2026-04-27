@@ -22,10 +22,10 @@ export default function LoginPage() {
 
   return (
     <section className="card">
-      <h2>ログイン</h2>
-      <p>パスコードを入力してください。</p>
+      <h2 className="section-title">ログイン</h2>
+      <p className="section-subtle">パスコードを入力してください。</p>
 
-      <form onSubmit={handleSubmit}>
+      <form className="stack" onSubmit={handleSubmit}>
         <label htmlFor="passcode">パスコード</label>
         <input
           id="passcode"

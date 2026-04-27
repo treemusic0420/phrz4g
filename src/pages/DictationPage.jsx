@@ -26,6 +26,9 @@ export default function DictationPage() {
   }, [id, navigate, LOCAL_USER_ID]);
 
   const diff = useMemo(() => diffWords(inputText, lesson?.scriptEn || ''), [inputText, lesson?.scriptEn]);
+  const fileExtension = lesson?.audioPath?.split('.').pop()?.toLowerCase() || '';
+  const fallbackAudioContentType =
+    fileExtension === 'm4a' ? 'audio/mp4' : fileExtension === 'mp3' ? 'audio/mpeg' : fileExtension === 'wav' ? 'audio/wav' : '';
 
   const complete = async () => {
     if (!lesson) return;
@@ -59,8 +62,8 @@ export default function DictationPage() {
 
   return (
     <section className="stack">
-      <h2>ディクテーション: {lesson.title}</h2>
-      <AudioControls audioUrl={lesson.audioUrl} />
+      <h2 className="section-title">ディクテーション: {lesson.title}</h2>
+      <AudioControls audioUrl={lesson.audioUrl} audioContentType={lesson.audioContentType || fallbackAudioContentType} />
       <label>
         聞き取り入力
         <textarea rows="8" value={inputText} onChange={(e) => setInputText(e.target.value)} />

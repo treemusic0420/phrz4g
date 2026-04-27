@@ -6,6 +6,14 @@ import { LOCAL_USER_ID } from '../lib/auth';
 import { getAudioDownloadUrlByPath } from '../lib/storage';
 import { formatDateTime, formatSeconds } from '../utils/format';
 
+const getExtFromPath = (path = '') => path.split('.').pop()?.toLowerCase() || '';
+const inferTypeByExt = (ext) => {
+  if (ext === 'm4a') return 'audio/mp4';
+  if (ext === 'mp3') return 'audio/mpeg';
+  if (ext === 'wav') return 'audio/wav';
+  return '';
+};
+
 export default function LessonDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -13,6 +21,8 @@ export default function LessonDetailPage() {
   const [resolvedAudioUrl, setResolvedAudioUrl] = useState('');
   const [audioLoadStatus, setAudioLoadStatus] = useState('idle');
   const [audioErrorMessage, setAudioErrorMessage] = useState('');
+  const fileExtension = getExtFromPath(lesson?.audioPath || '');
+  const audioContentType = lesson?.audioContentType || inferTypeByExt(fileExtension);
 
   useEffect(() => {
     fetchLessonById(id).then((doc) => {
@@ -64,27 +74,32 @@ export default function LessonDetailPage() {
   return (
     <section className="stack">
       <article className="card">
-        <h2>{lesson.title}</h2>
+        <h2 className="section-title">{lesson.title}</h2>
         <p>カテゴリ: {lesson.category || '-'}</p>
         <p>難易度: {lesson.difficulty || '未設定'}</p>
-        <p>英文</p>
-        <pre>{lesson.scriptEn}</pre>
+        <p className="section-subtle">英文</p>
+        <pre className="mono">{lesson.scriptEn}</pre>
         <p>日本語訳</p>
         <pre>{lesson.scriptJa || '-'}</pre>
         <p>メモ</p>
         <pre>{lesson.memo || '-'}</pre>
         <AudioControls
           audioUrl={resolvedAudioUrl}
+          audioContentType={audioContentType}
           onStatusChange={setAudioLoadStatus}
           onErrorMessage={setAudioErrorMessage}
         />
-        <div className="audio-debug">
+        <details className="debug-panel">
+          <summary>audio debug</summary>
           <p>audioPath: {lesson.audioPath ? 'あり' : 'なし'}</p>
           <p>audioUrl: {lesson.audioUrl ? 'あり' : 'なし'}</p>
           <p>resolvedAudioUrl: {resolvedAudioUrl ? 'あり' : 'なし'}</p>
+          <p>audioContentType: {audioContentType || '-'}</p>
+          <p>file extension: {fileExtension || '-'}</p>
           <p>audio load status: {audioLoadStatus}</p>
           <p>audio error message: {audioErrorMessage || '-'}</p>
-        </div>
+        </details>
+        <p className="section-subtle">再生できない場合は mp3 または m4a を再登録してください。</p>
         <h3>学習概要</h3>
         <p>最終学習日: {formatDateTime(lesson.lastStudiedAt)}</p>
         <p>ディクテーション回数: {lesson.dictationCount || 0}</p>

@@ -11,6 +11,9 @@ export default function ShadowingPage() {
   const [showEn, setShowEn] = useState(true);
   const [showJa, setShowJa] = useState(false);
   const [startedAt] = useState(new Date());
+  const fileExtension = lesson?.audioPath?.split('.').pop()?.toLowerCase() || '';
+  const fallbackAudioContentType =
+    fileExtension === 'm4a' ? 'audio/mp4' : fileExtension === 'mp3' ? 'audio/mpeg' : fileExtension === 'wav' ? 'audio/wav' : '';
 
   useEffect(() => {
     fetchLessonById(id).then((doc) => {
@@ -40,8 +43,8 @@ export default function ShadowingPage() {
 
   return (
     <section className="stack">
-      <h2>シャドーイング: {lesson.title}</h2>
-      <AudioControls audioUrl={lesson.audioUrl} />
+      <h2 className="section-title">シャドーイング: {lesson.title}</h2>
+      <AudioControls audioUrl={lesson.audioUrl} audioContentType={lesson.audioContentType || fallbackAudioContentType} />
       <div className="row gap-sm wrap">
         <button onClick={() => setShowEn((v) => !v)} type="button">英文 {showEn ? '非表示' : '表示'}</button>
         <button onClick={() => setShowJa((v) => !v)} type="button">日本語訳 {showJa ? '非表示' : '表示'}</button>
