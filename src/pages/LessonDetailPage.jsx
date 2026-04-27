@@ -127,8 +127,6 @@ export default function LessonDetailPage() {
         <p>Total study time: {formatSeconds(lesson.totalStudySeconds || 0)}</p>
       </article>
       <div className="row gap-sm wrap">
-        <Link className="btn" to={`/lessons/${id}/dictation`}>Dictation</Link>
-        <Link className="btn" to={`/lessons/${id}/shadowing`}>Shadowing</Link>
         <Link className="btn ghost" to={`/lessons/${id}/edit`}>Edit</Link>
       </div>
     </section>
