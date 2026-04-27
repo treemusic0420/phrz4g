@@ -4,11 +4,14 @@ import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import LessonsPage from './pages/LessonsPage';
 import CategoryLessonsPage from './pages/CategoryLessonsPage';
+import MonthLessonsPage from './pages/MonthLessonsPage';
 import LessonFormPage from './pages/LessonFormPage';
 import LessonDetailPage from './pages/LessonDetailPage';
 import DictationPage from './pages/DictationPage';
 import ShadowingPage from './pages/ShadowingPage';
 import StatsPage from './pages/StatsPage';
+import CategoriesPage from './pages/CategoriesPage';
+import CategoryFormPage from './pages/CategoryFormPage';
 
 export default function App() {
   return (
@@ -32,10 +35,18 @@ export default function App() {
           }
         />
         <Route
-          path="/lessons/category/:categoryKey"
+          path="/lessons/category/:categoryId"
           element={
             <ProtectedRoute>
               <CategoryLessonsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/lessons/category/:categoryId/month/:registeredMonth"
+          element={
+            <ProtectedRoute>
+              <MonthLessonsPage />
             </ProtectedRoute>
           }
         />
@@ -68,6 +79,30 @@ export default function App() {
           element={
             <ProtectedRoute>
               <ShadowingPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/categories"
+          element={
+            <ProtectedRoute>
+              <CategoriesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/categories/new"
+          element={
+            <ProtectedRoute>
+              <CategoryFormPage mode="create" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/categories/:id/edit"
+          element={
+            <ProtectedRoute>
+              <CategoryFormPage mode="edit" />
             </ProtectedRoute>
           }
         />

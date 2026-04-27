@@ -107,3 +107,10 @@ Workflow: `.github/workflows/deploy-hosting.yml`
 - ランキング
 - バッジ
 - ネイティブアプリ化
+
+## カテゴリID化に伴う既存データについて
+- lessons はカテゴリを文字列ではなく `categoryId`（`categories` コレクションの documentId）で管理します。
+- 旧形式（`category` / `categoryName` / `categorySlug` ベース）の lessons データは互換対象外です。
+- Firestore Console で旧 lessons データを削除するか、教材を再登録してください。
+- アプリコード側に lessons 全削除の自動処理は入れていません。
+- 登録月階層（`registeredMonth` / `registeredMonthLabel`）導入により、旧 lessons データは削除または再登録を推奨します。

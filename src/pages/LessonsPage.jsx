@@ -1,41 +1,43 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchLessons } from '../lib/firestore';
 import { LOCAL_USER_ID } from '../lib/auth';
+import { ensureInitialCategories, fetchLessons } from '../lib/firestore';
 import { formatDateTime, formatSeconds } from '../utils/format';
 import { groupLessonsByCategory } from '../utils/lessons';
 
 export default function LessonsPage() {
   const [lessons, setLessons] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const loadLessons = async () => {
       setError(null);
       try {
-        const fetched = await fetchLessons(LOCAL_USER_ID);
-        setLessons(fetched);
+        const [fetchedLessons, fetchedCategories] = await Promise.all([
+          fetchLessons(LOCAL_USER_ID),
+          ensureInitialCategories(LOCAL_USER_ID),
+        ]);
+        setLessons(fetchedLessons);
+        setCategories(fetchedCategories);
       } catch (fetchError) {
         setLessons([]);
+        setCategories([]);
         setError(fetchError);
       }
     };
     loadLessons();
   }, []);
-  const categorySummaries = groupLessonsByCategory(lessons);
+  const categorySummaries = groupLessonsByCategory(lessons, categories);
 
   return (
     <section className="stack">
-      <div className="row between">
-        <h2 className="section-title">カテゴリ一覧</h2>
-        <Link className="btn" to="/lessons/new">
-          教材追加
-        </Link>
-      </div>
+      <h2 className="section-title">カテゴリ一覧</h2>
       <details className="debug-panel">
         <summary>debug info</summary>
         <p>debug.userId: {LOCAL_USER_ID}</p>
         <p>debug.lessonCount: {lessons.length}</p>
+        <p>debug.categoryCount: {categories.length}</p>
         {error ? (
           <p className="error">
             debug.error: {error?.code || 'unknown'} / {error?.message || '不明なエラー'}
@@ -59,12 +61,13 @@ export default function LessonsPage() {
         </article>
       ) : null}
       {categorySummaries.map((category) => (
-        <Link className="card category-card" key={category.key} to={`/lessons/category/${category.key}`}>
+        <Link className="card category-card" key={category.id} to={`/lessons/category/${category.id}`}>
           <div className="row between">
             <h3 className="section-title">{category.name}</h3>
             <span className="pill">{category.count}件</span>
           </div>
-          <p>最終更新: {formatDateTime(category.latestActivityTime)}</p>
+          <p>登録月数: {category.monthCount}か月</p>
+          <p>最終学習: {formatDateTime(category.latestActivityTime)}</p>
           <p>合計学習時間: {formatSeconds(category.totalStudySeconds)}</p>
           <p className="section-subtle">カテゴリ内の教材を表示</p>
         </Link>

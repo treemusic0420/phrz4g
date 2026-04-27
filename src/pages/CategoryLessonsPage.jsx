@@ -1,66 +1,59 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { LOCAL_USER_ID } from '../lib/auth';
-import { fetchLessons } from '../lib/firestore';
-import { formatDateTime } from '../utils/format';
+import { ensureInitialCategories, fetchLessons } from '../lib/firestore';
+import { formatDateTime, formatSeconds } from '../utils/format';
 import {
-  LESSONS_PER_PAGE,
-  keyToCategory,
-  normalizeCategory,
-  paginateLessons,
-  sortLessonsByRecency,
+  DELETED_CATEGORY_LABEL,
+  UNSET_CATEGORY_LABEL,
+  groupLessonsByRegisteredMonth,
 } from '../utils/lessons';
 
-const createSnippet = (text = '', maxLength = 120) => {
-  const oneLine = String(text || '').replace(/\s+/g, ' ').trim();
-  if (!oneLine) return '-';
-  if (oneLine.length <= maxLength) return oneLine;
-  return `${oneLine.slice(0, maxLength)}…`;
-};
-
 export default function CategoryLessonsPage() {
-  const { categoryKey } = useParams();
-  const categoryName = keyToCategory(categoryKey);
+  const { categoryId } = useParams();
   const [allLessons, setAllLessons] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [categories, setCategories] = useState([]);
   const [error, setError] = useState(null);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [categoryKey]);
 
   useEffect(() => {
     const loadLessons = async () => {
       setError(null);
       try {
-        const fetched = await fetchLessons(LOCAL_USER_ID);
-        setAllLessons(fetched);
+        const [fetchedLessons, fetchedCategories] = await Promise.all([
+          fetchLessons(LOCAL_USER_ID),
+          ensureInitialCategories(LOCAL_USER_ID),
+        ]);
+        setAllLessons(fetchedLessons);
+        setCategories(fetchedCategories);
       } catch (fetchError) {
         setAllLessons([]);
+        setCategories([]);
         setError(fetchError);
       }
     };
     loadLessons();
   }, []);
 
-  const categoryLessons = useMemo(() => {
-    const filtered = allLessons.filter((lesson) => normalizeCategory(lesson.category) === categoryName);
-    return sortLessonsByRecency(filtered);
-  }, [allLessons, categoryName]);
+  const categoryName = useMemo(() => {
+    if (categoryId === '__unset__') return UNSET_CATEGORY_LABEL;
+    const found = categories.find((category) => category.id === categoryId);
+    return found?.name || DELETED_CATEGORY_LABEL;
+  }, [categories, categoryId]);
 
-  const paging = useMemo(
-    () => paginateLessons(categoryLessons, currentPage, LESSONS_PER_PAGE),
-    [categoryLessons, currentPage],
-  );
-
-  const shouldShowPaging = paging.total > LESSONS_PER_PAGE;
+  const monthSummaries = useMemo(() => {
+    const categoryLessons = allLessons.filter((lesson) =>
+      categoryId === '__unset__' ? !lesson.categoryId : lesson.categoryId === categoryId,
+    );
+    return groupLessonsByRegisteredMonth(categoryLessons);
+  }, [allLessons, categoryId]);
 
   return (
     <section className="stack">
       <div className="row between">
         <div>
-          <h2 className="section-title">{categoryName}</h2>
-          <p className="section-subtle">カテゴリ内教材: {paging.total}件</p>
+          <p className="section-subtle">教材 &gt; {categoryName}</p>
+          <h2 className="section-title">{categoryName} の登録月</h2>
+          <p className="section-subtle">登録月: {monthSummaries.length}件</p>
         </div>
         <Link className="btn ghost" to="/lessons">
           カテゴリ一覧へ戻る
@@ -73,51 +66,28 @@ export default function CategoryLessonsPage() {
         </p>
       ) : null}
 
-      {!error && paging.total === 0 ? (
+      {!error && monthSummaries.length === 0 ? (
         <article className="card empty-state">
-          <h3 className="section-title">このカテゴリの教材はありません</h3>
+          <h3 className="section-title">このカテゴリには教材がありません</h3>
           <p className="section-subtle">カテゴリ一覧に戻って他のカテゴリを選択してください。</p>
         </article>
       ) : null}
 
-      {paging.items.map((lesson) => (
-        <Link className="card lesson-card-link" key={lesson.id} to={`/lessons/${lesson.id}`}>
-          <h3 className="section-title">{lesson.title}</h3>
-          <p>難易度: {lesson.difficulty || '未設定'}</p>
-          <p>英文: {createSnippet(lesson.scriptEn)}</p>
-          <p>
-            学習回数: D {lesson.dictationCount || 0} / S {lesson.shadowingCount || 0}
-          </p>
-          <p>最終学習日: {formatDateTime(lesson.lastStudiedAt)}</p>
-          <p className="section-subtle">タップして教材詳細へ</p>
+      {monthSummaries.map((month) => (
+        <Link
+          className="card lesson-card-link"
+          key={month.registeredMonth}
+          to={`/lessons/category/${categoryId}/month/${month.registeredMonth}`}
+        >
+          <div className="row between">
+            <h3 className="section-title">{month.registeredMonthLabel}</h3>
+            <span className="pill">{month.count}件</span>
+          </div>
+          <p>合計学習時間: {formatSeconds(month.totalStudySeconds)}</p>
+          <p>最終学習: {formatDateTime(month.latestActivityTime)}</p>
+          <p className="section-subtle">タップして月内教材へ</p>
         </Link>
       ))}
-
-      {shouldShowPaging ? (
-        <div className="card pagination-box">
-          <div className="row gap-sm wrap center">
-            <button
-              className="btn ghost"
-              disabled={paging.page <= 1}
-              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-              type="button"
-            >
-              前へ
-            </button>
-            <p>
-              {paging.page} / {paging.totalPages}
-            </p>
-            <button
-              className="btn ghost"
-              disabled={paging.page >= paging.totalPages}
-              onClick={() => setCurrentPage((prev) => Math.min(paging.totalPages, prev + 1))}
-              type="button"
-            >
-              次へ
-            </button>
-          </div>
-        </div>
-      ) : null}
     </section>
   );
 }
