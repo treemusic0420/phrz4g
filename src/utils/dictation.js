@@ -3,7 +3,7 @@ const PUNCTUATION_REGEX = /[.,?!:;"“”"'‘’。、？！：；]/g;
 export const normalizeText = (text) =>
   String(text ?? '')
     .trim()
-    .replace(/\s+/g, ' ')
+    .replace(/\s+/g, '')
     .replace(PUNCTUATION_REGEX, '')
     .toLowerCase();
 

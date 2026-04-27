@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { LOCAL_USER_ID } from '../lib/auth';
 import { fetchLessons, fetchStudyLogs } from '../lib/firestore';
 import { formatDateTime, toDate } from '../utils/format';
-import { hasLessonAudio, sortLessonsForMonthTraining } from '../utils/lessons';
 
 const TZ = 'Asia/Tokyo';
 
@@ -61,12 +60,6 @@ const formatDurationCompact = (seconds = 0) => {
   if (hours > 0) return `${hours}h ${minutes}m`;
   if (minutes > 0) return `${minutes}m`;
   return `${remainder}s`;
-};
-
-const normalizeTrainingType = (type = '') => {
-  if (type === 'dictation') return 'Dictation';
-  if (type === 'shadowing') return 'Shadowing';
-  return 'Unknown';
 };
 
 const buildDashboardData = (lessons, logs, options = {}) => {
@@ -143,14 +136,6 @@ const buildDashboardData = (lessons, logs, options = {}) => {
     };
   });
 
-  const lessonTitleById = new Map(lessons.map((lesson) => [lesson.id, lesson.title || 'Untitled lesson']));
-
-  const recentLogs = sortedLogs.slice(0, 5).map((log) => ({
-    ...log,
-    lessonTitle: lessonTitleById.get(log.lessonId) || 'Deleted lesson',
-    trainingTypeLabel: normalizeTrainingType(log.trainingType),
-  }));
-
   return {
     summary: {
       today,
@@ -166,7 +151,6 @@ const buildDashboardData = (lessons, logs, options = {}) => {
       { label: 'Dictation', value: dictationAttempts },
       { label: 'Shadowing', value: shadowingAttempts },
     ],
-    recentLogs,
   };
 };
 
@@ -286,28 +270,7 @@ export default function StatsPage() {
     return lessonsById.get(recentLog.lessonId) || null;
   }, [logs, lessonsById]);
 
-  const latestMonthLessons = useMemo(() => {
-    if (!latestStudiedLesson?.categoryId || !latestStudiedLesson?.registeredMonth) return [];
-    return lessons.filter(
-      (lesson) =>
-        lesson.categoryId === latestStudiedLesson.categoryId
-        && lesson.registeredMonth === latestStudiedLesson.registeredMonth
-        && hasLessonAudio(lesson),
-    );
-  }, [lessons, latestStudiedLesson]);
-
-  const firstTrainingLessonId = useMemo(
-    () => sortLessonsForMonthTraining(latestMonthLessons)[0]?.id || '',
-    [latestMonthLessons],
-  );
-
   const continuePracticeRoute = toMonthRoute(latestStudiedLesson) || '/lessons';
-  const startDictationRoute = firstTrainingLessonId
-    ? `/lessons/${firstTrainingLessonId}/dictation?mode=month&categoryId=${latestStudiedLesson.categoryId}&registeredMonth=${latestStudiedLesson.registeredMonth}`
-    : '/lessons';
-  const startShadowingRoute = firstTrainingLessonId
-    ? `/lessons/${firstTrainingLessonId}/shadowing?mode=month&categoryId=${latestStudiedLesson.categoryId}&registeredMonth=${latestStudiedLesson.registeredMonth}`
-    : '/lessons';
 
   const recentlyStudied = useMemo(
     () =>
@@ -380,14 +343,11 @@ export default function StatsPage() {
           <button className="btn" type="button" onClick={() => navigate(continuePracticeRoute)}>
             Continue Practice
           </button>
-          <button className="btn ghost" type="button" onClick={() => navigate(startDictationRoute)}>
-            Start Dictation
-          </button>
-          <button className="btn ghost" type="button" onClick={() => navigate(startShadowingRoute)}>
-            Start Shadowing
-          </button>
           <Link className="btn ghost" to="/lessons/new">
             Add Lesson
+          </Link>
+          <Link className="btn ghost" to="/lessons">
+            Lessons
           </Link>
         </div>
       </article>
@@ -431,34 +391,6 @@ export default function StatsPage() {
                   <Link className="btn ghost" to={`/lessons/${lesson.id}`}>Details</Link>
                   <Link className="btn ghost" to={`/lessons/${lesson.id}/edit`}>Edit</Link>
                 </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </article>
-
-      <article className="card">
-        <h3>Recent Study Logs</h3>
-        {dashboard.recentLogs.length === 0 ? (
-          <p className="section-subtle">No study logs yet.</p>
-        ) : (
-          <ul className="dashboard-list">
-            {dashboard.recentLogs.map((log) => (
-              <li className="dashboard-list-item" key={log.id}>
-                <p className="dashboard-list-title">{formatDateTime(log.createdAt)}</p>
-                <p className="section-subtle">
-                  {log.lessonTitle} ·{' '}
-                  <span
-                    className={`training-type-badge ${
-                      log.trainingType === 'shadowing' ? 'training-type-badge-shadowing' : 'training-type-badge-dictation'
-                    }`}
-                  >
-                    {log.trainingTypeLabel}
-                  </span>
-                </p>
-                <Link className="section-subtle" to={`/lessons/${log.lessonId}`}>
-                  Open lesson
-                </Link>
               </li>
             ))}
           </ul>

@@ -14,6 +14,8 @@ export default function ShadowingPage() {
   const [monthLessons, setMonthLessons] = useState([]);
   const [showJa, setShowJa] = useState(false);
   const [startedAt, setStartedAt] = useState(new Date());
+  const [autoPlayToken, setAutoPlayToken] = useState(0);
+  const [autoPlayMessage, setAutoPlayMessage] = useState('');
   const searchParams = new URLSearchParams(location.search);
   const mode = searchParams.get('mode');
   const categoryId = searchParams.get('categoryId') || '';
@@ -26,6 +28,8 @@ export default function ShadowingPage() {
   useEffect(() => {
     setStartedAt(new Date());
     setShowJa(false);
+    setAutoPlayMessage('');
+    setAutoPlayToken((prev) => prev + 1);
     fetchLessonById(id).then((doc) => {
       if (!doc || doc.userId !== LOCAL_USER_ID) return navigate('/lessons');
       setLesson(doc);
@@ -46,7 +50,6 @@ export default function ShadowingPage() {
 
   const monthIndex = monthLessons.findIndex((monthLesson) => monthLesson.id === id);
   const nextLesson = monthIndex >= 0 ? monthLessons[monthIndex + 1] : null;
-  const isLastLesson = monthLessons.length > 0 && monthIndex === monthLessons.length - 1;
   const hasValidProgress = monthIndex >= 0 && monthLessons.length > 0;
   const monthLabel = getRegisteredMonthLabel(registeredMonth);
   const [isFinished, setIsFinished] = useState(false);
@@ -192,7 +195,7 @@ export default function ShadowingPage() {
     }
   };
 
-  const completeAndGoNext = async () => {
+  const completeAndGoNext = async (shadowingRating) => {
     if (!lesson) return;
     await discardRecording();
     const endedAt = new Date();
@@ -205,8 +208,9 @@ export default function ShadowingPage() {
       endedAt,
       durationSeconds,
       completed: true,
+      shadowingRating,
     });
-    await updateLessonStats(lesson.id, 'shadowing', durationSeconds);
+    await updateLessonStats(lesson.id, 'shadowing', durationSeconds, { shadowingRating });
     if (nextLesson) {
       navigate(
         `/lessons/${nextLesson.id}/shadowing?mode=month&categoryId=${categoryId}&registeredMonth=${registeredMonth}`,
@@ -214,6 +218,11 @@ export default function ShadowingPage() {
       return;
     }
     setIsFinished(true);
+  };
+
+  const backToLessonList = async () => {
+    await discardRecording();
+    navigate(`/lessons/category/${categoryId}/month/${registeredMonth}`);
   };
 
   useEffect(() => {
@@ -289,7 +298,11 @@ export default function ShadowingPage() {
         key={lesson.id}
         audioUrl={lesson.audioUrl}
         audioContentType={lesson.audioContentType || fallbackAudioContentType}
+        shouldAutoPlay={canPlayAudio}
+        autoPlayToken={autoPlayToken}
+        onAutoPlayBlocked={setAutoPlayMessage}
       />
+      {autoPlayMessage ? <p className="section-subtle">{autoPlayMessage}</p> : null}
       <article className="card recording-card">
         <h3>Your Recording</h3>
         <div className="stack">
@@ -315,12 +328,27 @@ export default function ShadowingPage() {
       </article>
       <div className="row gap-sm wrap">
         <button onClick={() => setShowJa((v) => !v)} type="button">Translation {showJa ? 'Hide' : 'Show'}</button>
-        <button onClick={completeAndGoNext} type="button" disabled={!hasValidProgress}>
-          {isLastLesson ? 'Finish' : 'Next'}
+      </div>
+      <div className="shadowing-rating-actions">
+        <button
+          className="btn shadowing-negative"
+          onClick={() => completeAndGoNext('couldntDoIt')}
+          type="button"
+          disabled={!hasValidProgress}
+        >
+          Couldn’t do it
         </button>
-        <Link className="btn ghost" to={`/lessons/category/${categoryId}/month/${registeredMonth}`} onClick={() => void discardRecording()}>
+        <button
+          className="btn shadowing-positive"
+          onClick={() => completeAndGoNext('didIt')}
+          type="button"
+          disabled={!hasValidProgress}
+        >
+          Did it
+        </button>
+        <button className="btn ghost" onClick={() => void backToLessonList()} type="button">
           Back to Lesson List
-        </Link>
+        </button>
       </div>
       {showJa ? <article className="card"><h3>Translation</h3><pre>{lesson.scriptJa || '-'}</pre></article> : null}
     </section>
