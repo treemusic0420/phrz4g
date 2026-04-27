@@ -62,14 +62,15 @@ export default function LessonsPage() {
       ) : null}
       {categorySummaries.map((category) => (
         <Link className="card category-card" key={category.id} to={`/lessons/category/${category.id}`}>
-          <div className="row between">
+          <div className="row between category-card-header">
             <h3 className="section-title">{category.name}</h3>
             <span className="pill">{category.count} lessons</span>
           </div>
-          <p>Months: {category.monthCount}</p>
-          <p>Last studied: {formatDateTime(category.latestActivityTime)}</p>
-          <p>Total study time: {formatSeconds(category.totalStudySeconds)}</p>
-          <p className="section-subtle">Open lessons in this category</p>
+          <p className="category-card-meta">Months: {category.monthCount}</p>
+          <p className="category-card-meta">
+            Last studied: {formatDateTime(category.latestActivityTime)} / Total study time:{' '}
+            {formatSeconds(category.totalStudySeconds)}
+          </p>
         </Link>
       ))}
     </section>

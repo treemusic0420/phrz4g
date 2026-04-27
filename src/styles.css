@@ -114,7 +114,18 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
 .diff-match { background: #dcfce7; padding: 2px 6px; border-radius: 999px; }
 .diff-miss { background: #fee2e2; padding: 2px 6px; border-radius: 999px; }
 .empty-state { text-align: center; padding: 28px 20px; }
-.category-card { display: grid; gap: 8px; }
+.category-card {
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+  margin-bottom: 8px;
+  min-height: 108px;
+}
+.category-card-header { margin-bottom: 2px; }
+.category-card .section-title { font-size: clamp(1.08rem, 3.2vw, 1.26rem); }
+.category-card p,
+.category-card .section-subtle { margin: 0; }
+.category-card-meta { font-size: 0.9rem; color: #3a3a3c; line-height: 1.35; }
 .category-card:hover { border-color: #c8c8ce; background: #fcfcff; }
 .lesson-card-link { display: grid; gap: 6px; }
 .lesson-card-link:hover { border-color: #c8c8ce; background: #fcfcff; }
@@ -167,8 +178,16 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
 
   .container { padding: 10px 12px 0; }
   .row.between { align-items: stretch; flex-direction: column; gap: 10px; }
+  .category-card .row.between {
+    align-items: center;
+    flex-direction: row;
+    gap: 8px;
+  }
   .row.between .btn { width: 100%; }
   .card { padding: 16px; border-radius: 18px; }
+  .category-card { padding: 14px; gap: 5px; min-height: 96px; margin-bottom: 6px; }
+  .category-card .section-title { font-size: 1.02rem; }
+  .category-card-meta { font-size: 0.84rem; }
   .pagination-box { margin-bottom: 24px; }
   .pagination-box .row { justify-content: space-between; }
   .pagination-box .btn { min-width: 92px; }
