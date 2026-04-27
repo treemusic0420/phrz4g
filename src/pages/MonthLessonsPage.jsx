@@ -75,38 +75,38 @@ export default function MonthLessonsPage() {
     <section className="stack">
       <div className="row between">
         <div>
-          <p className="section-subtle">教材 &gt; {categoryName} &gt; {monthLabel}</p>
+          <p className="section-subtle">Lessons &gt; {categoryName} &gt; {monthLabel}</p>
           <h2 className="section-title">{categoryName} / {monthLabel}</h2>
-          <p className="section-subtle">月内教材: {paging.total}件</p>
+          <p className="section-subtle">Lessons: {paging.total}</p>
         </div>
         <Link className="btn ghost" to={`/lessons/category/${categoryId}`}>
-          登録月一覧へ戻る
+          Back to Monthly Archive
         </Link>
       </div>
 
       {error ? (
         <p className="card error">
-          教材一覧の取得に失敗しました: {error?.code || 'unknown'} / {error?.message || '不明なエラー'}
+          Failed to load lessons: {error?.code || 'unknown'} / {error?.message || 'Unknown error'}
         </p>
       ) : null}
 
       {!error && paging.total === 0 ? (
         <article className="card empty-state">
-          <h3 className="section-title">この月には教材がありません</h3>
-          <p className="section-subtle">登録月一覧へ戻って他の月を選択してください。</p>
+          <h3 className="section-title">No lessons in this month</h3>
+          <p className="section-subtle">Go back and select another month.</p>
         </article>
       ) : null}
 
       {paging.items.map((lesson) => (
         <Link className="card lesson-card-link" key={lesson.id} to={`/lessons/${lesson.id}`}>
           <h3 className="section-title">{lesson.title}</h3>
-          <p>難易度: {getDifficultyLabel(lesson.difficulty)}</p>
-          <p>英文: {createSnippet(lesson.scriptEn)}</p>
-          <p>ディクテーション回数: {lesson.dictationCount || 0}回</p>
-          <p>シャドーイング回数: {lesson.shadowingCount || 0}回</p>
-          <p>累計学習時間: {formatSeconds(lesson.totalStudySeconds || 0)}</p>
-          <p>最終学習日: {formatDateTime(lesson.lastStudiedAt)}</p>
-          <p className="section-subtle">タップして教材詳細へ</p>
+          <p>Difficulty: {getDifficultyLabel(lesson.difficulty)}</p>
+          <p>English Script: {createSnippet(lesson.scriptEn)}</p>
+          <p>Dictation attempts: {lesson.dictationCount || 0}</p>
+          <p>Shadowing attempts: {lesson.shadowingCount || 0}</p>
+          <p>Total study time: {formatSeconds(lesson.totalStudySeconds || 0)}</p>
+          <p>Last studied: {formatDateTime(lesson.lastStudiedAt)}</p>
+          <p className="section-subtle">Open lesson details</p>
         </Link>
       ))}
 
@@ -119,7 +119,7 @@ export default function MonthLessonsPage() {
               onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
               type="button"
             >
-              前へ
+              Previous
             </button>
             <p>
               {paging.page} / {paging.totalPages}
@@ -130,7 +130,7 @@ export default function MonthLessonsPage() {
               onClick={() => setCurrentPage((prev) => Math.min(paging.totalPages, prev + 1))}
               type="button"
             >
-              次へ
+              Next
             </button>
           </div>
         </div>

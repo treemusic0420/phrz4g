@@ -16,17 +16,17 @@ export default function LoginPage() {
     try {
       loginWithPasscode(passcode);
     } catch (error) {
-      setLoginError(error?.message || 'ログインに失敗しました。');
+      setLoginError(error?.message || 'Login failed.');
     }
   };
 
   return (
     <section className="card">
-      <h2 className="section-title">ログイン</h2>
-      <p className="section-subtle">パスコードを入力してください。</p>
+      <h2 className="section-title">Login</h2>
+      <p className="section-subtle">Enter your passcode.</p>
 
       <form className="stack" onSubmit={handleSubmit}>
-        <label htmlFor="passcode">パスコード</label>
+        <label htmlFor="passcode">Passcode</label>
         <input
           id="passcode"
           type="password"
@@ -36,7 +36,7 @@ export default function LoginPage() {
           required
         />
 
-        <button type="submit">ログイン</button>
+        <button type="submit">Login</button>
       </form>
 
       {loginError ? <p className="error">{loginError}</p> : null}

@@ -24,7 +24,7 @@ const defaultForm = {
   audioContentType: '',
 };
 
-const MP3_ONLY_ERROR = '現在はmp3ファイルのみ登録できます。m4a等はmp3に変換してから登録してください。';
+const MP3_ONLY_ERROR = 'Only MP3 files are currently supported. Convert m4a files to MP3 before uploading.';
 
 export default function LessonFormPage({ mode }) {
   const navigate = useNavigate();
@@ -52,7 +52,7 @@ export default function LessonFormPage({ mode }) {
       setAudioDebugInfo({ ext, contentType });
     };
 
-    loadData().catch((err) => setError(err?.message || '初期データの読み込みに失敗しました'));
+    loadData().catch((err) => setError(err?.message || 'Failed to load initial data.'));
   }, [id, mode, navigate]);
 
   const categoryOptions = useMemo(() => sortCategories(categories), [categories]);
@@ -89,10 +89,10 @@ export default function LessonFormPage({ mode }) {
         audioContentType: audioContentType || '',
       };
 
-      if (!payload.title || !payload.scriptEn) throw new Error('タイトルと英文スクリプトは必須です。');
-      if (!payload.categoryId) throw new Error('カテゴリ未選択です。カテゴリを選択してください。');
-      if (!form.difficulty) throw new Error('難易度を選択してください。');
-      if (!payload.audioUrl || !payload.audioPath) throw new Error('音声ファイルを登録してください。');
+      if (!payload.title || !payload.scriptEn) throw new Error('Title and English Script are required.');
+      if (!payload.categoryId) throw new Error('Please select a category.');
+      if (!form.difficulty) throw new Error('Please select a difficulty.');
+      if (!payload.audioUrl || !payload.audioPath) throw new Error('Please upload an audio file.');
       const savedExt = getFileExtension(payload.audioPath);
       if (savedExt !== 'mp3') throw new Error(MP3_ONLY_ERROR);
       payload.audioContentType = 'audio/mpeg';
@@ -113,11 +113,11 @@ export default function LessonFormPage({ mode }) {
     if (mode !== 'edit' || !id || isDeleting) return;
     setError('');
 
-    const confirmed = window.confirm('この教材を削除しますか？この操作は取り消せません。');
+    const confirmed = window.confirm('Delete this lesson? This action cannot be undone.');
     if (!confirmed) return;
 
     if (form.userId && form.userId !== LOCAL_USER_ID) {
-      setError('この教材は削除できません。');
+      setError('This lesson cannot be deleted.');
       return;
     }
 
@@ -138,18 +138,18 @@ export default function LessonFormPage({ mode }) {
         navigate('/lessons');
       }
     } catch (deleteError) {
-      setError(`教材の削除に失敗しました: ${deleteError?.message || '不明なエラー'}`);
+      setError(`Failed to delete lesson: ${deleteError?.message || 'Unknown error'}`);
       setIsDeleting(false);
     }
   };
 
   return (
     <section className="card">
-      <h2 className="section-title">{mode === 'create' ? '教材登録' : '教材編集'}</h2>
+      <h2 className="section-title">{mode === 'create' ? 'Add Lesson' : 'Edit Lesson'}</h2>
       <form className="stack" onSubmit={handleSubmit}>
-        <label>タイトル<input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></label>
+        <label>Title<input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></label>
         <label>
-          カテゴリ
+          Category
           <select required value={form.categoryId} onChange={(e) => setForm({ ...form, categoryId: e.target.value })}>
             {categoryOptions.map((category) => (
               <option key={category.id} value={category.id}>{category.name}</option>
@@ -157,7 +157,7 @@ export default function LessonFormPage({ mode }) {
           </select>
         </label>
         <label>
-          難易度
+          Difficulty
           <select
             required
             value={normalizeDifficulty(form.difficulty)}
@@ -168,11 +168,11 @@ export default function LessonFormPage({ mode }) {
             ))}
           </select>
         </label>
-        <label>英文スクリプト<textarea required rows="4" value={form.scriptEn} onChange={(e) => setForm({ ...form, scriptEn: e.target.value })} /></label>
-        <label>日本語訳<textarea rows="3" value={form.scriptJa} onChange={(e) => setForm({ ...form, scriptJa: e.target.value })} /></label>
-        <label>メモ<textarea rows="3" value={form.memo} onChange={(e) => setForm({ ...form, memo: e.target.value })} /></label>
+        <label>English Script<textarea required rows="4" value={form.scriptEn} onChange={(e) => setForm({ ...form, scriptEn: e.target.value })} /></label>
+        <label>Japanese Translation<textarea rows="3" value={form.scriptJa} onChange={(e) => setForm({ ...form, scriptJa: e.target.value })} /></label>
+        <label>Notes<textarea rows="3" value={form.memo} onChange={(e) => setForm({ ...form, memo: e.target.value })} /></label>
         <label>
-          音声ファイル（mp3, 20MB未満）
+          Audio File (MP3, under 20MB)
           <input
             accept="audio/mpeg,.mp3"
             type="file"
@@ -198,7 +198,7 @@ export default function LessonFormPage({ mode }) {
             }}
           />
         </label>
-        <p className="section-subtle">現在はmp3ファイルのみ登録できます。</p>
+        <p className="section-subtle">Only MP3 files are currently supported.</p>
         <details className="debug-panel">
           <summary>audio upload debug</summary>
           <p>extension: {audioDebugInfo.ext || '-'}</p>
@@ -207,16 +207,16 @@ export default function LessonFormPage({ mode }) {
         {form.audioUrl ? <audio controls src={form.audioUrl} /> : null}
         {error ? <p className="error">{error}</p> : null}
         <div className="row gap-sm wrap">
-          <button disabled={isDeleting} type="submit">保存</button>
+          <button disabled={isDeleting} type="submit">Save</button>
           <Link className="btn ghost" to={mode === 'create' ? '/lessons' : `/lessons/${id}`}>
-            キャンセル
+            Cancel
           </Link>
         </div>
         {mode === 'edit' ? (
           <div className="danger-zone">
-            <p className="section-subtle">危険操作</p>
+            <p className="section-subtle">Danger Zone</p>
             <button className="btn danger-ghost" disabled={isDeleting} onClick={handleDelete} type="button">
-              {isDeleting ? '削除中...' : '教材を削除'}
+              {isDeleting ? 'Deleting...' : 'Delete'}
             </button>
           </div>
         ) : null}

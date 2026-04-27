@@ -32,30 +32,30 @@ export default function LessonsPage() {
 
   return (
     <section className="stack">
-      <h2 className="section-title">カテゴリ一覧</h2>
+      <h2 className="section-title">Categories</h2>
       <details className="debug-panel">
-        <summary>debug info</summary>
+        <summary>Debug Info</summary>
         <p>debug.userId: {LOCAL_USER_ID}</p>
         <p>debug.lessonCount: {lessons.length}</p>
         <p>debug.categoryCount: {categories.length}</p>
         {error ? (
           <p className="error">
-            debug.error: {error?.code || 'unknown'} / {error?.message || '不明なエラー'}
+            debug.error: {error?.code || 'unknown'} / {error?.message || 'Unknown error'}
           </p>
         ) : null}
       </details>
       {error ? (
         <p className="card error">
-          教材一覧の取得に失敗しました: {error?.code || 'unknown'} / {error?.message || '不明なエラー'}
+          Failed to load lessons: {error?.code || 'unknown'} / {error?.message || 'Unknown error'}
         </p>
       ) : null}
       {!error && lessons.length === 0 ? (
         <article className="card empty-state">
-          <h3 className="section-title">教材がありません</h3>
-          <p className="section-subtle">まずは「教材追加」から1件作成してください。</p>
+          <h3 className="section-title">No lessons yet</h3>
+          <p className="section-subtle">No lessons yet. Add your first lesson.</p>
           <div className="row gap-sm wrap center">
             <Link className="btn" to="/lessons/new">
-              教材を追加する
+              Add Lesson
             </Link>
           </div>
         </article>
@@ -64,12 +64,12 @@ export default function LessonsPage() {
         <Link className="card category-card" key={category.id} to={`/lessons/category/${category.id}`}>
           <div className="row between">
             <h3 className="section-title">{category.name}</h3>
-            <span className="pill">{category.count}件</span>
+            <span className="pill">{category.count} lessons</span>
           </div>
-          <p>登録月数: {category.monthCount}か月</p>
-          <p>最終学習: {formatDateTime(category.latestActivityTime)}</p>
-          <p>合計学習時間: {formatSeconds(category.totalStudySeconds)}</p>
-          <p className="section-subtle">カテゴリ内の教材を表示</p>
+          <p>Months: {category.monthCount}</p>
+          <p>Last studied: {formatDateTime(category.latestActivityTime)}</p>
+          <p>Total study time: {formatSeconds(category.totalStudySeconds)}</p>
+          <p className="section-subtle">Open lessons in this category</p>
         </Link>
       ))}
     </section>

@@ -8,4 +8,4 @@ export const normalizeSlug = (value = '') =>
 
 export const normalizeName = (value = '') => String(value || '').trim();
 
-export const getDuplicateSlugError = () => '同じslugのカテゴリが既に存在します。';
+export const getDuplicateSlugError = () => 'A category with the same slug already exists.';

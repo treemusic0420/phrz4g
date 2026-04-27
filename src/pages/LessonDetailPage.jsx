@@ -61,7 +61,7 @@ export default function LessonDetailPage() {
 
       if (!lesson.audioPath) {
         setResolvedAudioUrl('');
-        setAudioErrorMessage('音声URLがありません');
+        setAudioErrorMessage('Audio URL is missing.');
         return;
       }
 
@@ -75,7 +75,7 @@ export default function LessonDetailPage() {
         if (cancelled) return;
         setResolvedAudioUrl('');
         setAudioLoadStatus('error');
-        setAudioErrorMessage(err.message || 'audioPathからURLを取得できませんでした');
+        setAudioErrorMessage(err.message || 'Failed to resolve audio URL from audioPath.');
       }
     };
 
@@ -85,22 +85,22 @@ export default function LessonDetailPage() {
     };
   }, [lesson, unsupportedFormat]);
 
-  if (!lesson) return <p>読み込み中...</p>;
+  if (!lesson) return <p>Loading...</p>;
 
   return (
     <section className="stack">
       <article className="card">
         <h2 className="section-title">{lesson.title}</h2>
-        <p>カテゴリ: {lesson.categoryId ? (categories.find((category) => category.id === lesson.categoryId)?.name || '削除済みカテゴリ') : 'カテゴリ未設定'}</p>
-        <p>難易度: {getDifficultyLabel(lesson.difficulty)}</p>
-        <p className="section-subtle">英文</p>
+        <p>Category: {lesson.categoryId ? (categories.find((category) => category.id === lesson.categoryId)?.name || 'Deleted category') : 'Not set'}</p>
+        <p>Difficulty: {getDifficultyLabel(lesson.difficulty)}</p>
+        <p className="section-subtle">English Script</p>
         <pre className="mono">{lesson.scriptEn}</pre>
-        <p>日本語訳</p>
+        <p>Japanese Translation</p>
         <pre>{lesson.scriptJa || '-'}</pre>
-        <p>メモ</p>
+        <p>Notes</p>
         <pre>{lesson.memo || '-'}</pre>
         {unsupportedFormat ? (
-          <p className="error">この教材の音声は現在対応していない形式です。mp3で再登録してください。</p>
+          <p className="error">This lesson uses an unsupported audio format. Please re-upload it as MP3.</p>
         ) : (
           <AudioControls
             audioUrl={resolvedAudioUrl}
@@ -111,25 +111,25 @@ export default function LessonDetailPage() {
         )}
         <details className="debug-panel">
           <summary>audio debug</summary>
-          <p>audioPath: {lesson.audioPath ? 'あり' : 'なし'}</p>
-          <p>audioUrl: {lesson.audioUrl ? 'あり' : 'なし'}</p>
-          <p>resolvedAudioUrl: {resolvedAudioUrl ? 'あり' : 'なし'}</p>
+          <p>audioPath: {lesson.audioPath ? 'yes' : 'no'}</p>
+          <p>audioUrl: {lesson.audioUrl ? 'yes' : 'no'}</p>
+          <p>resolvedAudioUrl: {resolvedAudioUrl ? 'yes' : 'no'}</p>
           <p>audioContentType: {audioContentType || '-'}</p>
           <p>file extension: {fileExtension || '-'}</p>
           <p>audio load status: {audioLoadStatus}</p>
           <p>audio error message: {audioErrorMessage || '-'}</p>
         </details>
-        <p className="section-subtle">現在はmp3ファイルのみ対応しています。</p>
-        <h3>学習概要</h3>
-        <p>最終学習日: {formatDateTime(lesson.lastStudiedAt)}</p>
-        <p>ディクテーション回数: {lesson.dictationCount || 0}</p>
-        <p>シャドーイング回数: {lesson.shadowingCount || 0}</p>
-        <p>累計学習時間: {formatSeconds(lesson.totalStudySeconds || 0)}</p>
+        <p className="section-subtle">Only MP3 files are currently supported.</p>
+        <h3>Study Summary</h3>
+        <p>Last studied: {formatDateTime(lesson.lastStudiedAt)}</p>
+        <p>Dictation attempts: {lesson.dictationCount || 0}</p>
+        <p>Shadowing attempts: {lesson.shadowingCount || 0}</p>
+        <p>Total study time: {formatSeconds(lesson.totalStudySeconds || 0)}</p>
       </article>
       <div className="row gap-sm wrap">
-        <Link className="btn" to={`/lessons/${id}/dictation`}>ディクテーション</Link>
-        <Link className="btn" to={`/lessons/${id}/shadowing`}>シャドーイング</Link>
-        <Link className="btn ghost" to={`/lessons/${id}/edit`}>編集</Link>
+        <Link className="btn" to={`/lessons/${id}/dictation`}>Dictation</Link>
+        <Link className="btn" to={`/lessons/${id}/shadowing`}>Shadowing</Link>
+        <Link className="btn ghost" to={`/lessons/${id}/edit`}>Edit</Link>
       </div>
     </section>
   );
