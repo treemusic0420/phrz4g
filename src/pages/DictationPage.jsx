@@ -18,6 +18,11 @@ import { getRegisteredMonthLabel } from '../utils/registeredMonth';
 const splitToChars = (text) => Array.from(text || '');
 
 const WHITESPACE_REGEX = /\s/;
+const ALLOWED_DICTATION_CHAR_REGEX = /^[A-Za-z0-9.,?!'"\-:;()/&@]$/;
+const FULL_WIDTH_ASCII_REGEX = /[！-～]/g;
+
+const normalizeWidth = (char) =>
+  char.replace(FULL_WIDTH_ASCII_REGEX, (value) => String.fromCharCode(value.charCodeAt(0) - 0xfee0));
 
 const buildSlotGroups = (script = '') => {
   const chars = splitToChars(script);
@@ -108,6 +113,7 @@ export default function DictationPage() {
   const hiddenInputRef = useRef(null);
   const wrongInputTimeoutRef = useRef(null);
   const inputTextRef = useRef('');
+  const isComposingRef = useRef(false);
   const [wrongSlotIndex, setWrongSlotIndex] = useState(-1);
   const slotGroups = useMemo(() => buildSlotGroups(lesson?.scriptEn || ''), [lesson?.scriptEn]);
   const expectedChars = useMemo(
@@ -191,6 +197,45 @@ export default function DictationPage() {
     }
   };
 
+  const normalizeAndFilterChars = (candidateChars) => {
+    const existingLength = splitToChars(inputTextRef.current).length;
+    let acceptedCount = 0;
+    let hasRejectedChar = false;
+    const filteredChars = [];
+
+    candidateChars.forEach((rawChar) => {
+      if (WHITESPACE_REGEX.test(rawChar)) return;
+      const normalizedChar = normalizeWidth(rawChar);
+      if (!normalizedChar || WHITESPACE_REGEX.test(normalizedChar)) return;
+
+      const pointer = existingLength + acceptedCount;
+      const expectedChar = expectedChars[pointer];
+      const isAllowedByList = ALLOWED_DICTATION_CHAR_REGEX.test(normalizedChar);
+      const isAllowedExpectedSymbol = Boolean(expectedChar) && normalizedChar === expectedChar;
+
+      if (!isAllowedByList && !isAllowedExpectedSymbol) {
+        hasRejectedChar = true;
+        return;
+      }
+
+      filteredChars.push(normalizedChar);
+      acceptedCount += 1;
+    });
+
+    return { filteredChars, hasRejectedChar };
+  };
+
+  const handleRawInputChars = (candidateChars, options = {}) => {
+    const { stopOnWrong = true, playRejectedFeedback = true } = options;
+    const { filteredChars, hasRejectedChar } = normalizeAndFilterChars(candidateChars);
+
+    if (filteredChars.length > 0) {
+      applyInputChars(filteredChars, { stopOnWrong });
+    } else if (hasRejectedChar && playRejectedFeedback && maxInputLength > 0) {
+      triggerWrongFeedback(Math.min(splitToChars(inputTextRef.current).length, maxInputLength - 1));
+    }
+  };
+
   const removeLastInputChar = () => {
     const prevChars = splitToChars(inputTextRef.current);
     if (prevChars.length === 0) return;
@@ -247,17 +292,26 @@ export default function DictationPage() {
     setIsFinished(true);
   };
 
-  const focusInput = () => {
-    hiddenInputRef.current?.focus();
+  const focusDictationInput = () => {
+    window.requestAnimationFrame(() => {
+      hiddenInputRef.current?.focus();
+    });
   };
 
+  useEffect(() => {
+    if (!lesson || isFinished) return;
+    focusDictationInput();
+  }, [lesson?.id, isFinished]);
+
   const onHiddenInputChange = (event) => {
+    if (isComposingRef.current) return;
     const typedChars = splitToChars(event.target.value);
-    if (typedChars.length > 0) applyInputChars(typedChars, { stopOnWrong: true });
+    if (typedChars.length > 0) handleRawInputChars(typedChars, { stopOnWrong: true, playRejectedFeedback: true });
     event.target.value = '';
   };
 
   const onHiddenInputKeyDown = (event) => {
+    if (isComposingRef.current || event.nativeEvent.isComposing) return;
     if (event.key === 'Backspace') {
       event.preventDefault();
       removeLastInputChar();
@@ -273,7 +327,7 @@ export default function DictationPage() {
     }
     if (event.key.length === 1 && !event.metaKey && !event.ctrlKey && !event.altKey) {
       event.preventDefault();
-      applyInputChars([event.key]);
+      handleRawInputChars([event.key], { stopOnWrong: true, playRejectedFeedback: true });
     }
   };
 
@@ -281,7 +335,20 @@ export default function DictationPage() {
     const text = event.clipboardData.getData('text');
     if (!text) return;
     event.preventDefault();
-    applyInputChars(splitToChars(text), { stopOnWrong: true });
+    handleRawInputChars(splitToChars(text), { stopOnWrong: true, playRejectedFeedback: true });
+  };
+
+  const onHiddenInputCompositionStart = () => {
+    isComposingRef.current = true;
+  };
+
+  const onHiddenInputCompositionEnd = (event) => {
+    isComposingRef.current = false;
+    const committedText = event.data || event.currentTarget.value;
+    if (committedText) {
+      handleRawInputChars(splitToChars(committedText), { stopOnWrong: true, playRejectedFeedback: true });
+    }
+    event.currentTarget.value = '';
   };
 
 
@@ -348,16 +415,17 @@ export default function DictationPage() {
         shouldAutoPlay={canPlayAudio}
         autoPlayToken={autoPlayToken}
         onAutoPlayBlocked={setAutoPlayMessage}
+        onAutoPlaySettled={focusDictationInput}
       />
       {autoPlayMessage ? <p className="section-subtle">{autoPlayMessage}</p> : null}
       <article className="card dictation-input-card">
         <h3>Your Input</h3>
-        <p className="section-subtle">Type the correct next character. Spaces are skipped automatically.</p>
+        <p className="section-subtle">Type the next English character. Spaces are skipped automatically.</p>
         <div
           className="dictation-slot-container"
-          onClick={focusInput}
-          onTouchStart={focusInput}
-          onFocus={focusInput}
+          onClick={focusDictationInput}
+          onTouchStart={focusDictationInput}
+          onFocus={focusDictationInput}
           role="textbox"
           aria-label="Dictation character input"
           tabIndex={0}
@@ -365,13 +433,17 @@ export default function DictationPage() {
           <input
             ref={hiddenInputRef}
             className="dictation-hidden-input"
-            autoCapitalize="off"
+            inputMode="latin"
+            autoCapitalize="none"
             autoCorrect="off"
             autoComplete="off"
             spellCheck={false}
+            lang="en"
             onChange={onHiddenInputChange}
             onKeyDown={onHiddenInputKeyDown}
             onPaste={onHiddenInputPaste}
+            onCompositionStart={onHiddenInputCompositionStart}
+            onCompositionEnd={onHiddenInputCompositionEnd}
           />
           {slotGroups.map((group, groupIndex) => (
             <span className="dictation-slot-word" key={`group-${groupIndex}`}>

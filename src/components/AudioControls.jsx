@@ -10,6 +10,7 @@ export default function AudioControls({
   shouldAutoPlay = false,
   autoPlayToken = 0,
   onAutoPlayBlocked,
+  onAutoPlaySettled,
 }) {
   const audioRef = useRef(null);
   const [speed, setSpeed] = useState(1);
@@ -39,11 +40,17 @@ export default function AudioControls({
       if (canceled) return;
       audio.playbackRate = speed;
       const playPromise = audio.play();
-      if (playPromise && typeof playPromise.catch === 'function') {
-        playPromise.catch(() => {
-          if (!canceled) onAutoPlayBlocked?.('Tap play to start the audio.');
-        });
+      if (playPromise && typeof playPromise.finally === 'function') {
+        playPromise
+          .catch(() => {
+            if (!canceled) onAutoPlayBlocked?.('Tap play to start the audio.');
+          })
+          .finally(() => {
+            if (!canceled) onAutoPlaySettled?.();
+          });
+        return;
       }
+      onAutoPlaySettled?.();
     };
 
     if (audio.readyState >= 2) {
@@ -65,7 +72,7 @@ export default function AudioControls({
       audio.removeEventListener('canplay', handleCanPlay);
       if (rafId) window.cancelAnimationFrame(rafId);
     };
-  }, [audioUrl, autoPlayToken, onAutoPlayBlocked, shouldAutoPlay, speed]);
+  }, [audioUrl, autoPlayToken, onAutoPlayBlocked, onAutoPlaySettled, shouldAutoPlay, speed]);
 
   const rewind = () => {
     if (!audioRef.current) return;
