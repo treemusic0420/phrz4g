@@ -21,6 +21,21 @@ export const getLessonSortTime = (lesson) => {
 export const sortLessonsByRecency = (lessons = []) =>
   [...lessons].sort((a, b) => getLessonSortTime(b) - getLessonSortTime(a));
 
+const safePrimarySortMillis = (value) => {
+  const date = toDate(value);
+  if (!date || Number.isNaN(date.getTime())) return -1;
+  return date.getTime();
+};
+
+export const getLessonMonthTrainingSortTime = (lesson) => {
+  const createdAt = safePrimarySortMillis(lesson?.createdAt);
+  if (createdAt > 0) return createdAt;
+  return safePrimarySortMillis(lesson?.updatedAt);
+};
+
+export const sortLessonsForMonthTraining = (lessons = []) =>
+  [...lessons].sort((a, b) => getLessonMonthTrainingSortTime(b) - getLessonMonthTrainingSortTime(a));
+
 export const sortCategories = (categories = []) =>
   [...categories].sort((a, b) => {
     const orderDiff = (Number(a.order) || 0) - (Number(b.order) || 0);

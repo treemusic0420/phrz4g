@@ -113,6 +113,22 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
 .diff-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
 .diff-match { background: #dcfce7; padding: 2px 6px; border-radius: 999px; }
 .diff-miss { background: #fee2e2; padding: 2px 6px; border-radius: 999px; }
+.answer-result-card {
+  padding: 14px 16px;
+  border-radius: 16px;
+}
+.answer-result-card h3 {
+  margin: 0 0 4px;
+  font-size: 1.02rem;
+}
+.answer-result-card.correct {
+  background: #f2fbf5;
+  border-color: #cfe9d5;
+}
+.answer-result-card.incorrect {
+  background: #faf7f4;
+  border-color: #e7ddd3;
+}
 .empty-state { text-align: center; padding: 28px 20px; }
 .category-card {
   display: grid;
@@ -129,6 +145,27 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
 .category-card:hover { border-color: #c8c8ce; background: #fcfcff; }
 .lesson-card-link { display: grid; gap: 6px; }
 .lesson-card-link:hover { border-color: #c8c8ce; background: #fcfcff; }
+.month-action-buttons .btn[aria-disabled="true"] {
+  opacity: 0.45;
+  pointer-events: none;
+}
+.compact-lesson-link {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  margin-bottom: 8px;
+}
+.compact-lesson-link:hover { border-color: #c8c8ce; background: #fcfcff; }
+.compact-lesson-head {
+  align-items: baseline;
+  flex-wrap: nowrap;
+}
+.compact-lesson-title {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.3;
+}
 .pill { background: #f1f1f4; border: 1px solid #dfdfe4; border-radius: 999px; padding: 4px 10px; font-size: 0.82rem; color: #3a3a3c; }
 .pagination-box { margin-bottom: 24px; }
 .pagination-box button[disabled] { opacity: 0.45; cursor: default; pointer-events: none; }
@@ -184,7 +221,11 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
     gap: 8px;
   }
   .row.between .btn { width: 100%; }
+  .month-action-buttons { width: 100%; }
+  .month-action-buttons .btn { width: 100%; }
   .card { padding: 16px; border-radius: 18px; }
+  .compact-lesson-link { padding: 11px 12px; }
+  .compact-lesson-head { flex-wrap: wrap; }
   .category-card { padding: 14px; gap: 5px; min-height: 96px; margin-bottom: 6px; }
   .category-card .section-title { font-size: 1.02rem; }
   .category-card-meta { font-size: 0.84rem; }
