@@ -35,24 +35,56 @@ export default function LessonFormPage({ mode }) {
   const [audioDebugInfo, setAudioDebugInfo] = useState({ ext: '', contentType: '' });
   const [error, setError] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
 
   useEffect(() => {
     const loadData = async () => {
+      setIsLoadingCategories(true);
+      setError('');
       const loadedCategories = sortCategories(await ensureInitialCategories(LOCAL_USER_ID));
       const activeCategories = loadedCategories.filter((category) => category.isActive);
       setCategories(activeCategories);
 
-      if (mode !== 'edit' || !id) return;
+      if (mode !== 'edit' || !id) {
+        if (activeCategories.length > 0) {
+          setForm((prev) => (prev.categoryId ? prev : { ...prev, categoryId: activeCategories[0].id }));
+        }
+        setIsLoadingCategories(false);
+        return;
+      }
+
       const lesson = await fetchLessonById(id);
-      if (!lesson) return;
-      if (lesson.userId !== LOCAL_USER_ID) return navigate('/lessons');
-      setForm((prev) => ({ ...prev, ...lesson, difficulty: normalizeDifficulty(lesson.difficulty) }));
+      if (!lesson) {
+        setIsLoadingCategories(false);
+        return;
+      }
+      if (lesson.userId !== LOCAL_USER_ID) {
+        setIsLoadingCategories(false);
+        return navigate('/lessons');
+      }
+
+      const categoryExists = activeCategories.some((category) => category.id === lesson.categoryId);
+      const fallbackCategoryId = categoryExists ? lesson.categoryId : activeCategories[0]?.id || '';
+
+      setForm((prev) => ({
+        ...prev,
+        ...lesson,
+        difficulty: normalizeDifficulty(lesson.difficulty),
+        categoryId: fallbackCategoryId,
+      }));
+
+      if (lesson.categoryId && !categoryExists && activeCategories.length > 0) {
+        setError('The previous category no longer exists. Please review and save again.');
+      }
       const ext = getFileExtension(lesson.audioPath || '');
       const contentType = lesson.audioContentType || getAudioContentTypeFromExtension(ext) || '';
       setAudioDebugInfo({ ext, contentType });
+      setIsLoadingCategories(false);
     };
 
-    loadData().catch((err) => setError(err?.message || 'Failed to load initial data.'));
+    loadData()
+      .catch((err) => setError(err?.message || 'Failed to load initial data.'))
+      .finally(() => setIsLoadingCategories(false));
   }, [id, mode, navigate]);
 
   const categoryOptions = useMemo(() => sortCategories(categories), [categories]);
@@ -90,6 +122,7 @@ export default function LessonFormPage({ mode }) {
       };
 
       if (!payload.title || !payload.scriptEn) throw new Error('Title and English Script are required.');
+      if (!categoryOptions.length) throw new Error('No categories available. Please create a category first.');
       if (!payload.categoryId) throw new Error('Please select a category.');
       if (!form.difficulty) throw new Error('Please select a difficulty.');
       if (!payload.audioUrl || !payload.audioPath) throw new Error('Please upload an audio file.');
@@ -150,11 +183,27 @@ export default function LessonFormPage({ mode }) {
         <label>Title<input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></label>
         <label>
           Category
-          <select required value={form.categoryId} onChange={(e) => setForm({ ...form, categoryId: e.target.value })}>
-            {categoryOptions.map((category) => (
-              <option key={category.id} value={category.id}>{category.name}</option>
-            ))}
+          <select
+            required
+            value={form.categoryId}
+            disabled={isLoadingCategories || categoryOptions.length === 0}
+            onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
+          >
+            {isLoadingCategories ? <option value="">Loading categories...</option> : null}
+            {!isLoadingCategories && categoryOptions.length === 0 ? (
+              <option value="">No categories available</option>
+            ) : null}
+            {!isLoadingCategories
+              ? categoryOptions.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))
+              : null}
           </select>
+          {!isLoadingCategories && categoryOptions.length === 0 ? (
+            <p className="error">No categories available. Please create a category first.</p>
+          ) : null}
         </label>
         <label>
           Difficulty
