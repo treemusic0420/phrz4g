@@ -17,6 +17,11 @@ export default function AudioControls({
   const [localError, setLocalError] = useState('');
 
   useEffect(() => {
+    if (!audioRef.current) return;
+    audioRef.current.playbackRate = speed;
+  }, [speed]);
+
+  useEffect(() => {
     if (!audioUrl) {
       setLocalError('Audio URL is missing.');
       onStatusChange?.('idle');
@@ -38,7 +43,6 @@ export default function AudioControls({
 
     const tryPlay = () => {
       if (canceled) return;
-      audio.playbackRate = speed;
       const playPromise = audio.play();
       if (playPromise && typeof playPromise.finally === 'function') {
         playPromise
@@ -72,7 +76,7 @@ export default function AudioControls({
       audio.removeEventListener('canplay', handleCanPlay);
       if (rafId) window.cancelAnimationFrame(rafId);
     };
-  }, [audioUrl, autoPlayToken, onAutoPlayBlocked, onAutoPlaySettled, shouldAutoPlay, speed]);
+  }, [audioUrl, autoPlayToken, onAutoPlayBlocked, onAutoPlaySettled, shouldAutoPlay]);
 
   const rewind = () => {
     if (!audioRef.current) return;

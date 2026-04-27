@@ -200,14 +200,15 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
 }
 .dictation-hidden-input {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 1px;
-  height: 1px;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   opacity: 0;
   border: 0;
   padding: 0;
   margin: 0;
+  z-index: 1;
+  cursor: text;
 }
 .dictation-slot-word {
   display: inline-flex;

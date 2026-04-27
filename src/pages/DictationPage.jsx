@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import AudioControls from '../components/AudioControls';
 import { LOCAL_USER_ID } from '../lib/auth';
@@ -298,11 +298,11 @@ export default function DictationPage() {
     setIsFinished(true);
   };
 
-  const focusDictationInput = () => {
+  const focusDictationInput = useCallback(() => {
     window.requestAnimationFrame(() => {
       hiddenInputRef.current?.focus();
     });
-  };
+  }, []);
 
   useEffect(() => {
     if (!lesson || isFinished) return;
@@ -427,12 +427,7 @@ export default function DictationPage() {
           <input
             ref={hiddenInputRef}
             className="dictation-hidden-input"
-            inputMode="latin"
-            autoCapitalize="none"
-            autoCorrect="off"
-            autoComplete="off"
-            spellCheck={false}
-            lang="en"
+            type="text"
             onChange={onHiddenInputChange}
             onKeyDown={onHiddenInputKeyDown}
             onPaste={onHiddenInputPaste}
