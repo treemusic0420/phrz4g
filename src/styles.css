@@ -213,8 +213,16 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
 .dictation-slot-word {
   display: inline-flex;
   flex-wrap: nowrap;
+  align-items: flex-end;
   gap: 3px;
   margin-right: 10px;
+}
+.dictation-auto-char {
+  color: #6b7280;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.95rem;
+  line-height: 1.8em;
+  user-select: none;
 }
 .dictation-slot {
   width: 1.3em;

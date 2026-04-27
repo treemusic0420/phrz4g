@@ -20,6 +20,7 @@ const splitToChars = (text) => Array.from(text || '');
 const WHITESPACE_REGEX = /\s/;
 const ALLOWED_DICTATION_CHAR_REGEX = /^[A-Za-z0-9.,?!'"\-:;()/&@]$/;
 const FULL_WIDTH_ASCII_REGEX = /[！-～]/g;
+const isAutoInsertedDictationChar = (char) => WHITESPACE_REGEX.test(char) || char === ',' || char === '.';
 
 const normalizeWidth = (char) =>
   char.replace(FULL_WIDTH_ASCII_REGEX, (value) => String.fromCharCode(value.charCodeAt(0) - 0xfee0));
@@ -37,12 +38,21 @@ const buildSlotGroups = (script = '') => {
       return;
     }
 
-    currentGroup.push({
-      id: `${char}-${index}-${expectedIndex}`,
-      char,
-      expectedIndex,
-    });
-    expectedIndex += 1;
+    if (isAutoInsertedDictationChar(char)) {
+      currentGroup.push({
+        id: `auto-${char}-${index}`,
+        char,
+        type: 'auto',
+      });
+    } else {
+      currentGroup.push({
+        id: `${char}-${index}-${expectedIndex}`,
+        char,
+        expectedIndex,
+        type: 'slot',
+      });
+      expectedIndex += 1;
+    }
 
     if (index === chars.length - 1 && currentGroup.length > 0) {
       groups.push(currentGroup);
@@ -96,7 +106,9 @@ export default function DictationPage() {
     });
   }, [isMonthMode, categoryId, registeredMonth]);
 
-  const diff = useMemo(() => diffWords(inputText, lesson?.scriptEn || ''), [inputText, lesson?.scriptEn]);
+  const normalizedInput = useMemo(() => normalizeForDictation(inputText), [inputText]);
+  const normalizedScript = useMemo(() => normalizeForDictation(lesson?.scriptEn || ''), [lesson?.scriptEn]);
+  const diff = useMemo(() => diffWords(normalizedInput, normalizedScript), [normalizedInput, normalizedScript]);
   const monthIndex = useMemo(
     () => monthLessons.findIndex((monthLesson) => monthLesson.id === id),
     [monthLessons, id],
@@ -119,7 +131,7 @@ export default function DictationPage() {
   const [wrongSlotIndex, setWrongSlotIndex] = useState(-1);
   const slotGroups = useMemo(() => buildSlotGroups(lesson?.scriptEn || ''), [lesson?.scriptEn]);
   const expectedChars = useMemo(
-    () => slotGroups.flatMap((group) => group.map((slot) => slot.char)),
+    () => slotGroups.flatMap((group) => group.filter((item) => item.type === 'slot').map((slot) => slot.char)),
     [slotGroups],
   );
   const inputChars = useMemo(() => splitToChars(inputText), [inputText]);
@@ -169,7 +181,7 @@ export default function DictationPage() {
     existing.forEach((char) => nextInput.push(char));
 
     candidateChars.some((rawChar) => {
-      if (WHITESPACE_REGEX.test(rawChar)) return false;
+      if (isAutoInsertedDictationChar(rawChar)) return false;
       if (pointer >= maxInputLength) return true;
 
       const expectedChar = expectedChars[pointer];
@@ -211,9 +223,8 @@ export default function DictationPage() {
     const filteredChars = [];
 
     candidateChars.forEach((rawChar) => {
-      if (WHITESPACE_REGEX.test(rawChar)) return;
       const normalizedChar = normalizeWidth(rawChar);
-      if (!normalizedChar || WHITESPACE_REGEX.test(normalizedChar)) return;
+      if (!normalizedChar || isAutoInsertedDictationChar(normalizedChar)) return;
 
       const pointer = existingLength + acceptedCount;
       const expectedChar = expectedChars[pointer];
@@ -447,13 +458,17 @@ export default function DictationPage() {
           {slotGroups.map((group, groupIndex) => (
             <span className="dictation-slot-word" key={`group-${groupIndex}`}>
               {group.map((slot) => {
+                if (slot.type === 'auto') {
+                  return (
+                    <span key={slot.id} className="dictation-auto-char" aria-hidden="true">
+                      {slot.char}
+                    </span>
+                  );
+                }
                 const actualChar = inputChars[slot.expectedIndex];
                 const slotStatus = getCharStatus(slot.expectedIndex);
                 return (
-                  <span
-                    key={slot.id}
-                    className={`dictation-slot ${slotStatus}`}
-                  >
+                  <span key={slot.id} className={`dictation-slot ${slotStatus}`}>
                     {actualChar || ''}
                   </span>
                 );
@@ -503,11 +518,15 @@ export default function DictationPage() {
         <article className="card">
           <h3>Difference (Simple)</h3>
           <div className="diff-wrap">
-            {diff.map((item) => (
-              <span className={item.match ? 'diff-match' : 'diff-miss'} key={item.index}>
-                {item.match ? item.correctWord : `[${item.inputWord || '∅'} → ${item.correctWord || '∅'}]`}
-              </span>
-            ))}
+            {diff.every((item) => item.match) ? (
+              <span className="diff-match">No differences.</span>
+            ) : (
+              diff.map((item) => (
+                <span className={item.match ? 'diff-match' : 'diff-miss'} key={item.index}>
+                  {item.match ? item.correctWord : `[${item.inputWord || '∅'} → ${item.correctWord || '∅'}]`}
+                </span>
+              ))
+            )}
           </div>
         </article>
       ) : null}
