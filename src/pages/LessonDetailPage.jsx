@@ -28,6 +28,7 @@ export default function LessonDetailPage() {
   const fileExtension = getExtFromPath(lesson?.audioPath || '');
   const audioContentType = lesson?.audioContentType || inferTypeByExt(fileExtension);
   const unsupportedFormat = isUnsupportedAudioFormat(fileExtension, audioContentType);
+  const hasAudio = !!(lesson?.audioUrl || lesson?.audioPath);
 
   useEffect(() => {
     fetchLessonById(id).then((doc) => {
@@ -54,16 +55,16 @@ export default function LessonDetailPage() {
         setResolvedAudioUrl('');
         return;
       }
+      if (!hasAudio) {
+        setResolvedAudioUrl('');
+        return;
+      }
       if (lesson.audioUrl) {
         setResolvedAudioUrl(lesson.audioUrl);
         return;
       }
 
-      if (!lesson.audioPath) {
-        setResolvedAudioUrl('');
-        setAudioErrorMessage('Audio URL is missing.');
-        return;
-      }
+      if (!lesson.audioPath) return;
 
       setAudioLoadStatus('loading');
       try {
@@ -83,7 +84,7 @@ export default function LessonDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [lesson, unsupportedFormat]);
+  }, [lesson, unsupportedFormat, hasAudio]);
 
   if (!lesson) return <p>Loading...</p>;
   const difficultyStyle = getDifficultyStyle(lesson.difficulty);
@@ -105,7 +106,9 @@ export default function LessonDetailPage() {
         <pre>{lesson.scriptJa || '-'}</pre>
         <p>Notes</p>
         <pre>{lesson.memo || '-'}</pre>
-        {unsupportedFormat ? (
+        {!hasAudio ? (
+          <p className="section-subtle">No audio file yet.</p>
+        ) : unsupportedFormat ? (
           <p className="error">This lesson uses an unsupported audio format. Please re-upload it as MP3.</p>
         ) : (
           <AudioControls

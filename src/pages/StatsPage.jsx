@@ -140,6 +140,7 @@ const buildDashboardData = (lessons, logs, options = {}) => {
       label: toShortDateLabel(sourceDate),
       minutes: Math.round(seconds / 60),
       seconds,
+      isToday: key === todayKey,
     };
   });
 
@@ -189,14 +190,15 @@ const buildDashboardData = (lessons, logs, options = {}) => {
   };
 };
 
-const MetricCard = ({ label, value }) => (
-  <article className="card dashboard-summary-card">
+const MetricCard = ({ label, value, tone = 'blue' }) => (
+  <article className={`card dashboard-summary-card dashboard-summary-card-${tone}`}>
+    <span className="dashboard-card-dot" aria-hidden="true" />
     <p className="dashboard-card-label">{label}</p>
     <p className="dashboard-card-value">{value}</p>
   </article>
 );
 
-const SimpleBarChart = ({ title, data, valueKey, emptyText, valueSuffix = '' }) => {
+const SimpleBarChart = ({ title, data, valueKey, emptyText, valueSuffix = '', variant = 'studyTime' }) => {
   const maxValue = Math.max(...data.map((item) => item[valueKey]), 0);
   return (
     <article className="card dashboard-chart-card">
@@ -208,11 +210,20 @@ const SimpleBarChart = ({ title, data, valueKey, emptyText, valueSuffix = '' }) 
           {data.map((item) => {
             const value = item[valueKey];
             const percent = maxValue ? Math.max(8, Math.round((value / maxValue) * 100)) : 0;
+            const isMax = maxValue > 0 && value === maxValue;
+            const isToday = variant === 'studyTime' && item.isToday;
+            const fillClass =
+              variant === 'practiceBalance'
+                ? `simple-bar-fill-${String(item.label || '').toLowerCase()}`
+                : 'simple-bar-fill-study-time';
             return (
               <div className="simple-bar-row" key={item.label}>
                 <p className="simple-bar-label">{item.label}</p>
                 <div className="simple-bar-track">
-                  <div className="simple-bar-fill" style={{ width: `${percent}%` }} />
+                  <div
+                    className={`simple-bar-fill ${fillClass} ${isMax || isToday ? 'simple-bar-fill-strong' : ''}`}
+                    style={{ width: `${percent}%` }}
+                  />
                 </div>
                 <p className="simple-bar-value">{value}{valueSuffix}</p>
               </div>
@@ -282,13 +293,13 @@ export default function StatsPage() {
   );
 
   const summaryCards = [
-    { label: 'Today', value: formatDurationCompact(dashboard.summary.today) },
-    { label: 'This Week', value: formatDurationCompact(dashboard.summary.week) },
-    { label: 'This Month', value: formatDurationCompact(dashboard.summary.month) },
-    { label: 'Total', value: formatDurationCompact(dashboard.summary.total) },
-    { label: 'Study Streak', value: `${dashboard.summary.streak} days` },
-    { label: 'Dictation Attempts', value: dashboard.summary.dictationAttempts },
-    { label: 'Shadowing Attempts', value: dashboard.summary.shadowingAttempts },
+    { label: 'Today', value: formatDurationCompact(dashboard.summary.today), tone: 'blue' },
+    { label: 'This Week', value: formatDurationCompact(dashboard.summary.week), tone: 'indigo' },
+    { label: 'This Month', value: formatDurationCompact(dashboard.summary.month), tone: 'purple' },
+    { label: 'Total', value: formatDurationCompact(dashboard.summary.total), tone: 'gradient' },
+    { label: 'Study Streak', value: `${dashboard.summary.streak} days`, tone: 'purple' },
+    { label: 'Dictation Attempts', value: dashboard.summary.dictationAttempts, tone: 'blue' },
+    { label: 'Shadowing Attempts', value: dashboard.summary.shadowingAttempts, tone: 'purple' },
   ];
 
   return (
@@ -312,7 +323,7 @@ export default function StatsPage() {
 
       <section className="dashboard-summary-grid" aria-label="Summary cards">
         {summaryCards.map((card) => (
-          <MetricCard key={card.label} label={card.label} value={card.value} />
+          <MetricCard key={card.label} label={card.label} value={card.value} tone={card.tone} />
         ))}
       </section>
 
@@ -322,6 +333,7 @@ export default function StatsPage() {
           data={dashboard.last7Days}
           valueKey="minutes"
           valueSuffix="m"
+          variant="studyTime"
           emptyText="No study logs yet. Start a lesson to see your progress."
         />
 
@@ -329,21 +341,26 @@ export default function StatsPage() {
           title="Practice Balance"
           data={dashboard.practiceBalance}
           valueKey="value"
+          variant="practiceBalance"
           emptyText="No practice attempts yet."
         />
       </section>
 
-      <article className="card">
+      <article className="card dashboard-top-lessons-card">
         <h3>Top Lessons</h3>
         {dashboard.topLessons.length === 0 ? (
           <p className="section-subtle">No lessons yet.</p>
         ) : (
           <ol className="dashboard-list">
-            {dashboard.topLessons.map((lesson) => (
+            {dashboard.topLessons.map((lesson, index) => (
               <li className="dashboard-list-item" key={lesson.lessonId}>
-                <p className="dashboard-list-title">{lesson.title}</p>
+                <div className="dashboard-list-head">
+                  <span className="dashboard-rank-badge">#{index + 1}</span>
+                  <p className="dashboard-list-title">{lesson.title}</p>
+                  <span className="dashboard-attempts-badge">{lesson.attempts} attempts</span>
+                </div>
                 <p className="section-subtle">
-                  {lesson.attempts} attempts · {formatDurationCompact(lesson.totalStudySeconds)}
+                  {formatDurationCompact(lesson.totalStudySeconds)}
                 </p>
                 <p className="section-subtle">
                   Dictation {lesson.dictationCount} · Shadowing {lesson.shadowingCount}
@@ -364,7 +381,15 @@ export default function StatsPage() {
               <li className="dashboard-list-item" key={log.id}>
                 <p className="dashboard-list-title">{formatDateTime(log.createdAt)}</p>
                 <p className="section-subtle">
-                  {log.lessonTitle} · {log.trainingTypeLabel} · {formatSeconds(log.durationSeconds)}
+                  {log.lessonTitle} ·{' '}
+                  <span
+                    className={`training-type-badge ${
+                      log.trainingType === 'shadowing' ? 'training-type-badge-shadowing' : 'training-type-badge-dictation'
+                    }`}
+                  >
+                    {log.trainingTypeLabel}
+                  </span>{' '}
+                  · {formatSeconds(log.durationSeconds)}
                 </p>
                 <Link className="section-subtle" to={`/lessons/${log.lessonId}`}>
                   Open lesson

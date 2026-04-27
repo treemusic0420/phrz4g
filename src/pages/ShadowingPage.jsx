@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import AudioControls from '../components/AudioControls';
 import { LOCAL_USER_ID } from '../lib/auth';
 import { createStudyLog, fetchLessonById, fetchLessons, updateLessonStats } from '../lib/firestore';
-import { filterLessonsByCategoryAndMonth, sortLessonsForMonthTraining } from '../utils/lessons';
+import { filterLessonsByCategoryAndMonth, hasLessonAudio, sortLessonsForMonthTraining } from '../utils/lessons';
 import { getRegisteredMonthLabel } from '../utils/registeredMonth';
 
 export default function ShadowingPage() {
@@ -39,7 +39,8 @@ export default function ShadowingPage() {
     }
     fetchLessons(LOCAL_USER_ID).then((lessons) => {
       const filtered = filterLessonsByCategoryAndMonth(lessons, categoryId, registeredMonth);
-      setMonthLessons(sortLessonsForMonthTraining(filtered));
+      const audioReady = filtered.filter((monthLesson) => hasLessonAudio(monthLesson));
+      setMonthLessons(sortLessonsForMonthTraining(audioReady));
     });
   }, [isMonthMode, categoryId, registeredMonth]);
 
@@ -53,6 +54,7 @@ export default function ShadowingPage() {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [recordingError, setRecordingError] = useState('');
+  const canPlayAudio = hasLessonAudio(lesson);
   const mediaRecorderRef = useRef(null);
   const mediaStreamRef = useRef(null);
   const chunksRef = useRef([]);
@@ -244,6 +246,21 @@ export default function ShadowingPage() {
   }
 
   if (!lesson) return <p>Loading...</p>;
+
+  if (!canPlayAudio) {
+    return (
+      <section className="stack">
+        <article className="card">
+          <h2 className="section-title">No audio lessons available in this month.</h2>
+          <div className="row gap-sm wrap">
+            <Link className="btn ghost" to={`/lessons/category/${categoryId}/month/${registeredMonth}`}>
+              Back to Lesson List
+            </Link>
+          </div>
+        </article>
+      </section>
+    );
+  }
 
   if (isFinished) {
     return (

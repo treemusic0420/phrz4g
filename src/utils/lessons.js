@@ -173,3 +173,5 @@ export const paginateLessons = (lessons = [], currentPage = 1, perPage = LESSONS
     items: lessons.slice(start, start + perPage),
   };
 };
+
+export const hasLessonAudio = (lesson = {}) => !!(lesson?.audioUrl || lesson?.audioPath);

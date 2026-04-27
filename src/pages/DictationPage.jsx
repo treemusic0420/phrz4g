@@ -12,7 +12,7 @@ import {
 import { isDictationAnswerCorrect } from '../utils/dictation';
 import { diffWords } from '../utils/diff';
 import { playCorrectSound, playIncorrectSound } from '../utils/feedbackSound';
-import { filterLessonsByCategoryAndMonth, sortLessonsForMonthTraining } from '../utils/lessons';
+import { filterLessonsByCategoryAndMonth, hasLessonAudio, sortLessonsForMonthTraining } from '../utils/lessons';
 import { getRegisteredMonthLabel } from '../utils/registeredMonth';
 
 export default function DictationPage() {
@@ -49,7 +49,8 @@ export default function DictationPage() {
     }
     fetchLessons(LOCAL_USER_ID).then((lessons) => {
       const filtered = filterLessonsByCategoryAndMonth(lessons, categoryId, registeredMonth);
-      setMonthLessons(sortLessonsForMonthTraining(filtered));
+      const audioReady = filtered.filter((monthLesson) => hasLessonAudio(monthLesson));
+      setMonthLessons(sortLessonsForMonthTraining(audioReady));
     });
   }, [isMonthMode, categoryId, registeredMonth]);
 
@@ -66,6 +67,7 @@ export default function DictationPage() {
   const fallbackAudioContentType =
     fileExtension === 'm4a' ? 'audio/mp4' : fileExtension === 'mp3' ? 'audio/mpeg' : fileExtension === 'wav' ? 'audio/wav' : '';
   const [isFinished, setIsFinished] = useState(false);
+  const canPlayAudio = hasLessonAudio(lesson);
 
   const completeAndGoNext = async () => {
     if (!lesson) return;
@@ -137,6 +139,21 @@ export default function DictationPage() {
   }
 
   if (!lesson) return <p>Loading...</p>;
+
+  if (!canPlayAudio) {
+    return (
+      <section className="stack">
+        <article className="card">
+          <h2 className="section-title">No audio lessons available in this month.</h2>
+          <div className="row gap-sm wrap">
+            <Link className="btn ghost" to={`/lessons/category/${categoryId}/month/${registeredMonth}`}>
+              Back to Lesson List
+            </Link>
+          </div>
+        </article>
+      </section>
+    );
+  }
 
   if (isFinished) {
     return (

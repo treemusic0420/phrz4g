@@ -8,6 +8,7 @@ import {
   LESSONS_PER_PAGE,
   UNSET_CATEGORY_LABEL,
   filterLessonsByCategoryAndMonth,
+  hasLessonAudio,
   paginateLessons,
   sortLessonsByRecency,
   sortLessonsForMonthTraining,
@@ -59,11 +60,12 @@ export default function MonthLessonsPage() {
   }, [allLessons, categoryId, registeredMonth]);
 
   const monthTrainingLessons = useMemo(
-    () => sortLessonsForMonthTraining(monthLessons),
+    () => sortLessonsForMonthTraining(monthLessons.filter((lesson) => hasLessonAudio(lesson))),
     [monthLessons],
   );
 
   const firstTrainingLessonId = monthTrainingLessons[0]?.id || '';
+  const audioLessonCount = monthTrainingLessons.length;
 
   const paging = useMemo(
     () => paginateLessons(monthLessons, currentPage, LESSONS_PER_PAGE),
@@ -78,7 +80,7 @@ export default function MonthLessonsPage() {
         <div>
           <p className="section-subtle">Lessons &gt; {categoryName} &gt; {monthLabel}</p>
           <h2 className="section-title">{categoryName} / {monthLabel}</h2>
-          <p className="section-subtle">Lessons: {paging.total}</p>
+          <p className="section-subtle">{audioLessonCount} audio lessons / {paging.total} total lessons</p>
         </div>
         <div className="row gap-sm wrap month-action-buttons">
           <Link
@@ -127,9 +129,15 @@ export default function MonthLessonsPage() {
           <p className="section-subtle">Go back and select another month.</p>
         </article>
       ) : null}
+      {!error && paging.total > 0 && audioLessonCount === 0 ? (
+        <article className="card">
+          <p className="section-subtle">No audio lessons available in this month.</p>
+        </article>
+      ) : null}
 
       {paging.items.map((lesson) => {
         const difficultyStyle = getDifficultyStyle(lesson.difficulty);
+        const isAudioReady = hasLessonAudio(lesson);
         return (
           <Link
             className={`card compact-lesson-link difficulty-card ${difficultyStyle.tone}`}
@@ -142,6 +150,7 @@ export default function MonthLessonsPage() {
                 Difficulty: {getDifficultyLabel(lesson.difficulty)}
               </span>
             </div>
+            {!isAudioReady ? <span className="pill no-audio-badge">No audio</span> : null}
             <p className="section-subtle">Last studied: {formatDateTime(lesson.lastStudiedAt)}</p>
           </Link>
         );
