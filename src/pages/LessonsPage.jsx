@@ -39,12 +39,13 @@ export default function LessonsPage() {
   return (
     <section className="stack">
       <div className="row between">
-        <h2>教材一覧</h2>
+        <h2 className="section-title">教材一覧</h2>
         <Link className="btn" to="/lessons/new">
           教材追加
         </Link>
       </div>
-      <article className="card">
+      <details className="debug-panel">
+        <summary>debug info</summary>
         <p>debug.userId: {LOCAL_USER_ID}</p>
         <p>debug.lessonCount: {lessons.length}</p>
         {error ? (
@@ -52,16 +53,21 @@ export default function LessonsPage() {
             debug.error: {error?.code || 'unknown'} / {error?.message || '不明なエラー'}
           </p>
         ) : null}
-      </article>
+      </details>
       {error ? (
         <p className="card error">
           教材一覧の取得に失敗しました: {error?.code || 'unknown'} / {error?.message || '不明なエラー'}
         </p>
       ) : null}
-      {!error && lessons.length === 0 ? <p className="card">教材がありません。まず1件作成してください。</p> : null}
+      {!error && lessons.length === 0 ? (
+        <article className="card empty-state">
+          <h3 className="section-title">教材がありません</h3>
+          <p className="section-subtle">まずは「教材追加」から1件作成してください。</p>
+        </article>
+      ) : null}
       {lessons.map((lesson) => (
         <article className="card" key={lesson.id}>
-          <h3>{lesson.title}</h3>
+          <h3 className="section-title">{lesson.title}</h3>
           <p>カテゴリ: {lesson.category || '-'}</p>
           <p>難易度: {lesson.difficulty || '未設定'}</p>
           <p>最終学習日: {formatDateTime(lesson.lastStudiedAt)}</p>

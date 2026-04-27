@@ -11,9 +11,12 @@ const MIME_BY_EXT = {
   wav: 'audio/wav',
 };
 
+export const getFileExtension = (filename = '') => filename.split('.').pop()?.toLowerCase() || '';
+export const getAudioContentTypeFromExtension = (ext = '') => MIME_BY_EXT[ext] || '';
+
 export const validateAudioFile = (file) => {
   if (!file) return '音声ファイルを選択してください。';
-  const ext = file.name.split('.').pop()?.toLowerCase();
+  const ext = getFileExtension(file.name);
   if (!ext || !ALLOWED_EXTS.includes(ext)) {
     return '音声ファイルは mp3 / m4a / wav のみ対応しています。';
   }
@@ -27,14 +30,15 @@ export const validateAudioFile = (file) => {
 };
 
 export const uploadLessonAudio = async ({ file }) => {
-  const ext = file.name.split('.').pop()?.toLowerCase() || '';
+  const ext = getFileExtension(file.name);
   const filename = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
   const audioPath = `users/${LOCAL_USER_ID}/lesson-audio/${filename}`;
   const storageRef = ref(storage, audioPath);
-  const contentType = MIME_BY_EXT[ext] || file.type || 'audio/mpeg';
-  await uploadBytes(storageRef, file, { contentType });
+  const contentType = getAudioContentTypeFromExtension(ext) || file.type || 'audio/mpeg';
+  const metadata = { contentType };
+  await uploadBytes(storageRef, file, metadata);
   const audioUrl = await getDownloadURL(storageRef);
-  return { audioPath, audioUrl };
+  return { audioPath, audioUrl, audioContentType: contentType, fileExtension: ext };
 };
 
 export const getAudioDownloadUrlByPath = async (audioPath) => {

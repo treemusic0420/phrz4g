@@ -13,8 +13,17 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 
+const inferAudioContentTypeByPath = (audioPath = '') => {
+  const ext = audioPath.split('.').pop()?.toLowerCase();
+  if (ext === 'm4a') return 'audio/mp4';
+  if (ext === 'mp3') return 'audio/mpeg';
+  if (ext === 'wav') return 'audio/wav';
+  return '';
+};
+
 const mapLesson = (snap) => {
   const data = snap.data();
+  const inferredContentType = inferAudioContentTypeByPath(data.audioPath || '');
   return {
     id: snap.id,
     userId: data.userId,
@@ -24,6 +33,7 @@ const mapLesson = (snap) => {
     scriptJa: data.scriptJa || '',
     audioUrl: data.audioUrl || '',
     audioPath: data.audioPath || '',
+    audioContentType: data.audioContentType || inferredContentType,
     difficulty: data.difficulty || '未設定',
     memo: data.memo || '',
     createdAt: data.createdAt || null,

@@ -1,7 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { createLesson, fetchLessonById, updateLesson } from '../lib/firestore';
-import { deleteAudioByPath, uploadLessonAudio, validateAudioFile } from '../lib/storage';
+import {
+  deleteAudioByPath,
+  getAudioContentTypeFromExtension,
+  getFileExtension,
+  uploadLessonAudio,
+  validateAudioFile,
+} from '../lib/storage';
 import { LOCAL_USER_ID } from '../lib/auth';
 
 const defaultForm = {
@@ -13,6 +19,7 @@ const defaultForm = {
   memo: '',
   audioUrl: '',
   audioPath: '',
+  audioContentType: '',
 };
 
 export default function LessonFormPage({ mode }) {
@@ -20,6 +27,7 @@ export default function LessonFormPage({ mode }) {
   const { id } = useParams();
   const [form, setForm] = useState(defaultForm);
   const [audioFile, setAudioFile] = useState(null);
+  const [audioDebugInfo, setAudioDebugInfo] = useState({ ext: '', contentType: '' });
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -28,6 +36,9 @@ export default function LessonFormPage({ mode }) {
       if (!lesson) return;
       if (lesson.userId !== LOCAL_USER_ID) return navigate('/lessons');
       setForm((prev) => ({ ...prev, ...lesson }));
+      const ext = getFileExtension(lesson.audioPath || '');
+      const contentType = lesson.audioContentType || getAudioContentTypeFromExtension(ext) || '';
+      setAudioDebugInfo({ ext, contentType });
     });
   }, [id, mode, navigate, LOCAL_USER_ID]);
 
@@ -37,12 +48,15 @@ export default function LessonFormPage({ mode }) {
     try {
       let audioUrl = form.audioUrl || '';
       let audioPath = form.audioPath || '';
+      let audioContentType =
+        form.audioContentType || getAudioContentTypeFromExtension(getFileExtension(form.audioPath));
       if (audioFile) {
         const message = validateAudioFile(audioFile);
         if (message) throw new Error(message);
         const uploaded = await uploadLessonAudio({ file: audioFile });
         audioUrl = uploaded.audioUrl;
         audioPath = uploaded.audioPath;
+        audioContentType = uploaded.audioContentType;
         if (mode === 'edit' && form.audioPath && form.audioPath !== uploaded.audioPath) {
           await deleteAudioByPath(form.audioPath).catch(() => {});
         }
@@ -58,6 +72,7 @@ export default function LessonFormPage({ mode }) {
         memo: form.memo || '',
         audioUrl,
         audioPath,
+        audioContentType: audioContentType || '',
       };
 
       if (!payload.title || !payload.scriptEn) throw new Error('タイトルと英文スクリプトは必須です。');
@@ -77,7 +92,7 @@ export default function LessonFormPage({ mode }) {
 
   return (
     <section className="card">
-      <h2>{mode === 'create' ? '教材登録' : '教材編集'}</h2>
+      <h2 className="section-title">{mode === 'create' ? '教材登録' : '教材編集'}</h2>
       <form className="stack" onSubmit={handleSubmit}>
         <label>タイトル<input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></label>
         <label>カテゴリ<input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} /></label>
@@ -87,8 +102,28 @@ export default function LessonFormPage({ mode }) {
         <label>メモ<textarea rows="3" value={form.memo} onChange={(e) => setForm({ ...form, memo: e.target.value })} /></label>
         <label>
           音声ファイル（mp3/m4a/wav, 20MB未満）
-          <input accept=".mp3,.m4a,.wav,audio/*" type="file" onChange={(e) => setAudioFile(e.target.files?.[0] || null)} />
+          <input
+            accept="audio/mpeg,audio/mp3,audio/mp4,audio/x-m4a,audio/wav,.mp3,.m4a,.wav"
+            type="file"
+            onChange={(e) => {
+              const nextFile = e.target.files?.[0] || null;
+              setAudioFile(nextFile);
+              if (!nextFile) {
+                setAudioDebugInfo({ ext: '', contentType: '' });
+                return;
+              }
+              const ext = getFileExtension(nextFile.name);
+              const contentType = getAudioContentTypeFromExtension(ext) || nextFile.type || '';
+              setAudioDebugInfo({ ext, contentType });
+            }}
+          />
         </label>
+        <p className="section-subtle">再生できない場合は mp3 または m4a を再登録してください。</p>
+        <details className="debug-panel">
+          <summary>audio upload debug</summary>
+          <p>extension: {audioDebugInfo.ext || '-'}</p>
+          <p>detected contentType: {audioDebugInfo.contentType || '-'}</p>
+        </details>
         {form.audioUrl ? <audio controls src={form.audioUrl} /> : null}
         {error ? <p className="error">{error}</p> : null}
         <div className="row gap-sm wrap">

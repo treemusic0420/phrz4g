@@ -11,19 +11,23 @@ export default function Layout({ children }) {
   const { isAuthenticated, logout } = useAuth();
 
   return (
-    <div className="container">
-      <header className="header">
-        <div>
-          <h1>Phrz4g</h1>
-          <p className="muted">自分専用ディクテーション / シャドーイング</p>
-        </div>
-        {isAuthenticated ? (
-          <div className="header-right">
-            <button onClick={logout}>ログアウト</button>
+    <div className="app-shell">
+      <div className="container">
+        <header className="header">
+          <div>
+            <h1 className="app-title">Phrz4g</h1>
+            <p className="muted">自分専用ディクテーション / シャドーイング</p>
           </div>
-        ) : null}
-      </header>
-      <main>{children}</main>
+          {isAuthenticated ? (
+            <div className="header-right">
+              <button className="btn ghost" onClick={logout} type="button">
+                ログアウト
+              </button>
+            </div>
+          ) : null}
+        </header>
+        <main className="main-content">{children}</main>
+      </div>
       {isAuthenticated ? (
         <nav className="bottom-nav">
           {navItems.map((item) => (
@@ -33,6 +37,7 @@ export default function Layout({ children }) {
           ))}
         </nav>
       ) : null}
+      <div className="safe-bottom-space" />
     </div>
   );
 }

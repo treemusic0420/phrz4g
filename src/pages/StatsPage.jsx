@@ -69,7 +69,7 @@ export default function StatsPage() {
 
   return (
     <section className="stack">
-      <h2>学習時間 / 履歴</h2>
+      <h2 className="section-title">学習時間 / 履歴</h2>
       <article className="card">
         <p>今日: {formatSeconds(stats.today)}</p>
         <p>今週: {formatSeconds(stats.week)}</p>
