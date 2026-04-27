@@ -3,6 +3,7 @@ import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import LessonsPage from './pages/LessonsPage';
+import CategoryLessonsPage from './pages/CategoryLessonsPage';
 import LessonFormPage from './pages/LessonFormPage';
 import LessonDetailPage from './pages/LessonDetailPage';
 import DictationPage from './pages/DictationPage';
@@ -27,6 +28,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <LessonFormPage mode="create" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/lessons/category/:categoryKey"
+          element={
+            <ProtectedRoute>
+              <CategoryLessonsPage />
             </ProtectedRoute>
           }
         />

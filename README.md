@@ -79,6 +79,10 @@ Workflow: `.github/workflows/deploy-hosting.yml`
 - Firestore: `lessons`, `studyLogs`, `dictationAttempts` の各ドキュメントに `userId: "local"` を保存
 - Storage: `users/local/lesson-audio/{filename}`
 
+## 音声ファイル対応形式（MVP）
+- 現時点で教材登録時に対応している音声ファイルは **mp3 のみ** です。
+- `m4a`（Mac のボイスメモ等で作成される形式）はそのままでは登録できません。**mp3 に変換してから登録**してください。
+
 ## 本番運用前の復旧チェック
 1. Firebase Authentication を復旧（Google / Email Provider を必要に応じて有効化）
 2. クライアント実装を Firebase Auth ベースに戻す（uid ごとの分離）

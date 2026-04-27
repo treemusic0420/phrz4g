@@ -17,6 +17,7 @@ a { color: inherit; text-decoration: none; }
 .stack { display: grid; gap: 14px; }
 .row { display: flex; align-items: center; }
 .between { justify-content: space-between; }
+.center { justify-content: center; }
 .gap-sm { gap: 10px; }
 .wrap { flex-wrap: wrap; }
 button, .btn { border: 1px solid transparent; background: #1d1d1f; color: #fff; padding: 10px 16px; border-radius: 999px; font-size: 0.9rem; font-weight: 600; cursor: pointer; display: inline-flex; justify-content: center; align-items: center; min-height: 42px; transition: all 0.2s ease; }
@@ -45,6 +46,13 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
 .bottom-nav a.active { background: #1d1d1f; color: #fff; }
 .safe-bottom-space { height: 92px; }
 .empty-state { text-align: center; padding: 28px 20px; }
+.category-card { display: grid; gap: 8px; }
+.category-card:hover { border-color: #c8c8ce; background: #fcfcff; }
+.lesson-card-link { display: grid; gap: 6px; }
+.lesson-card-link:hover { border-color: #c8c8ce; background: #fcfcff; }
+.pill { background: #f1f1f4; border: 1px solid #dfdfe4; border-radius: 999px; padding: 4px 10px; font-size: 0.82rem; color: #3a3a3c; }
+.pagination-box { margin-bottom: 24px; }
+.pagination-box button[disabled] { opacity: 0.45; cursor: default; pointer-events: none; }
 @media (max-width: 640px) {
   .container { padding: 18px 16px 0; }
   .header { flex-direction: column; align-items: flex-start; }
@@ -55,4 +63,8 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
   .card { padding: 16px; border-radius: 18px; }
   .bottom-nav { width: calc(100% - 24px); }
   .bottom-nav a { flex: 1; text-align: center; padding: 9px 12px; }
+  .pagination-box { margin-bottom: 60px; }
+  .pagination-box .row { justify-content: space-between; }
+  .pagination-box .btn { min-width: 92px; }
+  .pill { font-size: 0.78rem; }
 }

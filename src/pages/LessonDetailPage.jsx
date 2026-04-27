@@ -13,6 +13,8 @@ const inferTypeByExt = (ext) => {
   if (ext === 'wav') return 'audio/wav';
   return '';
 };
+const isUnsupportedAudioFormat = (ext, contentType = '') =>
+  ext === 'm4a' || contentType === 'audio/mp4' || contentType === 'audio/x-m4a';
 
 export default function LessonDetailPage() {
   const { id } = useParams();
@@ -23,6 +25,7 @@ export default function LessonDetailPage() {
   const [audioErrorMessage, setAudioErrorMessage] = useState('');
   const fileExtension = getExtFromPath(lesson?.audioPath || '');
   const audioContentType = lesson?.audioContentType || inferTypeByExt(fileExtension);
+  const unsupportedFormat = isUnsupportedAudioFormat(fileExtension, audioContentType);
 
   useEffect(() => {
     fetchLessonById(id).then((doc) => {
@@ -38,6 +41,10 @@ export default function LessonDetailPage() {
     const resolveUrl = async () => {
       setAudioErrorMessage('');
       setAudioLoadStatus('idle');
+      if (unsupportedFormat) {
+        setResolvedAudioUrl('');
+        return;
+      }
       if (lesson.audioUrl) {
         setResolvedAudioUrl(lesson.audioUrl);
         return;
@@ -67,7 +74,7 @@ export default function LessonDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [lesson]);
+  }, [lesson, unsupportedFormat]);
 
   if (!lesson) return <p>読み込み中...</p>;
 
@@ -83,12 +90,16 @@ export default function LessonDetailPage() {
         <pre>{lesson.scriptJa || '-'}</pre>
         <p>メモ</p>
         <pre>{lesson.memo || '-'}</pre>
-        <AudioControls
-          audioUrl={resolvedAudioUrl}
-          audioContentType={audioContentType}
-          onStatusChange={setAudioLoadStatus}
-          onErrorMessage={setAudioErrorMessage}
-        />
+        {unsupportedFormat ? (
+          <p className="error">この教材の音声は現在対応していない形式です。mp3で再登録してください。</p>
+        ) : (
+          <AudioControls
+            audioUrl={resolvedAudioUrl}
+            audioContentType={audioContentType}
+            onStatusChange={setAudioLoadStatus}
+            onErrorMessage={setAudioErrorMessage}
+          />
+        )}
         <details className="debug-panel">
           <summary>audio debug</summary>
           <p>audioPath: {lesson.audioPath ? 'あり' : 'なし'}</p>
@@ -99,7 +110,7 @@ export default function LessonDetailPage() {
           <p>audio load status: {audioLoadStatus}</p>
           <p>audio error message: {audioErrorMessage || '-'}</p>
         </details>
-        <p className="section-subtle">再生できない場合は mp3 または m4a を再登録してください。</p>
+        <p className="section-subtle">現在はmp3ファイルのみ対応しています。</p>
         <h3>学習概要</h3>
         <p>最終学習日: {formatDateTime(lesson.lastStudiedAt)}</p>
         <p>ディクテーション回数: {lesson.dictationCount || 0}</p>
