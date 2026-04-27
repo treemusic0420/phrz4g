@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 const SPEEDS = [0.8, 1.0, 1.2];
 
@@ -11,6 +11,7 @@ export default function AudioControls({
   autoPlayToken = 0,
   onAutoPlayBlocked,
   onAutoPlaySettled,
+  onRegisterControls,
 }) {
   const audioRef = useRef(null);
   const [speed, setSpeed] = useState(1);
@@ -102,6 +103,30 @@ export default function AudioControls({
     onStatusChange?.('error');
     onErrorMessage?.(message);
   };
+
+  const togglePlayback = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (audio.paused) {
+      const playPromise = audio.play();
+      if (playPromise && typeof playPromise.catch === 'function') {
+        playPromise.catch(() => {
+          onAutoPlayBlocked?.('Tap play to start the audio.');
+        });
+      }
+      return;
+    }
+
+    audio.pause();
+  }, [onAutoPlayBlocked]);
+
+  useEffect(() => {
+    onRegisterControls?.({ togglePlayback });
+    return () => {
+      onRegisterControls?.(null);
+    };
+  }, [onRegisterControls, togglePlayback]);
 
   return (
     <div className="audio-box">

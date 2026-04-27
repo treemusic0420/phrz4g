@@ -112,6 +112,7 @@ export default function DictationPage() {
   const canPlayAudio = hasLessonAudio(lesson);
   const hiddenInputRef = useRef(null);
   const nextButtonRef = useRef(null);
+  const audioToggleRef = useRef(null);
   const wrongInputTimeoutRef = useRef(null);
   const inputTextRef = useRef('');
   const isComposingRef = useRef(false);
@@ -357,6 +358,15 @@ export default function DictationPage() {
     event.currentTarget.value = '';
   };
 
+  const isSpaceKeyEvent = (event) => event.key === ' ' || event.key === 'Spacebar' || event.code === 'Space';
+
+  const onDictationSectionKeyDownCapture = (event) => {
+    if (!isSpaceKeyEvent(event)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    audioToggleRef.current?.();
+  };
+
 
 
 
@@ -409,7 +419,7 @@ export default function DictationPage() {
   }
 
   return (
-    <section className="stack">
+    <section className="stack" onKeyDownCapture={onDictationSectionKeyDownCapture}>
       <h2 className="section-title">Dictation: {lesson.title}</h2>
       <p className="section-subtle">
         {monthLabel} ・ {hasValidProgress ? monthIndex + 1 : '-'} / {monthLessons.length || '-'}
@@ -460,6 +470,9 @@ export default function DictationPage() {
         autoPlayToken={autoPlayToken}
         onAutoPlayBlocked={setAutoPlayMessage}
         onAutoPlaySettled={focusDictationInput}
+        onRegisterControls={(controls) => {
+          audioToggleRef.current = controls?.togglePlayback || null;
+        }}
       />
       {autoPlayMessage ? <p className="section-subtle">{autoPlayMessage}</p> : null}
       <div className="row gap-sm wrap">

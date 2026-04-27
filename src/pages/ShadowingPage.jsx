@@ -263,7 +263,7 @@ export default function ShadowingPage() {
           <h2 className="section-title">No audio lessons available in this month.</h2>
           <div className="row gap-sm wrap">
             <Link className="btn ghost" to={`/lessons/category/${categoryId}/month/${registeredMonth}`}>
-              Back to Lesson List
+              Back to List
             </Link>
           </div>
         </article>
@@ -279,7 +279,7 @@ export default function ShadowingPage() {
           <p className="section-subtle">You completed all lessons in this month.</p>
           <div className="row gap-sm wrap">
             <Link className="btn ghost" to={`/lessons/category/${categoryId}/month/${registeredMonth}`}>
-              Back to Lesson List
+              Back to List
             </Link>
           </div>
         </article>
@@ -344,7 +344,7 @@ export default function ShadowingPage() {
           Did it
         </button>
         <button className="btn ghost" onClick={() => void backToLessonList()} type="button">
-          Back to Lesson List
+          Back to List
         </button>
       </div>
       <div className="row gap-sm wrap shadowing-sub-actions">
