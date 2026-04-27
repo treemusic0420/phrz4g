@@ -293,7 +293,7 @@ export default function ShadowingPage() {
       <p className="section-subtle">
         {monthLabel} ・ {hasValidProgress ? monthIndex + 1 : '-'} / {monthLessons.length || '-'}
       </p>
-      <article className="card"><h3>English Script</h3><pre>{lesson.scriptEn}</pre></article>
+      <article className="card shadowing-script-card"><pre>{lesson.scriptEn}</pre></article>
       <AudioControls
         key={lesson.id}
         audioUrl={lesson.audioUrl}
@@ -326,9 +326,6 @@ export default function ShadowingPage() {
           {recordingUrl ? <audio controls src={recordingUrl} /> : null}
         </div>
       </article>
-      <div className="row gap-sm wrap">
-        <button onClick={() => setShowJa((v) => !v)} type="button">Translation {showJa ? 'Hide' : 'Show'}</button>
-      </div>
       <div className="shadowing-rating-actions">
         <button
           className="btn shadowing-negative"
@@ -348,6 +345,11 @@ export default function ShadowingPage() {
         </button>
         <button className="btn ghost" onClick={() => void backToLessonList()} type="button">
           Back to Lesson List
+        </button>
+      </div>
+      <div className="row gap-sm wrap shadowing-sub-actions">
+        <button className="btn ghost shadowing-translation-toggle" onClick={() => setShowJa((v) => !v)} type="button">
+          Translation {showJa ? 'Hide' : 'Show'}
         </button>
       </div>
       {showJa ? <article className="card"><h3>Translation</h3><pre>{lesson.scriptJa || '-'}</pre></article> : null}
