@@ -170,6 +170,16 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
 .pagination-box { margin-bottom: 24px; }
 .pagination-box button[disabled] { opacity: 0.45; cursor: default; pointer-events: none; }
 .danger-zone { margin-top: 8px; padding-top: 12px; border-top: 1px dashed #f3c7c4; display: grid; gap: 8px; }
+.recording-card {
+  display: grid;
+  gap: 10px;
+}
+.recording-card h3 {
+  margin: 0;
+}
+.recording-card audio {
+  width: 100%;
+}
 
 @media (max-width: 640px) {
   .header-inner {
