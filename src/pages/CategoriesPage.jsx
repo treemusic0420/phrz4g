@@ -22,7 +22,7 @@ export default function CategoriesPage() {
       setCategories(sortCategories(loadedCategories));
       setLessons(loadedLessons);
     } catch (err) {
-      setError(`カテゴリの取得に失敗しました: ${err?.message || '不明なエラー'}`);
+      setError(`Failed to load categories: ${err?.message || 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -44,37 +44,37 @@ export default function CategoriesPage() {
   const handleDelete = async (category) => {
     const count = lessonCountMap.get(category.id) || 0;
     if (count > 0) {
-      setError('このカテゴリには教材が紐づいているため削除できません');
+      setError('This category cannot be deleted because it has linked lessons.');
       return;
     }
 
-    if (!window.confirm(`カテゴリ「${category.name}」を削除しますか？`)) return;
+    if (!window.confirm(`Delete category "${category.name}"? This action cannot be undone.`)) return;
 
     try {
       await deleteCategory(category.id);
       await loadData();
     } catch (err) {
-      setError(`カテゴリ削除に失敗しました: ${err?.message || '不明なエラー'}`);
+      setError(`Failed to delete category: ${err?.message || 'Unknown error'}`);
     }
   };
 
   return (
     <section className="stack">
       <div className="row between">
-        <h2 className="section-title">カテゴリ管理</h2>
+        <h2 className="section-title">Manage Categories</h2>
         <button className="btn" onClick={() => navigate('/categories/new')} type="button">
-          カテゴリ追加
+          Add Category
         </button>
       </div>
 
       {error ? <p className="card error">{error}</p> : null}
 
-      {loading ? <p>読み込み中...</p> : null}
+      {loading ? <p>Loading...</p> : null}
 
       {!loading && categories.length === 0 ? (
         <article className="card empty-state">
-          <p>カテゴリがありません。</p>
-          <Link className="btn" to="/categories/new">カテゴリを追加する</Link>
+          <p>No categories yet.</p>
+          <Link className="btn" to="/categories/new">Add Category</Link>
         </article>
       ) : null}
 
@@ -88,13 +88,13 @@ export default function CategoriesPage() {
                   <h3 className="section-title">{category.name}</h3>
                   <p className="section-subtle">slug: {category.slug}</p>
                 </div>
-                <span className="pill">教材数: {lessonCount}</span>
+                <span className="pill">Lessons: {lessonCount}</span>
               </div>
               <p>order: {category.order}</p>
-              <p>状態: {category.isActive ? '有効' : '無効'}</p>
+              <p>Status: {category.isActive ? 'Active' : 'Inactive'}</p>
               <div className="row gap-sm wrap">
-                <Link className="btn ghost" to={`/categories/${category.id}/edit`}>編集</Link>
-                <button className="btn danger-ghost" onClick={() => handleDelete(category)} type="button">削除</button>
+                <Link className="btn ghost" to={`/categories/${category.id}/edit`}>Edit</Link>
+                <button className="btn danger-ghost" onClick={() => handleDelete(category)} type="button">Delete</button>
               </div>
             </article>
           );

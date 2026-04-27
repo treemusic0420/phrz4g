@@ -2,8 +2,8 @@ import { toDate } from './format';
 import { getRegisteredMonthLabel, resolveRegisteredMonthFields } from './registeredMonth';
 
 export const LESSONS_PER_PAGE = 10;
-export const UNSET_CATEGORY_LABEL = 'カテゴリ未設定';
-export const DELETED_CATEGORY_LABEL = '削除済みカテゴリ';
+export const UNSET_CATEGORY_LABEL = 'Not set';
+export const DELETED_CATEGORY_LABEL = 'Deleted category';
 
 const safeMillis = (value) => {
   const date = toDate(value);

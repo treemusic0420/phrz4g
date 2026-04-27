@@ -14,9 +14,9 @@ export default function AudioControls({
 
   useEffect(() => {
     if (!audioUrl) {
-      setLocalError('音声URLがありません');
+      setLocalError('Audio URL is missing.');
       onStatusChange?.('idle');
-      onErrorMessage?.('音声URLがありません');
+      onErrorMessage?.('Audio URL is missing.');
       return;
     }
     setLocalError('');
@@ -43,7 +43,7 @@ export default function AudioControls({
       4: 'MEDIA_ERR_SRC_NOT_SUPPORTED',
     };
     const detail = mediaError?.code ? `${codeMap[mediaError.code] || 'UNKNOWN'}(${mediaError.code})` : 'unknown';
-    const message = `音声を読み込めませんでした: ${detail}`;
+    const message = `Failed to load audio: ${detail}`;
     setLocalError(message);
     onStatusChange?.('error');
     onErrorMessage?.(message);
@@ -69,7 +69,7 @@ export default function AudioControls({
       {localError ? <p className="audio-debug">{localError}</p> : null}
       <div className="row gap-sm wrap">
         <button type="button" onClick={rewind}>
-          5秒戻る
+          Back 5s
         </button>
         {SPEEDS.map((item) => (
           <button

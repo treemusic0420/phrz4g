@@ -8,9 +8,9 @@ export const toDate = (value) => {
 export const formatDateTime = (value) => {
   const date = toDate(value);
   if (!date || Number.isNaN(date.getTime())) return '-';
-  return new Intl.DateTimeFormat('ja-JP', {
+  return new Intl.DateTimeFormat('en-US', {
     year: 'numeric',
-    month: '2-digit',
+    month: 'short',
     day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
@@ -22,7 +22,7 @@ export const formatSeconds = (seconds = 0) => {
   const h = Math.floor(total / 3600);
   const m = Math.floor((total % 3600) / 60);
   const s = total % 60;
-  if (h) return `${h}時間 ${m}分 ${s}秒`;
-  if (m) return `${m}分 ${s}秒`;
-  return `${s}秒`;
+  if (h) return `${h}h ${m}m ${s}s`;
+  if (m) return `${m}m ${s}s`;
+  return `${s}s`;
 };

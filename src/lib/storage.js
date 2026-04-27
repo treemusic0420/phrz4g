@@ -13,16 +13,16 @@ export const getFileExtension = (filename = '') => filename.split('.').pop()?.to
 export const getAudioContentTypeFromExtension = (ext = '') => MIME_BY_EXT[ext] || '';
 
 export const validateAudioFile = (file) => {
-  if (!file) return '音声ファイルを選択してください。';
+  if (!file) return 'Please select an audio file.';
   const ext = getFileExtension(file.name);
   if (!ext || !ALLOWED_EXTS.includes(ext)) {
-    return '現在はmp3ファイルのみ登録できます。m4a等はmp3に変換してから登録してください。';
+    return 'Only MP3 files are currently supported. Convert m4a files to MP3 before uploading.';
   }
   if (file.size > MAX_BYTES) {
-    return '20MBを超えるファイルはアップロードできません。';
+    return 'Files larger than 20MB cannot be uploaded.';
   }
   if (!ALLOWED_MIME_TYPES.includes(file.type)) {
-    return '現在はmp3ファイルのみ登録できます。m4a等はmp3に変換してから登録してください。';
+    return 'Only MP3 files are currently supported. Convert m4a files to MP3 before uploading.';
   }
   return null;
 };

@@ -14,10 +14,10 @@ export const AuthProvider = ({ children }) => {
       loginWithPasscode: (passcode) => {
         const expected = (import.meta.env.VITE_APP_PASSCODE || '').trim();
         if (!expected) {
-          throw new Error('VITE_APP_PASSCODE が未設定です。');
+          throw new Error('VITE_APP_PASSCODE is not configured.');
         }
         if (passcode !== expected) {
-          throw new Error('パスコードが一致しません。');
+          throw new Error('Passcode does not match.');
         }
         localStorage.setItem(AUTH_STORAGE_KEY, 'true');
         setAuthenticated(true);

@@ -39,19 +39,19 @@ export default function ShadowingPage() {
     navigate(`/lessons/${lesson.id}`);
   };
 
-  if (!lesson) return <p>読み込み中...</p>;
+  if (!lesson) return <p>Loading...</p>;
 
   return (
     <section className="stack">
-      <h2 className="section-title">シャドーイング: {lesson.title}</h2>
+      <h2 className="section-title">Shadowing: {lesson.title}</h2>
       <AudioControls audioUrl={lesson.audioUrl} audioContentType={lesson.audioContentType || fallbackAudioContentType} />
       <div className="row gap-sm wrap">
-        <button onClick={() => setShowEn((v) => !v)} type="button">英文 {showEn ? '非表示' : '表示'}</button>
-        <button onClick={() => setShowJa((v) => !v)} type="button">日本語訳 {showJa ? '非表示' : '表示'}</button>
-        <button onClick={complete} type="button">完了</button>
+        <button onClick={() => setShowEn((v) => !v)} type="button">English Script {showEn ? 'Hide' : 'Show'}</button>
+        <button onClick={() => setShowJa((v) => !v)} type="button">Japanese Translation {showJa ? 'Hide' : 'Show'}</button>
+        <button onClick={complete} type="button">Complete</button>
       </div>
-      {showEn ? <article className="card"><h3>英文</h3><pre>{lesson.scriptEn}</pre></article> : null}
-      {showJa ? <article className="card"><h3>日本語訳</h3><pre>{lesson.scriptJa || '-'}</pre></article> : null}
+      {showEn ? <article className="card"><h3>English Script</h3><pre>{lesson.scriptEn}</pre></article> : null}
+      {showJa ? <article className="card"><h3>Japanese Translation</h3><pre>{lesson.scriptJa || '-'}</pre></article> : null}
     </section>
   );
 }

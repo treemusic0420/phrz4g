@@ -51,25 +51,25 @@ export default function CategoryLessonsPage() {
     <section className="stack">
       <div className="row between">
         <div>
-          <p className="section-subtle">教材 &gt; {categoryName}</p>
-          <h2 className="section-title">{categoryName} の登録月</h2>
-          <p className="section-subtle">登録月: {monthSummaries.length}件</p>
+          <p className="section-subtle">Lessons &gt; {categoryName}</p>
+          <h2 className="section-title">{categoryName} / Monthly Archive</h2>
+          <p className="section-subtle">Months: {monthSummaries.length}</p>
         </div>
         <Link className="btn ghost" to="/lessons">
-          カテゴリ一覧へ戻る
+          Back to Categories
         </Link>
       </div>
 
       {error ? (
         <p className="card error">
-          教材一覧の取得に失敗しました: {error?.code || 'unknown'} / {error?.message || '不明なエラー'}
+          Failed to load lessons: {error?.code || 'unknown'} / {error?.message || 'Unknown error'}
         </p>
       ) : null}
 
       {!error && monthSummaries.length === 0 ? (
         <article className="card empty-state">
-          <h3 className="section-title">このカテゴリには教材がありません</h3>
-          <p className="section-subtle">カテゴリ一覧に戻って他のカテゴリを選択してください。</p>
+          <h3 className="section-title">No lessons in this category</h3>
+          <p className="section-subtle">Go back and select another category.</p>
         </article>
       ) : null}
 
@@ -81,11 +81,11 @@ export default function CategoryLessonsPage() {
         >
           <div className="row between">
             <h3 className="section-title">{month.registeredMonthLabel}</h3>
-            <span className="pill">{month.count}件</span>
+            <span className="pill">{month.count} lessons</span>
           </div>
-          <p>合計学習時間: {formatSeconds(month.totalStudySeconds)}</p>
-          <p>最終学習: {formatDateTime(month.latestActivityTime)}</p>
-          <p className="section-subtle">タップして月内教材へ</p>
+          <p>Total study time: {formatSeconds(month.totalStudySeconds)}</p>
+          <p>Last studied: {formatDateTime(month.latestActivityTime)}</p>
+          <p className="section-subtle">Open lessons for this month</p>
         </Link>
       ))}
     </section>

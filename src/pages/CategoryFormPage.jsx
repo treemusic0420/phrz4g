@@ -42,7 +42,7 @@ export default function CategoryFormPage({ mode }) {
           });
         }
       } catch (err) {
-        setError(`カテゴリ取得に失敗しました: ${err?.message || '不明なエラー'}`);
+        setError(`Failed to load category: ${err?.message || 'Unknown error'}`);
       } finally {
         setLoading(false);
       }
@@ -64,15 +64,15 @@ export default function CategoryFormPage({ mode }) {
     const order = form.order === '' ? maxOrder + 10 : Number(form.order);
 
     if (!name) {
-      setError('カテゴリ名は必須です。');
+      setError('Category name is required.');
       return;
     }
     if (!slug) {
-      setError('slugは必須です。');
+      setError('Slug is required.');
       return;
     }
     if (!Number.isFinite(order)) {
-      setError('orderは数値で入力してください。');
+      setError('Order must be a number.');
       return;
     }
 
@@ -98,14 +98,14 @@ export default function CategoryFormPage({ mode }) {
       }
       navigate('/categories');
     } catch (err) {
-      setError(`カテゴリ保存エラー: ${err?.message || '不明なエラー'}`);
+      setError(`Failed to save category: ${err?.message || 'Unknown error'}`);
     }
   };
 
   return (
     <section className="card">
-      <h2 className="section-title">{mode === 'create' ? 'カテゴリ追加' : 'カテゴリ編集'}</h2>
-      {loading ? <p>読み込み中...</p> : null}
+      <h2 className="section-title">{mode === 'create' ? 'Add Category' : 'Edit Category'}</h2>
+      {loading ? <p>Loading...</p> : null}
       {!loading ? (
         <form className="stack" onSubmit={handleSubmit}>
           <label>
@@ -135,14 +135,14 @@ export default function CategoryFormPage({ mode }) {
               onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
               type="checkbox"
             />
-            <span>有効</span>
+            <span>Active</span>
           </label>
 
           {error ? <p className="error">{error}</p> : null}
 
           <div className="row gap-sm wrap">
-            <button type="submit">保存</button>
-            <Link className="btn ghost" to="/categories">キャンセル</Link>
+            <button type="submit">Save</button>
+            <Link className="btn ghost" to="/categories">Cancel</Link>
           </div>
         </form>
       ) : null}

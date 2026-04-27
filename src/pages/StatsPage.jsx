@@ -69,28 +69,28 @@ export default function StatsPage() {
 
   return (
     <section className="stack">
-      <h2 className="section-title">学習時間 / 履歴</h2>
+      <h2 className="section-title">Study Time / History</h2>
       <article className="card">
-        <p>今日: {formatSeconds(stats.today)}</p>
-        <p>今週: {formatSeconds(stats.week)}</p>
-        <p>今月: {formatSeconds(stats.month)}</p>
-        <p>累計: {formatSeconds(stats.total)}</p>
-        <p>連続学習日数: {stats.streak}日</p>
-        <p>ディクテーション回数: {stats.dictationCount}</p>
-        <p>シャドーイング回数: {stats.shadowingCount}</p>
+        <p>Today: {formatSeconds(stats.today)}</p>
+        <p>This week: {formatSeconds(stats.week)}</p>
+        <p>This month: {formatSeconds(stats.month)}</p>
+        <p>Total: {formatSeconds(stats.total)}</p>
+        <p>Study streak: {stats.streak} days</p>
+        <p>Dictation attempts: {stats.dictationCount}</p>
+        <p>Shadowing attempts: {stats.shadowingCount}</p>
       </article>
       <article className="card">
-        <h3>教材別学習回数</h3>
+        <h3>Attempts by Lesson</h3>
         {stats.lessonStudyCounts.map((row) => (
-          <p key={row.lessonId}>{row.title}: {row.count}回</p>
+          <p key={row.lessonId}>{row.title}: {row.count}</p>
         ))}
       </article>
       <article className="card">
-        <h3>最近の学習ログ</h3>
+        <h3>Recent Study Logs</h3>
         {logs.slice(0, 20).map((log) => (
           <p key={log.id}>
             {formatDateTime(log.createdAt)} / {log.trainingType} / {formatSeconds(log.durationSeconds)} / 
-            <Link to={`/lessons/${log.lessonId}`}>教材へ</Link>
+            <Link to={`/lessons/${log.lessonId}`}>Go to lesson</Link>
           </p>
         ))}
       </article>

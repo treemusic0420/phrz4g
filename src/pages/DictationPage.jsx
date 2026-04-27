@@ -58,28 +58,28 @@ export default function DictationPage() {
     navigate(`/lessons/${lesson.id}`);
   };
 
-  if (!lesson) return <p>読み込み中...</p>;
+  if (!lesson) return <p>Loading...</p>;
 
   return (
     <section className="stack">
-      <h2 className="section-title">ディクテーション: {lesson.title}</h2>
+      <h2 className="section-title">Dictation: {lesson.title}</h2>
       <AudioControls audioUrl={lesson.audioUrl} audioContentType={lesson.audioContentType || fallbackAudioContentType} />
       <label>
-        聞き取り入力
+        Your Input
         <textarea rows="8" value={inputText} onChange={(e) => setInputText(e.target.value)} />
       </label>
       <div className="row gap-sm wrap">
-        <button onClick={() => setShowAnswer((v) => !v)} type="button">正解表示</button>
-        <button onClick={complete} type="button">完了</button>
+        <button onClick={() => setShowAnswer((v) => !v)} type="button">Show Answer</button>
+        <button onClick={complete} type="button">Complete</button>
       </div>
       {showAnswer ? (
         <article className="card">
-          <h3>正解英文</h3>
+          <h3>Correct Script</h3>
           <pre>{lesson.scriptEn}</pre>
         </article>
       ) : null}
       <article className="card">
-        <h3>差分表示（簡易）</h3>
+        <h3>Difference (Simple)</h3>
         <div className="diff-wrap">
           {diff.map((item) => (
             <span className={item.match ? 'diff-match' : 'diff-miss'} key={item.index}>

@@ -1,116 +1,116 @@
 # Phrz4g
 
-## プロジェクト概要
-Phrz4g は、**個人利用向け**の英語学習 Web アプリです。自分で登録した教材（英文/和訳/音声）を使い、ディクテーションとシャドーイングを行い、学習時間や回数を記録します。
+## Overview
+Phrz4g is a **personal English learning web app**. You can register your own lesson materials (English script / Japanese translation / audio), practice with dictation and shadowing, and track study time and attempt counts.
 
-## 現在の認証方式（MVP確認優先の暫定構成）
-Firebase Authentication は一時的に無効化し、**アプリ内パスコード認証**で動作確認する構成です。
+## Current Authentication (Temporary MVP Setup)
+Firebase Authentication is temporarily disabled. The app currently uses **in-app passcode authentication** for MVP verification.
 
-- ログイン画面で `VITE_APP_PASSCODE` と一致するパスコードを入力すると認証成功
-- 認証状態は `localStorage` の `phrz4g_authenticated=true` で保持
-- ログアウト時は認証フラグを削除
-- 未認証時は `/login` にリダイレクト
-- データ上の `userId` は固定値 `local` を使用
-- Storage 保存先は `users/local/lesson-audio/{filename}`
+- Login succeeds when the entered passcode matches `VITE_APP_PASSCODE`
+- Auth state is stored in `localStorage` as `phrz4g_authenticated=true`
+- Logout clears the auth flag
+- Unauthenticated users are redirected to `/login`
+- `userId` is fixed to `local`
+- Audio files are stored under `users/local/lesson-audio/{filename}`
 
-> 本番運用前には Firebase Auth を復旧し、Firestore / Storage Rules をログインユーザー限定（`request.auth.uid` ベース）に戻してください。
+> Before production release, restore Firebase Auth and switch Firestore / Storage Rules back to authenticated-user restrictions (`request.auth.uid` based).
 
-## 使用技術
+## Tech Stack
 - React + Vite
-- Firebase Hosting（配信）
-- Cloud Firestore（教材・学習ログ保存）
-- Firebase Storage（音声ファイル保存）
-- GitHub Actions（main push/merge 時の自動デプロイ）
+- Firebase Hosting
+- Cloud Firestore (lessons / study logs)
+- Firebase Storage (audio files)
+- GitHub Actions (auto deploy on push/merge to `main`)
 
-## Firebase で必要な設定
-- Firebase プロジェクト: `phrz4g`
-- Web App 作成
-- Cloud Firestore 有効化
-- Firebase Storage 有効化
+## Required Firebase Setup
+- Firebase project: `phrz4g`
+- Create a Web App
+- Enable Cloud Firestore
+- Enable Firebase Storage
 - Hosting site: `phrz4g`
 
-## 環境変数の設定（ローカル開発時）
-Firebase Web App config はブラウザに公開される前提の値のため、`src/lib/firebase.js` に固定値を定義しています。
+## Environment Variables (Local Development)
+Firebase Web App config values are defined directly in `src/lib/firebase.js` because they are intended to be public in the browser.
 
-1. `.env.example` をコピーして `.env` を作成
-2. `VITE_APP_PASSCODE` に任意のパスコードを設定
+1. Copy `.env.example` to `.env`
+2. Set your passcode in `VITE_APP_PASSCODE`
 
 ```bash
 cp .env.example .env
 ```
 
-`.env.example` キー:
+`.env.example` key:
 - `VITE_APP_PASSCODE`
 
-> `.env` は機密情報を含むためコミットしません（`.gitignore` 済み）。
+> `.env` is ignored by git and should not be committed.
 
-## ローカル起動手順
+## Run Locally
 ```bash
 npm install
 npm run dev
 ```
 
-## ビルド手順
+## Build
 ```bash
 npm run build
 ```
 
-## Firebase Hosting へのデプロイ手順（GitHub Actions 自動デプロイ）
-`main` ブランチへの push / merge で、GitHub Actions が自動実行され、Firebase Hosting の `live` チャンネルへデプロイされます。
+## Deploy to Firebase Hosting (GitHub Actions)
+On push/merge to `main`, GitHub Actions runs automatically and deploys to the Firebase Hosting `live` channel.
 
 Workflow: `.github/workflows/deploy-hosting.yml`
 
-### GitHub Secrets に必要な値
-以下を **Repository Secrets** に設定してください。
+### Required GitHub Secrets
+Set the following in **Repository Secrets**.
 
-#### フロントエンドビルド用（Vite）
+#### Frontend Build (Vite)
 - `VITE_APP_PASSCODE`
 
-#### Firebase Hosting デプロイ認証用
+#### Firebase Hosting Auth
 - `FIREBASE_SERVICE_ACCOUNT_PHRZ4G`
 
-### Workflow 内で実行される処理
+### What the Workflow Does
 1. `npm install`
-2. Secrets から `VITE_APP_PASSCODE` のみ `.env` を生成
+2. Generates `.env` using only `VITE_APP_PASSCODE`
 3. `npm run build`
-4. サービスアカウントJSONを一時ファイルに出力して Firebase Hosting へ `live` デプロイ
+4. Writes the service account JSON to a temp file and deploys to Firebase Hosting `live`
 
-## データ保存方針（暫定）
-- Firestore: `lessons`, `studyLogs`, `dictationAttempts` の各ドキュメントに `userId: "local"` を保存
+## Data Storage Policy (Temporary)
+- Firestore: stores `userId: "local"` in `lessons`, `studyLogs`, and `dictationAttempts`
 - Storage: `users/local/lesson-audio/{filename}`
 
-## 音声ファイル対応形式（MVP）
-- 現時点で教材登録時に対応している音声ファイルは **mp3 のみ** です。
-- `m4a`（Mac のボイスメモ等で作成される形式）はそのままでは登録できません。**mp3 に変換してから登録**してください。
+## Supported Audio Format (MVP)
+- Currently, only **MP3** files are supported for lesson audio upload.
+- `m4a` files (for example from Apple Voice Memos) are not accepted as-is. Please convert them to MP3 first.
 
-## 本番運用前の復旧チェック
-1. Firebase Authentication を復旧（Google / Email Provider を必要に応じて有効化）
-2. クライアント実装を Firebase Auth ベースに戻す（uid ごとの分離）
-3. Firestore Rules を `request.auth.uid` 制約に戻す
-4. Storage Rules を `request.auth.uid` 制約に戻す
-5. テストユーザー以外でアクセス分離を確認
+## Pre-Production Restoration Checklist
+1. Restore Firebase Authentication (enable Google / Email providers as needed)
+2. Switch client implementation back to Firebase Auth-based user isolation by uid
+3. Restore Firestore Rules using `request.auth.uid`
+4. Restore Storage Rules using `request.auth.uid`
+5. Verify data isolation with non-test users
 
-## 今回スコープ外の機能
-- AI添削
-- AI音声生成
-- LINE通知
-- プッシュ通知
+## Out of Scope in This Version
+- AI corrections
+- AI voice generation
+- LINE notifications
+- Push notifications
 - Cloud Functions
 - Cloud Scheduler
-- 録音機能
-- 発音採点
-- 音声波形表示
-- 課金機能
-- 多人数対応
-- 教材販売
-- 管理者/一般ユーザー権限
-- ランキング
-- バッジ
-- ネイティブアプリ化
+- Audio recording
+- Pronunciation scoring
+- Audio waveform display
+- Payments
+- Multi-user support
+- Lesson marketplace
+- Admin/user role separation
+- Rankings
+- Badges
+- Native app packaging
 
-## カテゴリID化に伴う既存データについて
-- lessons はカテゴリを文字列ではなく `categoryId`（`categories` コレクションの documentId）で管理します。
-- 旧形式（`category` / `categoryName` / `categorySlug` ベース）の lessons データは互換対象外です。
-- Firestore Console で旧 lessons データを削除するか、教材を再登録してください。
-- アプリコード側に lessons 全削除の自動処理は入れていません。
-- 登録月階層（`registeredMonth` / `registeredMonthLabel`）導入により、旧 lessons データは削除または再登録を推奨します。
+## About Existing Data After Category ID Migration
+- Lessons now use `categoryId` (documentId in `categories`) instead of category text values.
+- Legacy lesson format (`category` / `categoryName` / `categorySlug`) is not supported for backward compatibility.
+- Delete old lesson data in Firestore Console or re-register lessons.
+- The app does not include automatic full deletion of old lessons.
+- Since the monthly archive fields (`registeredMonth` / `registeredMonthLabel`) were introduced, deleting or re-registering old lessons is recommended.
