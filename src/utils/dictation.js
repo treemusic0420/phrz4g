@@ -1,6 +1,6 @@
 const PUNCTUATION_REGEX = /[.,?!:;"“”"'‘’。、？！：；]/g;
 
-export const normalizeText = (text) =>
+export const normalizeForDictation = (text) =>
   String(text ?? '')
     .trim()
     .replace(/\s+/g, '')
@@ -8,4 +8,6 @@ export const normalizeText = (text) =>
     .toLowerCase();
 
 export const isDictationAnswerCorrect = (inputText, correctScript) =>
-  normalizeText(inputText) === normalizeText(correctScript);
+  normalizeForDictation(inputText) === normalizeForDictation(correctScript);
+
+export const normalizeText = normalizeForDictation;

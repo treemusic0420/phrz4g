@@ -9,9 +9,9 @@ import {
   fetchLessonById,
   updateLessonStats,
 } from '../lib/firestore';
-import { isDictationAnswerCorrect } from '../utils/dictation';
+import { normalizeForDictation } from '../utils/dictation';
 import { diffWords } from '../utils/diff';
-import { playCorrectSound, playIncorrectSound } from '../utils/feedbackSound';
+import { playDictationCompleteSound, playDictationWrongKeySound } from '../utils/feedbackSound';
 import { filterLessonsByCategoryAndMonth, hasLessonAudio, sortLessonsForMonthTraining } from '../utils/lessons';
 import { getRegisteredMonthLabel } from '../utils/registeredMonth';
 
@@ -71,6 +71,7 @@ export default function DictationPage() {
     setHasChecked(false);
     setIsCorrect(null);
     setAutoPlayMessage('');
+    setWrongSlotIndex(-1);
     setAutoPlayToken((prev) => prev + 1);
     fetchLessonById(id).then((doc) => {
       if (!doc || doc.userId !== LOCAL_USER_ID) return navigate('/lessons');
@@ -108,7 +109,6 @@ export default function DictationPage() {
   const wrongInputTimeoutRef = useRef(null);
   const inputTextRef = useRef('');
   const [wrongSlotIndex, setWrongSlotIndex] = useState(-1);
-  const [showTryAgain, setShowTryAgain] = useState(false);
   const slotGroups = useMemo(() => buildSlotGroups(lesson?.scriptEn || ''), [lesson?.scriptEn]);
   const expectedChars = useMemo(
     () => slotGroups.flatMap((group) => group.map((slot) => slot.char)),
@@ -130,12 +130,19 @@ export default function DictationPage() {
 
   const triggerWrongFeedback = (index) => {
     setWrongSlotIndex(index);
-    setShowTryAgain(true);
     if (wrongInputTimeoutRef.current) window.clearTimeout(wrongInputTimeoutRef.current);
     wrongInputTimeoutRef.current = window.setTimeout(() => {
-      setShowTryAgain(false);
       setWrongSlotIndex(-1);
     }, 420);
+    playDictationWrongKeySound().catch(() => {});
+  };
+
+  const evaluateCompletedInput = async (nextText) => {
+    if (!lesson) return;
+    const result = normalizeForDictation(nextText) === normalizeForDictation(lesson.scriptEn);
+    setHasChecked(true);
+    setIsCorrect(result);
+    if (result) await playDictationCompleteSound();
   };
 
   const applyInputChars = (candidateChars, options = {}) => {
@@ -168,13 +175,20 @@ export default function DictationPage() {
     const nextText = nextInput.join('');
     inputTextRef.current = nextText;
     setInputText(nextText);
-    if (wrongIndex >= 0) triggerWrongFeedback(wrongIndex);
-    else if (showTryAgain) {
-      setShowTryAgain(false);
+
+    if (wrongIndex >= 0) {
+      triggerWrongFeedback(wrongIndex);
+    } else {
       setWrongSlotIndex(-1);
     }
-    setHasChecked(false);
-    setIsCorrect(null);
+
+    const isComplete = nextInput.length === maxInputLength && maxInputLength > 0;
+    if (isComplete) {
+      evaluateCompletedInput(nextText).catch(() => {});
+    } else {
+      setHasChecked(false);
+      setIsCorrect(null);
+    }
   };
 
   const removeLastInputChar = () => {
@@ -183,7 +197,6 @@ export default function DictationPage() {
     const nextText = prevChars.slice(0, -1).join('');
     inputTextRef.current = nextText;
     setInputText(nextText);
-    setShowTryAgain(false);
     setWrongSlotIndex(-1);
     setHasChecked(false);
     setIsCorrect(null);
@@ -192,7 +205,7 @@ export default function DictationPage() {
   const getCharStatus = (slotIndex) => {
     if (slotIndex < inputChars.length) return 'dictation-slot-correct';
     if (slotIndex === inputChars.length) {
-      if (showTryAgain && wrongSlotIndex === slotIndex) return 'dictation-slot-wrong-pulse';
+      if (wrongSlotIndex === slotIndex) return 'dictation-slot-wrong-pulse';
       return 'dictation-slot-active';
     }
     return 'dictation-slot-empty';
@@ -271,18 +284,8 @@ export default function DictationPage() {
     applyInputChars(splitToChars(text), { stopOnWrong: true });
   };
 
-  const checkAnswer = async () => {
-    if (!lesson) return;
-    const isComplete = inputChars.length === expectedChars.length;
-    const result = isComplete && isDictationAnswerCorrect(inputText, lesson.scriptEn);
-    setHasChecked(true);
-    setIsCorrect(result);
-    if (result) {
-      await playCorrectSound();
-      return;
-    }
-    await playIncorrectSound();
-  };
+
+
 
   if (!isMonthMode) {
     return (
@@ -387,11 +390,8 @@ export default function DictationPage() {
             </span>
           ))}
         </div>
-        {showTryAgain ? <p className="section-subtle dictation-try-again">Try again</p> : null}
-        {inputChars.length === expectedChars.length ? <p className="section-subtle">Ready to check.</p> : null}
       </article>
       <div className="row gap-sm wrap">
-        <button onClick={checkAnswer} type="button">Check Answer</button>
         <button
           onClick={completeAndGoNext}
           type="button"
@@ -408,11 +408,6 @@ export default function DictationPage() {
           </p>
         </article>
       ) : null}
-      <article className="card">
-        <p className="section-subtle">
-          Answer status: {hasChecked ? (isCorrect ? 'Correct' : 'Not correct yet') : 'Not checked'}
-        </p>
-      </article>
       {hasChecked ? (
         <article className="card">
           <h3>Correct Script</h3>
