@@ -5,7 +5,7 @@ import { ensureInitialCategories, fetchLessonById, updateLessonAudioUrl } from '
 import { LOCAL_USER_ID } from '../lib/auth';
 import { getAudioDownloadUrlByPath } from '../lib/storage';
 import { formatDateTime, formatSeconds } from '../utils/format';
-import { getDifficultyLabel } from '../utils/difficulty';
+import { getDifficultyLabel, getDifficultyStyle } from '../utils/difficulty';
 
 const getExtFromPath = (path = '') => path.split('.').pop()?.toLowerCase() || '';
 const inferTypeByExt = (ext) => {
@@ -86,16 +86,22 @@ export default function LessonDetailPage() {
   }, [lesson, unsupportedFormat]);
 
   if (!lesson) return <p>Loading...</p>;
+  const difficultyStyle = getDifficultyStyle(lesson.difficulty);
 
   return (
     <section className="stack">
-      <article className="card">
+      <article className={`card difficulty-card ${difficultyStyle.tone}`}>
         <h2 className="section-title">{lesson.title}</h2>
         <p>Category: {lesson.categoryId ? (categories.find((category) => category.id === lesson.categoryId)?.name || 'Deleted category') : 'Not set'}</p>
-        <p>Difficulty: {getDifficultyLabel(lesson.difficulty)}</p>
+        <div className="row gap-sm wrap">
+          <p>Difficulty:</p>
+          <span className={`pill difficulty-pill ${difficultyStyle.tone}`}>
+            {getDifficultyLabel(lesson.difficulty)}
+          </span>
+        </div>
         <p className="section-subtle">English Script</p>
         <pre className="mono">{lesson.scriptEn}</pre>
-        <p>Japanese Translation</p>
+        <p>Translation</p>
         <pre>{lesson.scriptJa || '-'}</pre>
         <p>Notes</p>
         <pre>{lesson.memo || '-'}</pre>

@@ -167,6 +167,49 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
   line-height: 1.3;
 }
 .pill { background: #f1f1f4; border: 1px solid #dfdfe4; border-radius: 999px; padding: 4px 10px; font-size: 0.82rem; color: #3a3a3c; }
+.difficulty-card {
+  position: relative;
+  overflow: hidden;
+}
+.difficulty-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: transparent;
+}
+.difficulty-card.difficulty-easy {
+  background: #f7fcf8;
+  border-color: #cdeed8;
+}
+.difficulty-card.difficulty-easy::before { background: #86d39f; }
+.difficulty-card.difficulty-normal {
+  background: #f6f9ff;
+  border-color: #d1e0fd;
+}
+.difficulty-card.difficulty-normal::before { background: #90b4f8; }
+.difficulty-card.difficulty-hard {
+  background: #fffaf4;
+  border-color: #f7dec1;
+}
+.difficulty-card.difficulty-hard::before { background: #efb67c; }
+.compact-lesson-link.difficulty-card:hover {
+  filter: brightness(0.995);
+}
+.difficulty-pill.difficulty-easy {
+  background: #e9f9ef;
+  border-color: #b9e8c8;
+}
+.difficulty-pill.difficulty-normal {
+  background: #eaf1ff;
+  border-color: #c7d8fb;
+}
+.difficulty-pill.difficulty-hard {
+  background: #fff1e3;
+  border-color: #f4d3af;
+}
 .pagination-box { margin-bottom: 24px; }
 .pagination-box button[disabled] { opacity: 0.45; cursor: default; pointer-events: none; }
 .danger-zone { margin-top: 8px; padding-top: 12px; border-top: 1px dashed #f3c7c4; display: grid; gap: 8px; }
@@ -235,6 +278,7 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
   .month-action-buttons .btn { width: 100%; }
   .card { padding: 16px; border-radius: 18px; }
   .compact-lesson-link { padding: 11px 12px; }
+  .difficulty-card::before { width: 3px; }
   .compact-lesson-head { flex-wrap: wrap; }
   .category-card { padding: 14px; gap: 5px; min-height: 96px; margin-bottom: 6px; }
   .category-card .section-title { font-size: 1.02rem; }

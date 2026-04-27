@@ -12,7 +12,7 @@ import {
   sortLessonsByRecency,
   sortLessonsForMonthTraining,
 } from '../utils/lessons';
-import { getDifficultyLabel } from '../utils/difficulty';
+import { getDifficultyLabel, getDifficultyStyle } from '../utils/difficulty';
 import { getRegisteredMonthLabel } from '../utils/registeredMonth';
 
 export default function MonthLessonsPage() {
@@ -128,15 +128,24 @@ export default function MonthLessonsPage() {
         </article>
       ) : null}
 
-      {paging.items.map((lesson) => (
-        <Link className="card compact-lesson-link" key={lesson.id} to={`/lessons/${lesson.id}`}>
-          <div className="row between gap-sm compact-lesson-head">
-            <h3 className="compact-lesson-title">{lesson.title}</h3>
-            <span className="pill">Difficulty: {getDifficultyLabel(lesson.difficulty)}</span>
-          </div>
-          <p className="section-subtle">Last studied: {formatDateTime(lesson.lastStudiedAt)}</p>
-        </Link>
-      ))}
+      {paging.items.map((lesson) => {
+        const difficultyStyle = getDifficultyStyle(lesson.difficulty);
+        return (
+          <Link
+            className={`card compact-lesson-link difficulty-card ${difficultyStyle.tone}`}
+            key={lesson.id}
+            to={`/lessons/${lesson.id}`}
+          >
+            <div className="row between gap-sm compact-lesson-head">
+              <h3 className="compact-lesson-title">{lesson.title}</h3>
+              <span className={`pill difficulty-pill ${difficultyStyle.tone}`}>
+                Difficulty: {getDifficultyLabel(lesson.difficulty)}
+              </span>
+            </div>
+            <p className="section-subtle">Last studied: {formatDateTime(lesson.lastStudiedAt)}</p>
+          </Link>
+        );
+      })}
 
       {shouldShowPaging ? (
         <div className="card pagination-box">

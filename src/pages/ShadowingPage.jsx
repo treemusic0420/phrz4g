@@ -12,7 +12,6 @@ export default function ShadowingPage() {
   const location = useLocation();
   const [lesson, setLesson] = useState(null);
   const [monthLessons, setMonthLessons] = useState([]);
-  const [showEn, setShowEn] = useState(true);
   const [showJa, setShowJa] = useState(false);
   const [startedAt, setStartedAt] = useState(new Date());
   const searchParams = new URLSearchParams(location.search);
@@ -26,7 +25,6 @@ export default function ShadowingPage() {
 
   useEffect(() => {
     setStartedAt(new Date());
-    setShowEn(true);
     setShowJa(false);
     fetchLessonById(id).then((doc) => {
       if (!doc || doc.userId !== LOCAL_USER_ID) return navigate('/lessons');
@@ -269,6 +267,7 @@ export default function ShadowingPage() {
       <p className="section-subtle">
         {monthLabel} ・ {hasValidProgress ? monthIndex + 1 : '-'} / {monthLessons.length || '-'}
       </p>
+      <article className="card"><h3>English Script</h3><pre>{lesson.scriptEn}</pre></article>
       <AudioControls
         key={lesson.id}
         audioUrl={lesson.audioUrl}
@@ -298,8 +297,7 @@ export default function ShadowingPage() {
         </div>
       </article>
       <div className="row gap-sm wrap">
-        <button onClick={() => setShowEn((v) => !v)} type="button">English Script {showEn ? 'Hide' : 'Show'}</button>
-        <button onClick={() => setShowJa((v) => !v)} type="button">Japanese Translation {showJa ? 'Hide' : 'Show'}</button>
+        <button onClick={() => setShowJa((v) => !v)} type="button">Translation {showJa ? 'Hide' : 'Show'}</button>
         <button onClick={completeAndGoNext} type="button" disabled={!hasValidProgress}>
           {isLastLesson ? 'Finish' : 'Next'}
         </button>
@@ -307,8 +305,7 @@ export default function ShadowingPage() {
           Back to Lesson List
         </Link>
       </div>
-      {showEn ? <article className="card"><h3>English Script</h3><pre>{lesson.scriptEn}</pre></article> : null}
-      {showJa ? <article className="card"><h3>Japanese Translation</h3><pre>{lesson.scriptJa || '-'}</pre></article> : null}
+      {showJa ? <article className="card"><h3>Translation</h3><pre>{lesson.scriptJa || '-'}</pre></article> : null}
     </section>
   );
 }
