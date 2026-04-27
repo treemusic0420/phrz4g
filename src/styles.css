@@ -176,6 +176,87 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
   background: #faf7f4;
   border-color: #e7ddd3;
 }
+.dictation-input-card {
+  display: grid;
+  gap: 8px;
+}
+.dictation-input-card h3 {
+  margin: 0;
+}
+.dictation-slot-container {
+  position: relative;
+  min-height: 110px;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #fbfbfd;
+  padding: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 6px 4px;
+  cursor: text;
+}
+.dictation-slot-container:focus-within {
+  border-color: #bfdbfe;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+.dictation-hidden-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.dictation-slot-word {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  gap: 3px;
+}
+.dictation-slot {
+  width: 1.3em;
+  min-height: 1.9em;
+  border-bottom: 2px solid #cbd5e1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #111827;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1rem;
+  line-height: 1;
+}
+.dictation-slot-space {
+  width: 1.8em;
+}
+.dictation-slot-empty {
+  color: #9ca3af;
+}
+.dictation-slot-filled {
+  border-bottom-color: #94a3b8;
+}
+.dictation-slot-active {
+  border-bottom-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.08);
+  border-radius: 4px 4px 0 0;
+}
+.dictation-slot-correct {
+  background: #eef8f0;
+  border-bottom-color: #9bcf9f;
+  border-radius: 4px 4px 0 0;
+}
+.dictation-slot-incorrect {
+  background: #fff3ee;
+  border-bottom-color: #f3b8a4;
+  border-radius: 4px 4px 0 0;
+}
+.dictation-slot-missing {
+  background: #f3f4f6;
+  border-bottom-color: #d1d5db;
+  border-radius: 4px 4px 0 0;
+}
 .empty-state { text-align: center; padding: 28px 20px; }
 .category-card {
   display: grid;
@@ -367,6 +448,19 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
   }
   .lesson-search-row .btn {
     width: 100%;
+  }
+  .dictation-slot-container {
+    min-height: 96px;
+    padding: 10px;
+    gap: 6px 2px;
+  }
+  .dictation-slot {
+    width: 1.2em;
+    min-height: 1.8em;
+    font-size: 0.95rem;
+  }
+  .dictation-slot-space {
+    width: 1.6em;
   }
 }
 
