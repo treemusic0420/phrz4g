@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import AudioControls from '../components/AudioControls';
 import LessonImageThumbnail from '../components/LessonImageThumbnail';
@@ -32,14 +32,23 @@ export default function ShadowingPage() {
     fileExtension === 'm4a' ? 'audio/mp4' : fileExtension === 'mp3' ? 'audio/mpeg' : fileExtension === 'wav' ? 'audio/wav' : '';
 
   useEffect(() => {
+    let isActive = true;
+    suppressAudioAutoplayRef.current = true;
+    lessonAudioStopAndUnloadRef.current?.();
     setStartedAt(new Date());
     setShowJa(false);
     setAutoPlayMessage('');
-    setAutoPlayToken((prev) => prev + 1);
     fetchLessonById(id).then((doc) => {
+      if (!isActive) return;
       if (!doc || doc.userId !== LOCAL_USER_ID) return navigate('/lessons');
       setLesson(doc);
+      suppressAudioAutoplayRef.current = false;
+      setAutoPlayToken((prev) => prev + 1);
     });
+    return () => {
+      isActive = false;
+      suppressAudioAutoplayRef.current = true;
+    };
   }, [id, navigate]);
 
   useEffect(() => {
@@ -70,11 +79,13 @@ export default function ShadowingPage() {
   const chunksRef = useRef([]);
   const backToListButtonRef = useRef(null);
   const recordingAudioRef = useRef(null);
-  const lessonAudioStopRef = useRef(null);
+  const lessonAudioStopAndUnloadRef = useRef(null);
+  const suppressAudioAutoplayRef = useRef(true);
   const discardOnStopRef = useRef(false);
   const shouldAutoPlayRecordingRef = useRef(false);
   const timerRef = useRef(null);
   const stopResolverRef = useRef(null);
+  const isAutoPlaySuppressed = useCallback(() => suppressAudioAutoplayRef.current, []);
 
   const clearRecordingTimer = () => {
     if (timerRef.current) {
@@ -106,7 +117,7 @@ export default function ShadowingPage() {
   };
 
   const stopCurrentAudio = () => {
-    lessonAudioStopRef.current?.();
+    lessonAudioStopAndUnloadRef.current?.();
     const recordingAudio = recordingAudioRef.current;
     if (!recordingAudio) return;
     recordingAudio.pause();
@@ -222,6 +233,7 @@ export default function ShadowingPage() {
 
   const completeAndGoNext = async (shadowingRating) => {
     if (!lesson) return;
+    suppressAudioAutoplayRef.current = true;
     stopCurrentAudio();
     await discardRecording();
     const endedAt = new Date();
@@ -247,6 +259,7 @@ export default function ShadowingPage() {
   };
 
   const backToLessonList = async () => {
+    suppressAudioAutoplayRef.current = true;
     stopCurrentAudio();
     await discardRecording();
     navigate(`/lessons/category/${categoryId}/month/${registeredMonth}`);
@@ -263,6 +276,7 @@ export default function ShadowingPage() {
 
   useEffect(() => {
     setRecordingError('');
+    suppressAudioAutoplayRef.current = true;
     stopCurrentAudio();
     void discardRecording();
   }, [id]);
@@ -374,13 +388,15 @@ export default function ShadowingPage() {
       <article className="card shadowing-script-card"><pre>{lesson.scriptEn}</pre></article>
       <AudioControls
         key={lesson.id}
+        lessonId={lesson.id}
         audioUrl={lesson.audioUrl}
         audioContentType={lesson.audioContentType || fallbackAudioContentType}
         shouldAutoPlay={canPlayAudio}
+        isAutoPlaySuppressed={isAutoPlaySuppressed}
         autoPlayToken={autoPlayToken}
         onAutoPlayBlocked={setAutoPlayMessage}
         onRegisterControls={(controls) => {
-          lessonAudioStopRef.current = controls?.stopCurrentAudio || null;
+          lessonAudioStopAndUnloadRef.current = controls?.stopAndUnloadCurrentAudio || null;
         }}
       />
       {autoPlayMessage ? <p className="section-subtle">{autoPlayMessage}</p> : null}
