@@ -42,6 +42,8 @@ const mapLesson = (snap) => {
     audioUrl: data.audioUrl || '',
     audioPath: data.audioPath || '',
     audioContentType: data.audioContentType || inferredContentType,
+    imageUrl: data.imageUrl || '',
+    imagePath: data.imagePath || '',
     difficulty: normalizeDifficulty(data.difficulty),
     ...resolveRegisteredMonthFields({
       registeredMonth: data.registeredMonth,
@@ -96,6 +98,8 @@ export const createLesson = async (payload) => {
     difficulty: normalizeDifficulty(payload.difficulty),
     ...monthFields,
     memo: payload.memo || '',
+    imageUrl: payload.imageUrl || '',
+    imagePath: payload.imagePath || '',
     dictationCount: 0,
     shadowingCount: 0,
     shadowingDidItCount: 0,
@@ -122,6 +126,8 @@ export const updateLesson = async (lessonId, payload) => {
     ...payload,
     categoryId: payload.categoryId || '',
     difficulty: normalizeDifficulty(payload.difficulty),
+    imageUrl: payload.imageUrl || '',
+    imagePath: payload.imagePath || '',
     ...monthFields,
     updatedAt: serverTimestamp(),
   });
@@ -141,6 +147,15 @@ export const updateLessonAudio = async (lessonId, payload) => {
     audioPath: payload?.audioPath || '',
     audioUrl: payload?.audioUrl || '',
     audioContentType: payload?.audioContentType || '',
+    updatedAt: serverTimestamp(),
+  });
+};
+
+export const updateLessonImage = async (lessonId, payload) => {
+  if (!lessonId) return;
+  return updateDoc(doc(db, 'lessons', lessonId), {
+    imagePath: payload?.imagePath || '',
+    imageUrl: payload?.imageUrl || '',
     updatedAt: serverTimestamp(),
   });
 };

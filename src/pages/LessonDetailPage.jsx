@@ -101,6 +101,7 @@ export default function LessonDetailPage() {
           </span>
         </div>
         <p className="section-subtle">English Script</p>
+        {lesson.imageUrl ? <img className="lesson-detail-image" src={lesson.imageUrl} alt={`${lesson.title} visual`} /> : null}
         <pre className="mono">{lesson.scriptEn}</pre>
         <p>Translation</p>
         <pre>{lesson.scriptJa || '-'}</pre>

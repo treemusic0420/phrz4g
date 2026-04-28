@@ -150,6 +150,9 @@ export default function MonthLessonsPage() {
                 Difficulty: {getDifficultyLabel(lesson.difficulty)}
               </span>
             </div>
+            {lesson.imageUrl ? (
+              <img className="lesson-list-thumbnail" src={lesson.imageUrl} alt={`${lesson.title} thumbnail`} />
+            ) : null}
             {!isAudioReady ? <span className="pill no-audio-badge">No audio</span> : null}
             <p className="section-subtle">Last studied: {formatDateTime(lesson.lastStudiedAt)}</p>
           </Link>

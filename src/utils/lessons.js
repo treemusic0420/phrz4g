@@ -177,3 +177,4 @@ export const paginateLessons = (lessons = [], currentPage = 1, perPage = LESSONS
 };
 
 export const hasLessonAudio = (lesson = {}) => !!(lesson?.audioUrl || lesson?.audioPath);
+export const hasLessonImage = (lesson = {}) => !!(lesson?.imageUrl || lesson?.imagePath);

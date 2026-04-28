@@ -912,3 +912,45 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
     padding: 14px;
   }
 }
+
+.lesson-image-preview {
+  width: min(100%, 340px);
+  max-height: 220px;
+  object-fit: cover;
+  border-radius: 14px;
+  border: 1px solid #ececf1;
+}
+
+.lesson-list-thumbnail {
+  width: 92px;
+  height: 62px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid #ececf1;
+  margin: 6px 0;
+}
+
+.lesson-detail-image,
+.training-lesson-image {
+  width: 100%;
+  max-height: 360px;
+  object-fit: cover;
+  border-radius: 14px;
+  border: 1px solid #ececf1;
+  margin-top: 8px;
+}
+
+.missing-filter-card {
+  margin-bottom: 0;
+}
+
+.missing-filter-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+
+.missing-photo-badge {
+  color: #b45309;
+  font-weight: 600;
+}

@@ -81,6 +81,9 @@ export default function Layout({ children }) {
                       <Link className="header-menu-item" onClick={() => setIsMenuOpen(false)} role="menuitem" to="/lessons/missing-audio">
                         Missing Audio
                       </Link>
+                      <Link className="header-menu-item" onClick={() => setIsMenuOpen(false)} role="menuitem" to="/lessons/missing-photo">
+                        Missing Photo
+                      </Link>
                       <Link className="header-menu-item" onClick={() => setIsMenuOpen(false)} role="menuitem" to="/categories">
                         Categories
                       </Link>
