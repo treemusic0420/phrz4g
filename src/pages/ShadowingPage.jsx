@@ -303,15 +303,20 @@ export default function ShadowingPage() {
 
   return (
     <section className="stack">
-      <h2 className="section-title">Shadowing: {lesson.title}</h2>
+      <div className="training-page-header">
+        <h2 className="section-title training-page-title">Shadowing: {lesson.title}</h2>
+        {lesson.imageUrl ? (
+          <LessonImageThumbnail
+            imageUrl={lesson.imageUrl}
+            title={lesson.title}
+            fit="cover"
+            className="training-lesson-thumbnail-compact"
+          />
+        ) : null}
+      </div>
       <p className="section-subtle">
         {monthLabel} ・ {hasValidProgress ? monthIndex + 1 : '-'} / {monthLessons.length || '-'}
       </p>
-      {lesson.imageUrl ? (
-        <div className="shadowing-thumbnail-row">
-          <LessonImageThumbnail imageUrl={lesson.imageUrl} title={lesson.title} fit="cover" />
-        </div>
-      ) : null}
       <article className="card shadowing-script-card"><pre>{lesson.scriptEn}</pre></article>
       <AudioControls
         key={lesson.id}
