@@ -36,9 +36,14 @@ export const getLessonMonthTrainingSortTime = (lesson) => {
 export const sortLessonsForMonthTraining = (lessons = []) =>
   [...lessons].sort((a, b) => getLessonMonthTrainingSortTime(b) - getLessonMonthTrainingSortTime(a));
 
+export const toOrderNumber = (value) => {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : Number.MAX_SAFE_INTEGER;
+};
+
 export const sortCategories = (categories = []) =>
   [...categories].sort((a, b) => {
-    const orderDiff = (Number(a.order) || 0) - (Number(b.order) || 0);
+    const orderDiff = toOrderNumber(a.order) - toOrderNumber(b.order);
     if (orderDiff !== 0) return orderDiff;
     return (a.name || '').localeCompare(b.name || '', 'ja');
   });
@@ -53,7 +58,7 @@ export const groupLessonsByCategory = (lessons = [], categories = []) => {
         name: category.name,
         slug: category.slug,
         isActive: !!category.isActive,
-        order: Number(category.order) || 0,
+        order: toOrderNumber(category.order),
         count: 0,
         monthCount: 0,
         monthSet: new Set(),
@@ -74,7 +79,7 @@ export const groupLessonsByCategory = (lessons = [], categories = []) => {
           name: UNSET_CATEGORY_LABEL,
           slug: '',
           isActive: true,
-          order: 9999,
+          order: Number.MAX_SAFE_INTEGER,
           count: 0,
           monthCount: 0,
           monthSet: new Set(),
@@ -97,7 +102,7 @@ export const groupLessonsByCategory = (lessons = [], categories = []) => {
         name: DELETED_CATEGORY_LABEL,
         slug: '',
         isActive: true,
-        order: 9999,
+        order: Number.MAX_SAFE_INTEGER,
         count: 0,
         monthCount: 0,
         monthSet: new Set(),
@@ -118,10 +123,7 @@ export const groupLessonsByCategory = (lessons = [], categories = []) => {
     .map((row) => ({ ...row, monthCount: row.monthSet.size }))
     .filter((category) => category.count > 0 || category.isActive)
     .sort((a, b) => {
-      if (a.count === 0 && b.count > 0) return 1;
-      if (b.count === 0 && a.count > 0) return -1;
-      if (a.latestActivityTime !== b.latestActivityTime) return b.latestActivityTime - a.latestActivityTime;
-      const orderDiff = (Number(a.order) || 0) - (Number(b.order) || 0);
+      const orderDiff = toOrderNumber(a.order) - toOrderNumber(b.order);
       if (orderDiff !== 0) return orderDiff;
       return (a.name || '').localeCompare(b.name || '', 'ja');
     });
