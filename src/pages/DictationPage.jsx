@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import AudioControls from '../components/AudioControls';
+import LessonImageThumbnail from '../components/LessonImageThumbnail';
 import { LOCAL_USER_ID } from '../lib/auth';
 import {
   createDictationAttempt,
@@ -454,12 +455,12 @@ export default function DictationPage() {
       <p className="section-subtle">
         {monthLabel} ・ {hasValidProgress ? monthIndex + 1 : '-'} / {monthLessons.length || '-'}
       </p>
-      {lesson.imageUrl ? (
-        <div className="training-lesson-image-frame">
-          <img className="training-lesson-image" src={lesson.imageUrl} alt={`${lesson.title} visual`} />
-        </div>
-      ) : null}
       <article className="card dictation-input-card">
+        {lesson.imageUrl ? (
+          <div className="dictation-thumbnail-row">
+            <LessonImageThumbnail imageUrl={lesson.imageUrl} title={lesson.title} fit="cover" />
+          </div>
+        ) : null}
         <div
           className="dictation-slot-container"
           onClick={focusDictationInput}

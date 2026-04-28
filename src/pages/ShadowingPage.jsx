@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import AudioControls from '../components/AudioControls';
+import LessonImageThumbnail from '../components/LessonImageThumbnail';
 import { LOCAL_USER_ID } from '../lib/auth';
 import { createStudyLog, fetchLessonById, fetchLessons, updateLessonStats } from '../lib/firestore';
 import { filterLessonsByCategoryAndMonth, hasLessonAudio, sortLessonsForMonthTraining } from '../utils/lessons';
@@ -307,8 +308,8 @@ export default function ShadowingPage() {
         {monthLabel} ・ {hasValidProgress ? monthIndex + 1 : '-'} / {monthLessons.length || '-'}
       </p>
       {lesson.imageUrl ? (
-        <div className="training-lesson-image-frame">
-          <img className="training-lesson-image" src={lesson.imageUrl} alt={`${lesson.title} visual`} />
+        <div className="shadowing-thumbnail-row">
+          <LessonImageThumbnail imageUrl={lesson.imageUrl} title={lesson.title} fit="cover" />
         </div>
       ) : null}
       <article className="card shadowing-script-card"><pre>{lesson.scriptEn}</pre></article>
