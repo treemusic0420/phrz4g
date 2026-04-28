@@ -7,6 +7,7 @@ import { formatDateTime, toDate } from '../utils/format';
 import { getDifficultyLabel } from '../utils/difficulty';
 import { resolveRegisteredMonthFields } from '../utils/registeredMonth';
 import { hasLessonImage } from '../utils/lessons';
+import MissingLessonsFilters from '../components/MissingLessonsFilters';
 
 const mapUploadError = (message = '') => {
   const normalized = String(message || '').toLowerCase();
@@ -160,38 +161,16 @@ export default function MissingPhotoLessonsPage() {
       {error ? <article className="card error">{error}</article> : null}
 
       {!isLoading && !error ? (
-        <article className="card missing-filter-card">
-          <div className="missing-filter-grid">
-            <label>
-              Category
-              <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}>
-                <option value="all">All</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>{category.name}</option>
-                ))}
-                <option value="__unset__">Not set</option>
-              </select>
-            </label>
-            <label>
-              Month
-              <select value={monthFilter} onChange={(event) => setMonthFilter(event.target.value)}>
-                <option value="all">All</option>
-                {availableMonths.map((month) => (
-                  <option key={month.value} value={month.value}>{month.label}</option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Difficulty
-              <select value={difficultyFilter} onChange={(event) => setDifficultyFilter(event.target.value)}>
-                <option value="all">All</option>
-                <option value="easy">Easy</option>
-                <option value="normal">Normal</option>
-                <option value="hard">Hard</option>
-              </select>
-            </label>
-          </div>
-        </article>
+        <MissingLessonsFilters
+          availableMonths={availableMonths}
+          categories={categories}
+          categoryFilter={categoryFilter}
+          difficultyFilter={difficultyFilter}
+          monthFilter={monthFilter}
+          onCategoryChange={setCategoryFilter}
+          onDifficultyChange={setDifficultyFilter}
+          onMonthChange={setMonthFilter}
+        />
       ) : null}
 
       {isLoading ? <article className="card section-subtle">Loading lessons...</article> : null}
