@@ -1,4 +1,5 @@
-const PUNCTUATION_REGEX = /[.,?!:;"“”"'‘’。、？！：；]/g;
+const AUTO_IGNORED_DICTATION_PUNCTUATION = [',', '.', '?', ':', ';', '"', '“', '”', "'", '‘', '’', '。', '、', '？', '！', '：', '；'];
+const PUNCTUATION_REGEX = new RegExp(`[${AUTO_IGNORED_DICTATION_PUNCTUATION.join('')}]`, 'g');
 
 export const normalizeForDictation = (text) =>
   String(text ?? '')
