@@ -3,10 +3,14 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { createLesson, deleteLessonDoc, ensureInitialCategories, fetchLessonById, updateLesson } from '../lib/firestore';
 import {
   deleteAudioByPath,
+  deleteImageByPath,
+  compressLessonImage,
   getAudioContentTypeFromExtension,
   getFileExtension,
   uploadLessonAudio,
+  uploadLessonImage,
   validateAudioFile,
+  validateImageFile,
 } from '../lib/storage';
 import { LOCAL_USER_ID } from '../lib/auth';
 import { sortCategories } from '../utils/lessons';
@@ -22,6 +26,8 @@ const defaultForm = {
   audioUrl: '',
   audioPath: '',
   audioContentType: '',
+  imageUrl: '',
+  imagePath: '',
 };
 
 const MP3_ONLY_ERROR = 'Only MP3 files are currently supported. Convert m4a files to MP3 before uploading.';
@@ -32,10 +38,19 @@ export default function LessonFormPage({ mode }) {
   const [form, setForm] = useState(defaultForm);
   const [categories, setCategories] = useState([]);
   const [audioFile, setAudioFile] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState('');
   const [audioDebugInfo, setAudioDebugInfo] = useState({ ext: '', contentType: '' });
   const [error, setError] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+
+  useEffect(
+    () => () => {
+      if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
+    },
+    [imagePreviewUrl],
+  );
 
   useEffect(() => {
     const loadData = async () => {
@@ -96,6 +111,8 @@ export default function LessonFormPage({ mode }) {
       let audioUrl = form.audioUrl || '';
       let audioPath = form.audioPath || '';
       let audioContentType = form.audioContentType || getAudioContentTypeFromExtension(getFileExtension(form.audioPath));
+      let imageUrl = form.imageUrl || '';
+      let imagePath = form.imagePath || '';
       if (audioFile) {
         const message = validateAudioFile(audioFile);
         if (message) throw new Error(message);
@@ -106,6 +123,13 @@ export default function LessonFormPage({ mode }) {
         if (mode === 'edit' && form.audioPath && form.audioPath !== uploaded.audioPath) {
           await deleteAudioByPath(form.audioPath).catch(() => {});
         }
+      }
+
+      let compressedImageFile = null;
+      if (imageFile) {
+        const imageMessage = validateImageFile(imageFile);
+        if (imageMessage) throw new Error(imageMessage);
+        compressedImageFile = await compressLessonImage({ file: imageFile });
       }
 
       const payload = {
@@ -119,6 +143,8 @@ export default function LessonFormPage({ mode }) {
         audioUrl,
         audioPath,
         audioContentType: audioContentType || '',
+        imageUrl,
+        imagePath,
       };
 
       if (!payload.title || !payload.scriptEn) throw new Error('Title and English Script are required.');
@@ -133,9 +159,25 @@ export default function LessonFormPage({ mode }) {
 
       if (mode === 'create') {
         const docRef = await createLesson(payload);
+        if (compressedImageFile) {
+          const uploadedImage = await uploadLessonImage({ file: compressedImageFile, lessonId: docRef.id });
+          await updateLesson(docRef.id, {
+            ...payload,
+            imageUrl: uploadedImage.imageUrl,
+            imagePath: uploadedImage.imagePath,
+          });
+        }
         navigate(`/lessons/${docRef.id}`);
       } else {
-        await updateLesson(id, payload);
+        if (compressedImageFile) {
+          const uploadedImage = await uploadLessonImage({ file: compressedImageFile, lessonId: id });
+          imageUrl = uploadedImage.imageUrl;
+          imagePath = uploadedImage.imagePath;
+          if (form.imagePath && form.imagePath !== uploadedImage.imagePath) {
+            await deleteImageByPath(form.imagePath).catch(() => {});
+          }
+        }
+        await updateLesson(id, { ...payload, imageUrl, imagePath });
         navigate(`/lessons/${id}`);
       }
     } catch (err) {
@@ -159,6 +201,12 @@ export default function LessonFormPage({ mode }) {
     try {
       if (form.audioPath) {
         await deleteAudioByPath(form.audioPath).catch((storageError) => {
+          const code = storageError?.code || '';
+          if (code.includes('object-not-found')) return;
+        });
+      }
+      if (form.imagePath) {
+        await deleteImageByPath(form.imagePath).catch((storageError) => {
           const code = storageError?.code || '';
           if (code.includes('object-not-found')) return;
         });
@@ -221,6 +269,45 @@ export default function LessonFormPage({ mode }) {
         <label>English Script<textarea required rows="4" value={form.scriptEn} onChange={(e) => setForm({ ...form, scriptEn: e.target.value })} /></label>
         <label>Translation<textarea rows="3" value={form.scriptJa} onChange={(e) => setForm({ ...form, scriptJa: e.target.value })} /></label>
         <label>Notes<textarea rows="3" value={form.memo} onChange={(e) => setForm({ ...form, memo: e.target.value })} /></label>
+        <label>
+          Lesson Image (optional, jpg/jpeg/png/webp, under 1MB after compression)
+          <input
+            accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+            type="file"
+            onChange={(e) => {
+              const nextFile = e.target.files?.[0] || null;
+              if (!nextFile) {
+                setImageFile(null);
+                setImagePreviewUrl((prev) => {
+                  if (prev) URL.revokeObjectURL(prev);
+                  return '';
+                });
+                setError('');
+                return;
+              }
+              const message = validateImageFile(nextFile);
+              if (message) {
+                setImageFile(null);
+                setImagePreviewUrl((prev) => {
+                  if (prev) URL.revokeObjectURL(prev);
+                  return '';
+                });
+                setError(message);
+                return;
+              }
+              setImageFile(nextFile);
+              const objectUrl = URL.createObjectURL(nextFile);
+              setImagePreviewUrl((prev) => {
+                if (prev) URL.revokeObjectURL(prev);
+                return objectUrl;
+              });
+              setError('');
+            }}
+          />
+        </label>
+        {imagePreviewUrl || form.imageUrl ? (
+          <img className="lesson-image-preview" src={imagePreviewUrl || form.imageUrl} alt="Lesson preview" />
+        ) : null}
         <label>
           Audio File (optional, MP3, under 20MB)
           <input

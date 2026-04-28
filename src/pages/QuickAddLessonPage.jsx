@@ -99,6 +99,8 @@ export default function QuickAddLessonPage() {
         audioPath: '',
         audioUrl: '',
         audioContentType: '',
+        imagePath: '',
+        imageUrl: '',
       });
 
       setScriptEn('');
@@ -211,10 +213,10 @@ export default function QuickAddLessonPage() {
           <div className="row gap-sm wrap">
             <Link className="btn ghost" to="/lessons">View Lessons</Link>
             <Link className="btn ghost" to="/lessons/missing-audio">Missing Audio</Link>
+            <Link className="btn ghost" to="/lessons/missing-photo">Missing Photo</Link>
           </div>
         </form>
       </div>
     </section>
   );
 }
-

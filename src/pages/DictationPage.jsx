@@ -454,6 +454,7 @@ export default function DictationPage() {
       <p className="section-subtle">
         {monthLabel} ・ {hasValidProgress ? monthIndex + 1 : '-'} / {monthLessons.length || '-'}
       </p>
+      {lesson.imageUrl ? <img className="training-lesson-image" src={lesson.imageUrl} alt={`${lesson.title} visual`} /> : null}
       <article className="card dictation-input-card">
         <div
           className="dictation-slot-container"
