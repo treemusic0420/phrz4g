@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 const SPEEDS = [0.8, 1.0, 1.2];
 
 export default function AudioControls({
+  lessonId,
   audioUrl,
   audioContentType = 'audio/mpeg',
   onStatusChange,
@@ -12,6 +13,7 @@ export default function AudioControls({
   onAutoPlayBlocked,
   onAutoPlaySettled,
   onRegisterControls,
+  isAutoPlaySuppressed,
 }) {
   const audioRef = useRef(null);
   const [speed, setSpeed] = useState(1);
@@ -44,6 +46,16 @@ export default function AudioControls({
 
     const tryPlay = () => {
       if (canceled) return;
+      if (isAutoPlaySuppressed?.()) {
+        onAutoPlaySettled?.();
+        return;
+      }
+      const elementLessonId = audio.dataset.lessonId || '';
+      const elementAudioUrl = audio.dataset.audioUrl || '';
+      if ((lessonId && elementLessonId !== String(lessonId)) || (audioUrl && elementAudioUrl !== audioUrl)) {
+        onAutoPlaySettled?.();
+        return;
+      }
       const playPromise = audio.play();
       if (playPromise && typeof playPromise.finally === 'function') {
         playPromise
@@ -77,7 +89,7 @@ export default function AudioControls({
       audio.removeEventListener('canplay', handleCanPlay);
       if (rafId) window.cancelAnimationFrame(rafId);
     };
-  }, [audioUrl, autoPlayToken, onAutoPlayBlocked, onAutoPlaySettled, shouldAutoPlay]);
+  }, [audioUrl, autoPlayToken, isAutoPlaySuppressed, lessonId, onAutoPlayBlocked, onAutoPlaySettled, shouldAutoPlay]);
 
   const rewind = () => {
     if (!audioRef.current) return;
@@ -128,12 +140,23 @@ export default function AudioControls({
     audio.currentTime = 0;
   }, []);
 
+  const stopAndUnloadCurrentAudio = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.pause();
+    audio.currentTime = 0;
+    audio.removeAttribute('src');
+    const source = audio.querySelector('source');
+    if (source) source.removeAttribute('src');
+    audio.load();
+  }, []);
+
   useEffect(() => {
-    onRegisterControls?.({ togglePlayback, stopCurrentAudio });
+    onRegisterControls?.({ togglePlayback, stopCurrentAudio, stopAndUnloadCurrentAudio });
     return () => {
       onRegisterControls?.(null);
     };
-  }, [onRegisterControls, stopCurrentAudio, togglePlayback]);
+  }, [onRegisterControls, stopAndUnloadCurrentAudio, stopCurrentAudio, togglePlayback]);
 
   return (
     <div className="audio-box">
@@ -141,6 +164,8 @@ export default function AudioControls({
         <audio
           controls
           ref={audioRef}
+          data-lesson-id={lessonId || ''}
+          data-audio-url={audioUrl || ''}
           onLoadStart={() => {
             onStatusChange?.('loading');
             onErrorMessage?.('');

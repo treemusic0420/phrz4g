@@ -89,17 +89,26 @@ export default function DictationPage() {
   const isMonthMode = mode === 'month' && categoryId && registeredMonth;
 
   useEffect(() => {
+    let isActive = true;
+    suppressAudioAutoplayRef.current = true;
+    lessonAudioStopAndUnloadRef.current?.();
     setStartedAt(new Date());
     setInputText('');
     setHasChecked(false);
     setIsCorrect(null);
     setAutoPlayMessage('');
     setWrongSlotIndex(-1);
-    setAutoPlayToken((prev) => prev + 1);
     fetchLessonById(id).then((doc) => {
+      if (!isActive) return;
       if (!doc || doc.userId !== LOCAL_USER_ID) return navigate('/lessons');
       setLesson(doc);
+      suppressAudioAutoplayRef.current = false;
+      setAutoPlayToken((prev) => prev + 1);
     });
+    return () => {
+      isActive = false;
+      suppressAudioAutoplayRef.current = true;
+    };
   }, [id, navigate]);
 
   useEffect(() => {
@@ -138,7 +147,8 @@ export default function DictationPage() {
   const nextButtonRef = useRef(null);
   const backToListButtonRef = useRef(null);
   const audioToggleRef = useRef(null);
-  const lessonAudioStopRef = useRef(null);
+  const lessonAudioStopAndUnloadRef = useRef(null);
+  const suppressAudioAutoplayRef = useRef(true);
   const wrongInputTimeoutRef = useRef(null);
   const inputTextRef = useRef('');
   const isComposingRef = useRef(false);
@@ -290,7 +300,8 @@ export default function DictationPage() {
 
   const completeAndGoNext = async () => {
     if (!lesson) return;
-    lessonAudioStopRef.current?.();
+    suppressAudioAutoplayRef.current = true;
+    lessonAudioStopAndUnloadRef.current?.();
     const endedAt = new Date();
     const durationSeconds = Math.max(1, Math.floor((endedAt - startedAt) / 1000));
 
@@ -392,6 +403,7 @@ export default function DictationPage() {
   };
 
   const isSpaceKeyEvent = (event) => event.key === ' ' || event.key === 'Spacebar' || event.code === 'Space';
+  const isAutoPlaySuppressed = useCallback(() => suppressAudioAutoplayRef.current, []);
 
   const onDictationSectionKeyDownCapture = (event) => {
     if (!isSpaceKeyEvent(event)) return;
@@ -401,7 +413,8 @@ export default function DictationPage() {
   };
 
   const handleBackToLessonList = () => {
-    lessonAudioStopRef.current?.();
+    suppressAudioAutoplayRef.current = true;
+    lessonAudioStopAndUnloadRef.current?.();
     navigate(`/lessons/category/${categoryId}/month/${registeredMonth}`);
   };
 
@@ -532,15 +545,17 @@ export default function DictationPage() {
       </article>
       <AudioControls
         key={lesson.id}
+        lessonId={lesson.id}
         audioUrl={lesson.audioUrl}
         audioContentType={lesson.audioContentType || fallbackAudioContentType}
         shouldAutoPlay={canPlayAudio}
+        isAutoPlaySuppressed={isAutoPlaySuppressed}
         autoPlayToken={autoPlayToken}
         onAutoPlayBlocked={setAutoPlayMessage}
         onAutoPlaySettled={focusDictationInput}
         onRegisterControls={(controls) => {
           audioToggleRef.current = controls?.togglePlayback || null;
-          lessonAudioStopRef.current = controls?.stopCurrentAudio || null;
+          lessonAudioStopAndUnloadRef.current = controls?.stopAndUnloadCurrentAudio || null;
         }}
       />
       {autoPlayMessage ? <p className="section-subtle">{autoPlayMessage}</p> : null}
