@@ -135,6 +135,16 @@ export const updateLessonAudioUrl = async (lessonId, audioUrl) => {
   });
 };
 
+export const updateLessonAudio = async (lessonId, payload) => {
+  if (!lessonId) return;
+  return updateDoc(doc(db, 'lessons', lessonId), {
+    audioPath: payload?.audioPath || '',
+    audioUrl: payload?.audioUrl || '',
+    audioContentType: payload?.audioContentType || '',
+    updatedAt: serverTimestamp(),
+  });
+};
+
 export const createStudyLog = async (payload) => {
   return addDoc(collection(db, 'studyLogs'), {
     ...payload,
