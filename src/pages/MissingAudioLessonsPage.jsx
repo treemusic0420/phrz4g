@@ -7,6 +7,7 @@ import { formatDateTime, toDate } from '../utils/format';
 import { getDifficultyLabel } from '../utils/difficulty';
 import { resolveRegisteredMonthFields } from '../utils/registeredMonth';
 import { hasLessonAudio } from '../utils/lessons';
+import MissingLessonsFilters from '../components/MissingLessonsFilters';
 
 const mapUploadError = (message = '') => {
   if (message.includes('20MB')) return 'Audio file must be under 20MB.';
@@ -31,6 +32,9 @@ export default function MissingAudioLessonsPage() {
   const [uploadingIds, setUploadingIds] = useState({});
   const [lessonErrors, setLessonErrors] = useState({});
   const [uploadedIds, setUploadedIds] = useState({});
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [monthFilter, setMonthFilter] = useState('all');
+  const [difficultyFilter, setDifficultyFilter] = useState('all');
 
   useEffect(() => {
     const loadLessons = async () => {
@@ -67,6 +71,30 @@ export default function MissingAudioLessonsPage() {
       }),
     [lessons, uploadedIds],
   );
+
+  const availableMonths = useMemo(() => {
+    const monthMap = new Map();
+    missingAudioLessons.forEach((lesson) => {
+      const monthFields = resolveRegisteredMonthFields(lesson);
+      const monthKey = monthFields.registeredMonth || '';
+      if (monthKey) monthMap.set(monthKey, monthFields.registeredMonthLabel || monthKey);
+    });
+    return Array.from(monthMap.entries())
+      .sort((a, b) => String(b[0]).localeCompare(String(a[0])))
+      .map(([value, label]) => ({ value, label }));
+  }, [missingAudioLessons]);
+
+  const filteredLessons = useMemo(() => {
+    return missingAudioLessons.filter((lesson) => {
+      if (categoryFilter !== 'all' && (lesson.categoryId || '__unset__') !== categoryFilter) return false;
+      if (difficultyFilter !== 'all' && (lesson.difficulty || 'easy') !== difficultyFilter) return false;
+      if (monthFilter !== 'all') {
+        const monthFields = resolveRegisteredMonthFields(lesson);
+        if ((monthFields.registeredMonth || '') !== monthFilter) return false;
+      }
+      return true;
+    });
+  }, [missingAudioLessons, categoryFilter, difficultyFilter, monthFilter]);
 
   const onFileChange = (lessonId, file) => {
     if (!file) {
@@ -123,7 +151,7 @@ export default function MissingAudioLessonsPage() {
         <div>
           <p className="section-subtle">Lesson Management</p>
           <h2 className="section-title">Missing Audio</h2>
-          {!isLoading ? <p className="section-subtle">Missing audio: {missingAudioLessons.length} lessons</p> : null}
+          {!isLoading ? <p className="section-subtle">Missing audio: {filteredLessons.length} lessons</p> : null}
         </div>
         <div className="row gap-sm wrap">
           <Link className="btn ghost" to="/lessons/missing-photo">Missing Photo</Link>
@@ -133,9 +161,22 @@ export default function MissingAudioLessonsPage() {
 
       {error ? <article className="card error">{error}</article> : null}
 
+      {!isLoading && !error ? (
+        <MissingLessonsFilters
+          availableMonths={availableMonths}
+          categories={categories}
+          categoryFilter={categoryFilter}
+          difficultyFilter={difficultyFilter}
+          monthFilter={monthFilter}
+          onCategoryChange={setCategoryFilter}
+          onDifficultyChange={setDifficultyFilter}
+          onMonthChange={setMonthFilter}
+        />
+      ) : null}
+
       {isLoading ? <article className="card section-subtle">Loading lessons...</article> : null}
 
-      {!isLoading && !error && missingAudioLessons.length === 0 ? (
+      {!isLoading && !error && filteredLessons.length === 0 ? (
         <article className="card empty-state">
           <h3 className="section-title">All lessons have audio.</h3>
           <p className="section-subtle">Nice work. There are no lessons missing audio.</p>
@@ -147,7 +188,7 @@ export default function MissingAudioLessonsPage() {
       ) : null}
 
       {!isLoading && !error
-        ? missingAudioLessons.map((lesson) => {
+        ? filteredLessons.map((lesson) => {
             const monthFields = resolveRegisteredMonthFields(lesson);
             const categoryName = categoryNameById.get(lesson.categoryId) || 'Not set';
             const isUploading = !!uploadingIds[lesson.id];

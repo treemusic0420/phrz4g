@@ -1,0 +1,27 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isLocalUser(userId) {
+      return userId == 'local';
+    }
+
+    function isAllowedImageUpload() {
+      return request.resource != null
+        && request.resource.size <= 1 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|webp)');
+    }
+
+    // Existing audio policy for MVP: allow local user path access.
+    match /users/{userId}/lesson-audio/{fileName=**} {
+      allow read, write: if isLocalUser(userId);
+    }
+
+    // Image upload policy mirrors audio auth (local path) + image-specific constraints.
+    match /users/{userId}/lesson-images/{lessonId}/{fileName=**} {
+      allow read: if isLocalUser(userId);
+      allow write: if isLocalUser(userId)
+        && (request.resource == null || isAllowedImageUpload());
+    }
+  }
+}
