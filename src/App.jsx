@@ -13,6 +13,7 @@ import StatsPage from './pages/StatsPage';
 import CategoriesPage from './pages/CategoriesPage';
 import CategoryFormPage from './pages/CategoryFormPage';
 import MissingAudioLessonsPage from './pages/MissingAudioLessonsPage';
+import QuickAddLessonPage from './pages/QuickAddLessonPage';
 
 export default function App() {
   return (
@@ -41,6 +42,15 @@ export default function App() {
           element={
             <ProtectedRoute>
               <MissingAudioLessonsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/lessons/quick-add"
+          element={
+            <ProtectedRoute>
+              <QuickAddLessonPage />
             </ProtectedRoute>
           }
         />
