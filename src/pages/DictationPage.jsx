@@ -13,7 +13,12 @@ import {
 import { normalizeForDictation } from '../utils/dictation';
 import { diffWords } from '../utils/diff';
 import { playDictationCompleteSound, playDictationWrongKeySound } from '../utils/feedbackSound';
-import { filterLessonsByCategoryAndMonth, hasLessonAudio, sortLessonsForMonthTraining } from '../utils/lessons';
+import {
+  filterLessonsByCategoryAndMonth,
+  getLessonDisplayTitle,
+  hasLessonAudio,
+  sortLessonsForMonthTraining,
+} from '../utils/lessons';
 import { getRegisteredMonthLabel } from '../utils/registeredMonth';
 
 const splitToChars = (text) => Array.from(text || '');
@@ -120,6 +125,10 @@ export default function DictationPage() {
   const isLastLesson = monthLessons.length > 0 && monthIndex === monthLessons.length - 1;
   const hasValidProgress = monthIndex >= 0 && monthLessons.length > 0;
   const monthLabel = useMemo(() => getRegisteredMonthLabel(registeredMonth), [registeredMonth]);
+  const completedLessonTitles = useMemo(
+    () => monthLessons.map((monthLesson) => getLessonDisplayTitle(monthLesson)),
+    [monthLessons],
+  );
   const fileExtension = lesson?.audioPath?.split('.').pop()?.toLowerCase() || '';
   const fallbackAudioContentType =
     fileExtension === 'm4a' ? 'audio/mp4' : fileExtension === 'mp3' ? 'audio/mpeg' : fileExtension === 'wav' ? 'audio/wav' : '';
@@ -431,10 +440,21 @@ export default function DictationPage() {
   if (isFinished) {
     return (
       <section className="stack">
-        <article className="card">
+        <article className="card training-finished-card">
           <h2 className="section-title">Finished!</h2>
           <p className="section-subtle">You completed all lessons in this month.</p>
-          <div className="row gap-sm wrap">
+          <p className="training-finished-summary">Completed lessons: {completedLessonTitles.length}</p>
+          {completedLessonTitles.length > 0 ? (
+            <div className="training-finished-list-wrap">
+              <p className="training-finished-list-title">Lessons completed</p>
+              <ol className="training-finished-list">
+                {completedLessonTitles.map((title, index) => (
+                  <li key={`${title}-${index}`}>{title}</li>
+                ))}
+              </ol>
+            </div>
+          ) : null}
+          <div className="row gap-sm wrap training-finished-action">
             <button
               ref={backToListButtonRef}
               className="btn ghost"

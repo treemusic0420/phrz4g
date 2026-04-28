@@ -178,3 +178,11 @@ export const paginateLessons = (lessons = [], currentPage = 1, perPage = LESSONS
 
 export const hasLessonAudio = (lesson = {}) => !!(lesson?.audioUrl || lesson?.audioPath);
 export const hasLessonImage = (lesson = {}) => !!(lesson?.imageUrl || lesson?.imagePath);
+
+export const getLessonDisplayTitle = (lesson = {}, maxLength = 120) => {
+  const title = String(lesson?.title || '').trim();
+  if (title) return title;
+  const scriptHead = String(lesson?.scriptEn || '').replace(/\s+/g, ' ').trim();
+  if (scriptHead) return scriptHead.slice(0, maxLength);
+  return 'Untitled lesson';
+};
