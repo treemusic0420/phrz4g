@@ -61,6 +61,7 @@ export default function ShadowingPage() {
   const mediaRecorderRef = useRef(null);
   const mediaStreamRef = useRef(null);
   const chunksRef = useRef([]);
+  const backToListButtonRef = useRef(null);
   const discardOnStopRef = useRef(false);
   const timerRef = useRef(null);
   const stopResolverRef = useRef(null);
@@ -239,6 +240,13 @@ export default function ShadowingPage() {
     void discardRecording();
   }, [id]);
 
+  useEffect(() => {
+    if (!isFinished) return;
+    window.requestAnimationFrame(() => {
+      backToListButtonRef.current?.focus();
+    });
+  }, [isFinished]);
+
   if (!isMonthMode) {
     return (
       <section className="stack">
@@ -278,9 +286,14 @@ export default function ShadowingPage() {
           <h2 className="section-title">Finished!</h2>
           <p className="section-subtle">You completed all lessons in this month.</p>
           <div className="row gap-sm wrap">
-            <Link className="btn ghost" to={`/lessons/category/${categoryId}/month/${registeredMonth}`}>
+            <button
+              ref={backToListButtonRef}
+              className="btn ghost"
+              type="button"
+              onClick={() => void backToLessonList()}
+            >
               Back to List
-            </Link>
+            </button>
           </div>
         </article>
       </section>
