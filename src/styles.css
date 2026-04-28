@@ -897,3 +897,18 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
     width: 100%;
   }
 }
+
+.quick-add-card {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.quick-add-card textarea {
+  min-height: 120px;
+}
+
+@media (max-width: 375px) {
+  .quick-add-card {
+    padding: 14px;
+  }
+}

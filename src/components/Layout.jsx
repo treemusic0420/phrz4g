@@ -75,11 +75,14 @@ export default function Layout({ children }) {
                   </button>
                   {isMenuOpen ? (
                     <div className="header-menu-dropdown" role="menu">
-                      <Link className="header-menu-item" onClick={() => setIsMenuOpen(false)} role="menuitem" to="/categories">
-                        Categories
+                      <Link className="header-menu-item" onClick={() => setIsMenuOpen(false)} role="menuitem" to="/lessons/quick-add">
+                        Quick Add
                       </Link>
                       <Link className="header-menu-item" onClick={() => setIsMenuOpen(false)} role="menuitem" to="/lessons/missing-audio">
                         Missing Audio
+                      </Link>
+                      <Link className="header-menu-item" onClick={() => setIsMenuOpen(false)} role="menuitem" to="/categories">
+                        Categories
                       </Link>
                       <button
                         className="header-menu-item"
