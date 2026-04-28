@@ -4,7 +4,12 @@ import AudioControls from '../components/AudioControls';
 import LessonImageThumbnail from '../components/LessonImageThumbnail';
 import { LOCAL_USER_ID } from '../lib/auth';
 import { createStudyLog, fetchLessonById, fetchLessons, updateLessonStats } from '../lib/firestore';
-import { filterLessonsByCategoryAndMonth, hasLessonAudio, sortLessonsForMonthTraining } from '../utils/lessons';
+import {
+  filterLessonsByCategoryAndMonth,
+  getLessonDisplayTitle,
+  hasLessonAudio,
+  sortLessonsForMonthTraining,
+} from '../utils/lessons';
 import { getRegisteredMonthLabel } from '../utils/registeredMonth';
 
 export default function ShadowingPage() {
@@ -53,6 +58,7 @@ export default function ShadowingPage() {
   const nextLesson = monthIndex >= 0 ? monthLessons[monthIndex + 1] : null;
   const hasValidProgress = monthIndex >= 0 && monthLessons.length > 0;
   const monthLabel = getRegisteredMonthLabel(registeredMonth);
+  const completedLessonTitles = monthLessons.map((monthLesson) => getLessonDisplayTitle(monthLesson));
   const [isFinished, setIsFinished] = useState(false);
   const [recordingUrl, setRecordingUrl] = useState('');
   const [isRecording, setIsRecording] = useState(false);
@@ -63,7 +69,9 @@ export default function ShadowingPage() {
   const mediaStreamRef = useRef(null);
   const chunksRef = useRef([]);
   const backToListButtonRef = useRef(null);
+  const recordingAudioRef = useRef(null);
   const discardOnStopRef = useRef(false);
+  const shouldAutoPlayRecordingRef = useRef(false);
   const timerRef = useRef(null);
   const stopResolverRef = useRef(null);
 
@@ -82,6 +90,7 @@ export default function ShadowingPage() {
   };
 
   const revokeRecordingUrl = () => {
+    shouldAutoPlayRecordingRef.current = false;
     setRecordingUrl((prev) => {
       if (prev) URL.revokeObjectURL(prev);
       return '';
@@ -109,6 +118,11 @@ export default function ShadowingPage() {
       stopResolverRef.current = resolve;
       recorder.stop();
     });
+
+  const handleStopRecording = () => {
+    shouldAutoPlayRecordingRef.current = true;
+    void stopRecording(false);
+  };
 
   const discardRecording = async () => {
     await stopRecording(true);
@@ -248,6 +262,23 @@ export default function ShadowingPage() {
     });
   }, [isFinished]);
 
+  useEffect(() => {
+    if (!recordingUrl || !shouldAutoPlayRecordingRef.current) return;
+    const frameId = window.requestAnimationFrame(() => {
+      const recordingAudio = recordingAudioRef.current;
+      if (!recordingAudio) return;
+      recordingAudio.currentTime = 0;
+      const playPromise = recordingAudio.play();
+      if (playPromise?.catch) {
+        playPromise.catch(() => {});
+      }
+    });
+    shouldAutoPlayRecordingRef.current = false;
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [recordingUrl]);
+
   if (!isMonthMode) {
     return (
       <section className="stack">
@@ -283,10 +314,21 @@ export default function ShadowingPage() {
   if (isFinished) {
     return (
       <section className="stack">
-        <article className="card">
+        <article className="card training-finished-card">
           <h2 className="section-title">Finished!</h2>
           <p className="section-subtle">You completed all lessons in this month.</p>
-          <div className="row gap-sm wrap">
+          <p className="training-finished-summary">Completed lessons: {completedLessonTitles.length}</p>
+          {completedLessonTitles.length > 0 ? (
+            <div className="training-finished-list-wrap">
+              <p className="training-finished-list-title">Lessons completed</p>
+              <ol className="training-finished-list">
+                {completedLessonTitles.map((title, index) => (
+                  <li key={`${title}-${index}`}>{title}</li>
+                ))}
+              </ol>
+            </div>
+          ) : null}
+          <div className="row gap-sm wrap training-finished-action">
             <button
               ref={backToListButtonRef}
               className="btn ghost"
@@ -337,7 +379,7 @@ export default function ShadowingPage() {
               Start Recording
             </button>
             {isRecording ? (
-              <button type="button" className="btn danger-ghost" onClick={() => stopRecording(false)}>
+              <button type="button" className="btn danger-ghost" onClick={handleStopRecording}>
                 Stop Recording
               </button>
             ) : null}
@@ -347,7 +389,7 @@ export default function ShadowingPage() {
               </button>
             ) : null}
           </div>
-          {recordingUrl ? <audio controls src={recordingUrl} /> : null}
+          {recordingUrl ? <audio ref={recordingAudioRef} controls src={recordingUrl} /> : null}
         </div>
       </article>
       <div className="shadowing-rating-actions">

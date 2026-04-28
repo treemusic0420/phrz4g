@@ -291,6 +291,54 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
   border-bottom-color: #d1d5db;
   border-radius: 4px 4px 0 0;
 }
+.training-finished-card,
+.dictation-finished-card {
+  display: grid;
+  gap: 10px;
+}
+.training-finished-summary,
+.dictation-finished-summary {
+  margin: 2px 0 0;
+  font-size: 0.95rem;
+  color: #1d1d1f;
+  font-weight: 600;
+}
+.training-finished-list-wrap,
+.dictation-finished-list-wrap {
+  margin-top: 2px;
+  padding: 12px 14px;
+  border: 1px solid #ececf1;
+  border-radius: 14px;
+  background: #fafafd;
+  max-height: min(42vh, 360px);
+  overflow-y: auto;
+}
+.training-finished-list-title,
+.dictation-finished-list-title {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #3a3a3c;
+}
+.training-finished-list,
+.dictation-finished-list {
+  margin: 0;
+  padding-left: 1.35rem;
+  display: grid;
+  gap: 8px;
+}
+.training-finished-list li,
+.dictation-finished-list li {
+  font-size: 0.94rem;
+  line-height: 1.45;
+  color: #1f2937;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.training-finished-action,
+.dictation-finished-action {
+  margin: 10px 0 4px;
+}
 .empty-state { text-align: center; padding: 28px 20px; }
 .category-card {
   display: grid;
@@ -552,6 +600,15 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
   }
   .dictation-slot-space {
     width: 1.6em;
+  }
+  .training-finished-list-wrap,
+  .dictation-finished-list-wrap {
+    max-height: min(40vh, 300px);
+    padding: 10px 12px;
+  }
+  .training-finished-list,
+  .dictation-finished-list {
+    gap: 7px;
   }
 }
 
