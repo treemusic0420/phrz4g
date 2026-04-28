@@ -451,16 +451,21 @@ export default function DictationPage() {
 
   return (
     <section className="stack" onKeyDownCapture={onDictationSectionKeyDownCapture}>
-      <h2 className="section-title">Dictation: {lesson.title}</h2>
+      <div className="training-page-header">
+        <h2 className="section-title training-page-title">Dictation: {lesson.title}</h2>
+        {lesson.imageUrl ? (
+          <LessonImageThumbnail
+            imageUrl={lesson.imageUrl}
+            title={lesson.title}
+            fit="cover"
+            className="training-lesson-thumbnail-compact"
+          />
+        ) : null}
+      </div>
       <p className="section-subtle">
         {monthLabel} ・ {hasValidProgress ? monthIndex + 1 : '-'} / {monthLessons.length || '-'}
       </p>
       <article className="card dictation-input-card">
-        {lesson.imageUrl ? (
-          <div className="dictation-thumbnail-row">
-            <LessonImageThumbnail imageUrl={lesson.imageUrl} title={lesson.title} fit="cover" />
-          </div>
-        ) : null}
         <div
           className="dictation-slot-container"
           onClick={focusDictationInput}

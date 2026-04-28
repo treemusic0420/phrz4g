@@ -156,6 +156,16 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
 .debug-panel { border: 1px dashed #d2d2d7; border-radius: 12px; padding: 8px 10px; font-size: 0.75rem; color: #6e6e73; background: #f9f9fb; }
 .section-title { margin: 0; font-size: clamp(1.22rem, 3.8vw, 1.5rem); letter-spacing: -0.02em; }
 .section-subtle { font-size: 0.88rem; color: #6e6e73; margin: 0; }
+.training-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.training-page-title {
+  flex: 1;
+  min-width: 0;
+}
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .diff-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
 .diff-match { background: #dcfce7; padding: 2px 6px; border-radius: 999px; }
@@ -939,13 +949,6 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
   margin-top: 8px;
 }
 
-.dictation-thumbnail-row,
-.shadowing-thumbnail-row {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 10px;
-}
-
 .training-lesson-thumbnail {
   width: 108px;
   height: 108px;
@@ -969,6 +972,12 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
 .training-lesson-thumbnail img {
   width: 100%;
   height: 100%;
+}
+.training-lesson-thumbnail-compact {
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  flex: 0 0 64px;
 }
 
 .lesson-image-modal-overlay {
@@ -1008,15 +1017,21 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
 }
 
 @media (max-width: 640px) {
+  .training-page-header {
+    gap: 8px;
+  }
+
   .training-lesson-thumbnail {
     width: 84px;
     height: 84px;
     border-radius: 14px;
   }
 
-  .dictation-thumbnail-row,
-  .shadowing-thumbnail-row {
-    margin-bottom: 8px;
+  .training-lesson-thumbnail-compact {
+    width: 56px;
+    height: 56px;
+    flex-basis: 56px;
+    border-radius: 12px;
   }
 
   .lesson-image-modal-overlay {
