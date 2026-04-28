@@ -20,8 +20,9 @@ const splitToChars = (text) => Array.from(text || '');
 const WHITESPACE_REGEX = /\s/;
 const ALLOWED_DICTATION_CHAR_REGEX = /^[A-Za-z0-9.,?!'"\-:;()/&@]$/;
 const FULL_WIDTH_ASCII_REGEX = /[！-～]/g;
+const AUTO_INSERTED_PUNCTUATION = new Set([',', '.', "'", '’', '?']);
 const isAutoInsertedDictationChar = (char) =>
-  WHITESPACE_REGEX.test(char) || char === ',' || char === '.' || char === "'" || char === '’';
+  WHITESPACE_REGEX.test(char) || AUTO_INSERTED_PUNCTUATION.has(char);
 
 const normalizeWidth = (char) =>
   char.replace(FULL_WIDTH_ASCII_REGEX, (value) => String.fromCharCode(value.charCodeAt(0) - 0xfee0));
