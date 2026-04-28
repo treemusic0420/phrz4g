@@ -125,6 +125,7 @@ export default function DictationPage() {
   const canPlayAudio = hasLessonAudio(lesson);
   const hiddenInputRef = useRef(null);
   const nextButtonRef = useRef(null);
+  const backToListButtonRef = useRef(null);
   const audioToggleRef = useRef(null);
   const wrongInputTimeoutRef = useRef(null);
   const inputTextRef = useRef('');
@@ -322,6 +323,13 @@ export default function DictationPage() {
     focusDictationInput();
   }, [lesson?.id, isFinished]);
 
+  useEffect(() => {
+    if (!isFinished) return;
+    window.requestAnimationFrame(() => {
+      backToListButtonRef.current?.focus();
+    });
+  }, [isFinished]);
+
   const onHiddenInputChange = (event) => {
     if (isComposingRef.current) return;
     const typedChars = splitToChars(event.target.value);
@@ -379,6 +387,10 @@ export default function DictationPage() {
     audioToggleRef.current?.();
   };
 
+  const handleBackToLessonList = () => {
+    navigate(`/lessons/category/${categoryId}/month/${registeredMonth}`);
+  };
+
 
 
 
@@ -421,9 +433,14 @@ export default function DictationPage() {
           <h2 className="section-title">Finished!</h2>
           <p className="section-subtle">You completed all lessons in this month.</p>
           <div className="row gap-sm wrap">
-            <Link className="btn ghost" to={`/lessons/category/${categoryId}/month/${registeredMonth}`}>
+            <button
+              ref={backToListButtonRef}
+              className="btn ghost"
+              type="button"
+              onClick={handleBackToLessonList}
+            >
               Back to Lesson List
-            </Link>
+            </button>
           </div>
         </article>
       </section>
