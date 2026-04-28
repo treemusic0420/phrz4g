@@ -12,6 +12,7 @@ import ShadowingPage from './pages/ShadowingPage';
 import StatsPage from './pages/StatsPage';
 import CategoriesPage from './pages/CategoriesPage';
 import CategoryFormPage from './pages/CategoryFormPage';
+import MissingAudioLessonsPage from './pages/MissingAudioLessonsPage';
 
 export default function App() {
   return (
@@ -31,6 +32,15 @@ export default function App() {
           element={
             <ProtectedRoute>
               <LessonsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/lessons/missing-audio"
+          element={
+            <ProtectedRoute>
+              <MissingAudioLessonsPage />
             </ProtectedRoute>
           }
         />
