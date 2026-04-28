@@ -70,6 +70,7 @@ export default function ShadowingPage() {
   const chunksRef = useRef([]);
   const backToListButtonRef = useRef(null);
   const recordingAudioRef = useRef(null);
+  const lessonAudioStopRef = useRef(null);
   const discardOnStopRef = useRef(false);
   const shouldAutoPlayRecordingRef = useRef(false);
   const timerRef = useRef(null);
@@ -102,6 +103,14 @@ export default function ShadowingPage() {
       mediaStreamRef.current.getTracks().forEach((track) => track.stop());
       mediaStreamRef.current = null;
     }
+  };
+
+  const stopCurrentAudio = () => {
+    lessonAudioStopRef.current?.();
+    const recordingAudio = recordingAudioRef.current;
+    if (!recordingAudio) return;
+    recordingAudio.pause();
+    recordingAudio.currentTime = 0;
   };
 
   const stopRecording = (discard = false) =>
@@ -213,6 +222,7 @@ export default function ShadowingPage() {
 
   const completeAndGoNext = async (shadowingRating) => {
     if (!lesson) return;
+    stopCurrentAudio();
     await discardRecording();
     const endedAt = new Date();
     const durationSeconds = Math.max(1, Math.floor((endedAt - startedAt) / 1000));
@@ -237,6 +247,7 @@ export default function ShadowingPage() {
   };
 
   const backToLessonList = async () => {
+    stopCurrentAudio();
     await discardRecording();
     navigate(`/lessons/category/${categoryId}/month/${registeredMonth}`);
   };
@@ -252,6 +263,7 @@ export default function ShadowingPage() {
 
   useEffect(() => {
     setRecordingError('');
+    stopCurrentAudio();
     void discardRecording();
   }, [id]);
 
@@ -367,6 +379,9 @@ export default function ShadowingPage() {
         shouldAutoPlay={canPlayAudio}
         autoPlayToken={autoPlayToken}
         onAutoPlayBlocked={setAutoPlayMessage}
+        onRegisterControls={(controls) => {
+          lessonAudioStopRef.current = controls?.stopCurrentAudio || null;
+        }}
       />
       {autoPlayMessage ? <p className="section-subtle">{autoPlayMessage}</p> : null}
       <article className="card recording-card">

@@ -121,12 +121,19 @@ export default function AudioControls({
     audio.pause();
   }, [onAutoPlayBlocked]);
 
+  const stopCurrentAudio = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.pause();
+    audio.currentTime = 0;
+  }, []);
+
   useEffect(() => {
-    onRegisterControls?.({ togglePlayback });
+    onRegisterControls?.({ togglePlayback, stopCurrentAudio });
     return () => {
       onRegisterControls?.(null);
     };
-  }, [onRegisterControls, togglePlayback]);
+  }, [onRegisterControls, stopCurrentAudio, togglePlayback]);
 
   return (
     <div className="audio-box">

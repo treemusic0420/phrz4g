@@ -138,6 +138,7 @@ export default function DictationPage() {
   const nextButtonRef = useRef(null);
   const backToListButtonRef = useRef(null);
   const audioToggleRef = useRef(null);
+  const lessonAudioStopRef = useRef(null);
   const wrongInputTimeoutRef = useRef(null);
   const inputTextRef = useRef('');
   const isComposingRef = useRef(false);
@@ -289,6 +290,7 @@ export default function DictationPage() {
 
   const completeAndGoNext = async () => {
     if (!lesson) return;
+    lessonAudioStopRef.current?.();
     const endedAt = new Date();
     const durationSeconds = Math.max(1, Math.floor((endedAt - startedAt) / 1000));
 
@@ -399,6 +401,7 @@ export default function DictationPage() {
   };
 
   const handleBackToLessonList = () => {
+    lessonAudioStopRef.current?.();
     navigate(`/lessons/category/${categoryId}/month/${registeredMonth}`);
   };
 
@@ -537,6 +540,7 @@ export default function DictationPage() {
         onAutoPlaySettled={focusDictationInput}
         onRegisterControls={(controls) => {
           audioToggleRef.current = controls?.togglePlayback || null;
+          lessonAudioStopRef.current = controls?.stopCurrentAudio || null;
         }}
       />
       {autoPlayMessage ? <p className="section-subtle">{autoPlayMessage}</p> : null}
