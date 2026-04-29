@@ -22,32 +22,11 @@ jobs:
           # Use LTS for maximum action/dependency compatibility in CI.
           node-version: 20
 
-      - name: Create .env for Vite build
-        run: |
-          cat <<ENVEOF > .env
-          VITE_APP_PASSCODE=${{ secrets.VITE_APP_PASSCODE }}
-          ENVEOF
-
-      - name: Validate VITE_APP_PASSCODE value (no secrets output)
-        run: |
-          node -e "
-          const value = process.env.VITE_APP_PASSCODE;
-          const exists = !!value;
-          console.log('VITE_APP_PASSCODE_EXISTS=' + exists);
-          if (!exists || value === 'undefined') {
-            throw new Error('VITE_APP_PASSCODE is missing or invalid');
-          }
-          "
-        env:
-          VITE_APP_PASSCODE: ${{ secrets.VITE_APP_PASSCODE }}
-
       - name: Install dependencies
         run: npm install
 
       - name: Build
         run: npm run build
-        env:
-          VITE_APP_PASSCODE: ${{ secrets.VITE_APP_PASSCODE }}
 
       - name: Create Firebase service account file
         run: |

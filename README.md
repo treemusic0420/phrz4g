@@ -3,20 +3,17 @@
 ## Overview
 Phrz4g is a **personal English learning web app**. You can register your own lesson materials (English script / Japanese translation / audio), practice with dictation and shadowing, and track study time and attempt counts.
 
-## Current Authentication (Temporary MVP Setup)
-Firebase Authentication is temporarily disabled. The app currently uses **in-app passcode authentication** for MVP verification.
+## Authentication
+This app uses **Google Sign-In with Firebase Authentication**.
 
-- Login succeeds when the entered passcode matches `VITE_APP_PASSCODE`
-- Auth state is stored in `localStorage` as `phrz4g_authenticated=true`
-- Logout clears the auth flag
+- Authentication state is managed by Firebase Auth (`onAuthStateChanged`)
+- The app uses authenticated `user.uid` as `userId`
 - Unauthenticated users are redirected to `/login`
-- `userId` is fixed to `local`
-- Audio files are stored under `users/local/lesson-audio/{filename}`
-
-> Before production release, restore Firebase Auth and switch Firestore / Storage Rules back to authenticated-user restrictions (`request.auth.uid` based).
+- Login is available only through Google Sign-In
 
 ## Tech Stack
 - React + Vite
+- Firebase Authentication (Google provider)
 - Firebase Hosting
 - Cloud Firestore (lessons / study logs)
 - Firebase Storage (audio files)
@@ -25,6 +22,7 @@ Firebase Authentication is temporarily disabled. The app currently uses **in-app
 ## Required Firebase Setup
 - Firebase project: `phrz4g`
 - Create a Web App
+- Enable Firebase Authentication (Google provider)
 - Enable Cloud Firestore
 - Enable Firebase Storage
 - Hosting site: `phrz4g`
@@ -32,15 +30,11 @@ Firebase Authentication is temporarily disabled. The app currently uses **in-app
 ## Environment Variables (Local Development)
 Firebase Web App config values are defined directly in `src/lib/firebase.js` because they are intended to be public in the browser.
 
-1. Copy `.env.example` to `.env`
-2. Set your passcode in `VITE_APP_PASSCODE`
+1. Copy `.env.example` to `.env` (optional; currently no required Vite env vars)
 
 ```bash
 cp .env.example .env
 ```
-
-`.env.example` key:
-- `VITE_APP_PASSCODE`
 
 > `.env` is ignored by git and should not be committed.
 
@@ -63,59 +57,17 @@ Workflow: `.github/workflows/deploy-hosting.yml`
 ### Required GitHub Secrets
 Set the following in **Repository Secrets**.
 
-#### Frontend Build (Vite)
-- `VITE_APP_PASSCODE`
-
 #### Firebase Hosting Auth
 - `FIREBASE_SERVICE_ACCOUNT_PHRZ4G`
 
 ### What the Workflow Does
 1. `npm install`
-2. Generates `.env` using only `VITE_APP_PASSCODE`
-3. `npm run build`
-4. Writes the service account JSON to a temp file and deploys to Firebase Hosting `live`
-
-## Data Storage Policy (Temporary)
-- Firestore: stores `userId: "local"` in `lessons`, `studyLogs`, and `dictationAttempts`
-- Storage: `users/local/lesson-audio/{filename}`
-
-## Firestore Rules for Dashboard Reads (MVP)
-`/stats` (Dashboard) reads both `lessons` and `studyLogs`. For MVP testing with `userId: "local"`, ensure these Rules allow reads:
-
-```txt
-rules_version = '2';
-
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /categories/{categoryId} {
-      allow read, write: if true;
-    }
-
-    match /lessons/{lessonId} {
-      allow read, write: if true;
-    }
-
-    match /studyLogs/{logId} {
-      allow read, write: if true;
-    }
-
-    match /dictationAttempts/{attemptId} {
-      allow read, write: if true;
-    }
-  }
-}
-```
+2. `npm run build`
+3. Writes the service account JSON to a temp file and deploys to Firebase Hosting `live`
 
 ## Supported Audio Format (MVP)
 - Currently, only **MP3** files are supported for lesson audio upload.
 - `m4a` files (for example from Apple Voice Memos) are not accepted as-is. Please convert them to MP3 first.
-
-## Pre-Production Restoration Checklist
-1. Restore Firebase Authentication (enable Google / Email providers as needed)
-2. Switch client implementation back to Firebase Auth-based user isolation by uid
-3. Restore Firestore Rules using `request.auth.uid`
-4. Restore Storage Rules using `request.auth.uid`
-5. Verify data isolation with non-test users
 
 ## Out of Scope in This Version
 - AI corrections
