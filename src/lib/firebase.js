@@ -4,13 +4,22 @@ import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyAObBuXIkEEDib1kDJP4bTwblpxGQ6w_Czo',
-  authDomain: 'phrz4g.firebaseapp.com',
-  projectId: 'phrz4g',
-  storageBucket: 'phrz4g.firebasestorage.app',
-  messagingSenderId: '795357705785',
-  appId: '1:795357705785:web:ac2e7c8d717c41289bffe8',
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
+
+const apiKey = firebaseConfig.apiKey || '';
+console.info('[firebase] config debug', {
+  apiKeyPresent: Boolean(apiKey),
+  apiKeyPrefix: apiKey ? apiKey.slice(0, 6) : 'missing',
+  projectId: firebaseConfig.projectId || 'missing',
+  authDomain: firebaseConfig.authDomain || 'missing',
+  storageBucket: firebaseConfig.storageBucket || 'missing',
+});
 
 const app = initializeApp(firebaseConfig);
 
