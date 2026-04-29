@@ -83,7 +83,9 @@ export const AuthProvider = ({ children }) => {
 
         try {
           if (isCapacitor) {
+            console.log('[AuthDebug] signInWithGoogle start');
             const result = await FirebaseAuthentication.signInWithGoogle();
+            console.log('[AuthDebug] signInWithGoogle returned');
             const hasCredentialObject = Boolean(result?.credential);
             const credentialForWebAuth = getGoogleCredentialFromResult(result);
 
@@ -109,6 +111,7 @@ export const AuthProvider = ({ children }) => {
           console.log('[AuthDebug] signInWithPopup success');
           return result;
         } catch (error) {
+          console.error('[AuthDebug] signInWithGoogle failed');
           const errorKeys = error && typeof error === 'object' ? Object.keys(error) : [];
           let serializedError = null;
 
@@ -136,6 +139,7 @@ export const AuthProvider = ({ children }) => {
             keys: errorKeys,
             serializedError,
           });
+          console.dir(error);
           throw error;
         }
       },
