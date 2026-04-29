@@ -76,6 +76,7 @@ const buildDashboardData = (lessons, logs, options = {}) => {
   let week = 0;
   let month = 0;
   let total = 0;
+  let activeDaysThisMonth = 0;
 
   const daySet = new Set();
   const perDaySeconds = new Map();
@@ -100,6 +101,8 @@ const buildDashboardData = (lessons, logs, options = {}) => {
     daySet.add(dayKey);
     perDaySeconds.set(dayKey, (perDaySeconds.get(dayKey) || 0) + seconds);
   });
+
+  activeDaysThisMonth = Array.from(daySet).filter((dayKey) => dayKey.startsWith(monthPrefix)).length;
 
   const lessonBasedTotal = lessons.reduce((sum, lesson) => sum + (Number(lesson.totalStudySeconds) || 0), 0);
   if (!shouldUseLogsSummary) {
@@ -142,6 +145,7 @@ const buildDashboardData = (lessons, logs, options = {}) => {
       month,
       total,
       streak,
+      activeDaysThisMonth,
     },
     last7Days,
   };
@@ -381,7 +385,10 @@ export default function StatsPage() {
           variant="studyTime"
           emptyText="No study logs yet. Start a lesson to see your progress."
         />
-
+        <article className="card dashboard-chart-card dashboard-active-days-card">
+          <h3>Active Days (This Month)</h3>
+          <p className="dashboard-active-days-value">{dashboard.summary.activeDaysThisMonth} days</p>
+        </article>
       </section>
 
       <article className="card">

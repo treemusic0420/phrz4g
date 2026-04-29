@@ -744,6 +744,21 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
   margin-bottom: 0;
 }
 
+.dashboard-active-days-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.dashboard-active-days-value {
+  margin: 4px 0 0;
+  font-size: clamp(1.5rem, 4.2vw, 2rem);
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #1f2952;
+}
+
 .dashboard-chart-card h3,
 .card h3 {
   margin: 0 0 10px;
