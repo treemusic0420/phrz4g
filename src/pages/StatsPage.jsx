@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { fetchLessons, fetchMonthlyStats, fetchStudyLogsInRange } from '../lib/firestore';
+import { fetchLessons, fetchMonthlyStats, fetchStudyLogs } from '../lib/firestore';
 import { formatDateTime, toDate } from '../utils/format';
 
 const TZ = 'Asia/Tokyo';
@@ -205,6 +205,12 @@ const toMonthRoute = (lesson) => {
   return `/lessons/category/${lesson.categoryId}/month/${lesson.registeredMonth}`;
 };
 
+const sanitizeErrorMessage = (error) => {
+  const raw = String(error?.message || 'Unknown error');
+  if (raw.includes('query requires an index')) return 'The query requires an index.';
+  return raw.replace(/https?:\/\/\S+/g, '[link hidden]');
+};
+
 export default function StatsPage() {
   const { user } = useAuth();
   const userId = user?.uid || '';
@@ -228,14 +234,11 @@ export default function StatsPage() {
 
       const now = new Date();
       const nowParts = getDatePartsInTz(now);
-      const nextMonthStart = new Date(Date.UTC(nowParts.year, nowParts.month, 1));
-      const streakWindowStart = addDaysInTz(nowParts, -90);
-      const logsWindowStart = toUtcFromTzDateParts(streakWindowStart);
       const currentMonthKey = `${nowParts.year}-${String(nowParts.month).padStart(2, '0')}`;
 
       const [lessonsResult, logsResult, monthlyStatsResult] = await Promise.allSettled([
         fetchLessons(userId),
-        fetchStudyLogsInRange(userId, logsWindowStart, nextMonthStart),
+        fetchStudyLogs(userId),
         fetchMonthlyStats(userId),
       ]);
 
@@ -256,7 +259,7 @@ export default function StatsPage() {
       } else {
         setLogs([]);
         setStudyLogsStatus('error');
-        setStudyLogsError(logsResult.reason?.message || 'Unknown error');
+        setStudyLogsError(sanitizeErrorMessage(logsResult.reason));
       }
 
       if (monthlyStatsResult.status === 'fulfilled') {
