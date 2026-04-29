@@ -1128,3 +1128,31 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
   color: #b45309;
   font-weight: 600;
 }
+
+.admin-migrate-card {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-migrate-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.admin-migrate-summary {
+  border: 1px solid var(--line, #ddd);
+  border-radius: 8px;
+  padding: 10px;
+  background: #fafafa;
+}
+
+.admin-migrate-log {
+  min-height: 180px;
+  max-height: 360px;
+  overflow: auto;
+  background: #0f172a;
+  color: #dbeafe;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 12px;
+}

@@ -15,6 +15,7 @@ import CategoryFormPage from './pages/CategoryFormPage';
 import MissingAudioLessonsPage from './pages/MissingAudioLessonsPage';
 import MissingPhotoLessonsPage from './pages/MissingPhotoLessonsPage';
 import QuickAddLessonPage from './pages/QuickAddLessonPage';
+import AdminMigrateLocalPage from './pages/AdminMigrateLocalPage';
 
 export default function App() {
   return (
@@ -140,6 +141,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <CategoryFormPage mode="edit" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/migrate-local"
+          element={
+            <ProtectedRoute>
+              <AdminMigrateLocalPage />
             </ProtectedRoute>
           }
         />
