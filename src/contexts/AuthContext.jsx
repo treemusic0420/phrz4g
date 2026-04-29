@@ -11,6 +11,15 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
+      if (nextUser) {
+        console.log('[AuthDebug] onAuthStateChanged: signed in', {
+          uid: nextUser.uid,
+          email: nextUser.email,
+          providerData: nextUser.providerData,
+        });
+      } else {
+        console.log('[AuthDebug] onAuthStateChanged: signed out');
+      }
       setUser(nextUser);
       setLoading(false);
     });
@@ -23,7 +32,23 @@ export const AuthProvider = ({ children }) => {
       loading,
       isAuthenticated: Boolean(user),
       login: async () => {
-        await signInWithPopup(auth, googleProvider);
+        console.log('[AuthDebug] [Auth] Google sign-in started');
+        try {
+          console.log('[AuthDebug] [Auth] signInWithPopup calling');
+          const result = await signInWithPopup(auth, googleProvider);
+          console.log('[AuthDebug] [Auth] signInWithPopup success');
+          return result;
+        } catch (error) {
+          console.error('[AuthDebug] Google sign in failed', {
+            code: error?.code,
+            message: error?.message,
+            name: error?.name,
+            customData: error?.customData,
+            stack: error?.stack,
+          });
+          // If popup-related failures continue, consider switching this flow to signInWithRedirect.
+          throw error;
+        }
       },
       logout: async () => {
         await signOut(auth);

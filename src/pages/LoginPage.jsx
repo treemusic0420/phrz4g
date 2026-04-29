@@ -5,15 +5,24 @@ import { useAuth } from '../contexts/AuthContext';
 export default function LoginPage() {
   const { isAuthenticated, login, loading } = useAuth();
   const [loginError, setLoginError] = useState('');
+  const [loginErrorCode, setLoginErrorCode] = useState('');
 
   if (!loading && isAuthenticated) return <Navigate to="/home" replace />;
 
   const handleGoogleLogin = async () => {
     setLoginError('');
+    setLoginErrorCode('');
     try {
       await login();
     } catch (error) {
-      console.error('Google sign in failed:', error?.code, error);
+      console.error('[AuthDebug] LoginPage handleGoogleLogin failed', {
+        code: error?.code,
+        message: error?.message,
+        name: error?.name,
+        customData: error?.customData,
+        stack: error?.stack,
+      });
+      setLoginErrorCode(error?.code || 'unknown-error');
       setLoginError('Google sign in failed. Please try again.');
     }
   };
@@ -29,7 +38,12 @@ export default function LoginPage() {
         </button>
       </div>
 
-      {loginError ? <p className="error">{loginError}</p> : null}
+      {loginError ? (
+        <div className="stack">
+          <p className="error">{loginError}</p>
+          {loginErrorCode ? <p className="error">Google sign in failed: {loginErrorCode}</p> : null}
+        </div>
+      ) : null}
     </section>
   );
 }
