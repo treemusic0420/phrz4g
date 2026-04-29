@@ -1,0 +1,72 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // TEMP: Local data migration exception for UID EpwjD8uFm2YNgqFB8SGPzMB5jfg1.
+    // Remove this helper and related allow-clauses after /admin/migrate-local migration is complete.
+    function isLocalMigrationUser() {
+      return request.auth != null
+        && request.auth.uid == 'EpwjD8uFm2YNgqFB8SGPzMB5jfg1';
+    }
+
+    function isOwnerByUserId(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function canReadLocalMigrationData() {
+      return isLocalMigrationUser() && resource.data.userId == 'local';
+    }
+
+    function canUpdateLocalMigrationData() {
+      return isLocalMigrationUser()
+        && resource.data.userId == 'local'
+        && request.resource.data.userId == 'local';
+    }
+
+    match /lessons/{docId} {
+      allow read: if isOwnerByUserId(resource.data.userId) || canReadLocalMigrationData();
+      allow create: if isOwnerByUserId(request.resource.data.userId);
+      allow update: if isOwnerByUserId(resource.data.userId)
+        && isOwnerByUserId(request.resource.data.userId)
+        || canUpdateLocalMigrationData();
+      allow delete: if isOwnerByUserId(resource.data.userId);
+    }
+
+    match /categories/{docId} {
+      allow read: if isOwnerByUserId(resource.data.userId) || canReadLocalMigrationData();
+      allow create: if isOwnerByUserId(request.resource.data.userId);
+      allow update: if isOwnerByUserId(resource.data.userId)
+        && isOwnerByUserId(request.resource.data.userId)
+        || canUpdateLocalMigrationData();
+      allow delete: if isOwnerByUserId(resource.data.userId);
+    }
+
+    match /studyLogs/{docId} {
+      allow read: if isOwnerByUserId(resource.data.userId) || canReadLocalMigrationData();
+      allow create: if isOwnerByUserId(request.resource.data.userId);
+      allow update: if isOwnerByUserId(resource.data.userId)
+        && isOwnerByUserId(request.resource.data.userId)
+        || canUpdateLocalMigrationData();
+      allow delete: if isOwnerByUserId(resource.data.userId);
+    }
+
+    match /dictationAttempts/{docId} {
+      allow read: if isOwnerByUserId(resource.data.userId) || canReadLocalMigrationData();
+      allow create: if isOwnerByUserId(request.resource.data.userId);
+      allow update: if isOwnerByUserId(resource.data.userId)
+        && isOwnerByUserId(request.resource.data.userId)
+        || canUpdateLocalMigrationData();
+      allow delete: if isOwnerByUserId(resource.data.userId);
+    }
+
+    // Included for environments where monthlyStats collection exists.
+    match /monthlyStats/{docId} {
+      allow read: if isOwnerByUserId(resource.data.userId) || canReadLocalMigrationData();
+      allow create: if isOwnerByUserId(request.resource.data.userId);
+      allow update: if isOwnerByUserId(resource.data.userId)
+        && isOwnerByUserId(request.resource.data.userId)
+        || canUpdateLocalMigrationData();
+      allow delete: if isOwnerByUserId(resource.data.userId);
+    }
+  }
+}
