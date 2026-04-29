@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 const navItems = [
   { to: '/lessons', label: 'Lessons' },
+  { to: '/analytics', label: 'Analytics' },
 ];
 
 const isActivePath = (pathname, to) => pathname === to || pathname.startsWith(`${to}/`);
@@ -86,6 +87,9 @@ export default function Layout({ children }) {
                       </Link>
                       <Link className="header-menu-item" onClick={() => setIsMenuOpen(false)} role="menuitem" to="/categories">
                         Categories
+                      </Link>
+                      <Link className="header-menu-item" onClick={() => setIsMenuOpen(false)} role="menuitem" to="/analytics">
+                        Analytics
                       </Link>
                       <button
                         className="header-menu-item"

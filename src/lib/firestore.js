@@ -1,11 +1,14 @@
 import {
   addDoc,
+  Timestamp,
+  writeBatch,
   collection,
   deleteDoc,
   doc,
   getDoc,
   getDocs,
   query,
+  setDoc,
   serverTimestamp,
   updateDoc,
   where,
@@ -178,6 +181,64 @@ export const fetchStudyLogs = async (userId) => {
   const q = query(collection(db, 'studyLogs'), where('userId', '==', userId));
   const snap = await getDocs(q);
   return snap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }));
+};
+
+export const fetchStudyLogsInRange = async (userId, startDate, endDate) => {
+  const q = query(
+    collection(db, 'studyLogs'),
+    where('userId', '==', userId),
+    where('createdAt', '>=', Timestamp.fromDate(startDate)),
+    where('createdAt', '<', Timestamp.fromDate(endDate)),
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }));
+};
+
+export const fetchStudyLogsBeforeDate = async (userId, endDateExclusive) => {
+  const q = query(
+    collection(db, 'studyLogs'),
+    where('userId', '==', userId),
+    where('createdAt', '<', Timestamp.fromDate(endDateExclusive)),
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }));
+};
+
+export const fetchMonthlyStatsByMonthKeys = async (userId, monthKeys = []) => {
+  if (!userId || monthKeys.length === 0) return [];
+  const q = query(collection(db, 'monthlyStats'), where('userId', '==', userId));
+  const snap = await getDocs(q);
+  const set = new Set(monthKeys);
+  return snap.docs
+    .map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
+    .filter((item) => set.has(item.monthKey));
+};
+
+export const upsertMonthlyStat = async (userId, monthKey, payload) => {
+  const docId = `${userId}_${monthKey}`;
+  const ref = doc(db, 'monthlyStats', docId);
+  const existing = await getDoc(ref);
+  await setDoc(
+    ref,
+    {
+      ...payload,
+      userId,
+      monthKey,
+      updatedAt: serverTimestamp(),
+      ...(existing.exists() ? {} : { createdAt: serverTimestamp() }),
+    },
+    { merge: true },
+  );
+  return { existed: existing.exists(), id: docId };
+};
+
+export const deleteStudyLogsByIds = async (ids = []) => {
+  if (ids.length === 0) return;
+  const batch = writeBatch(db);
+  ids.forEach((id) => {
+    batch.delete(doc(db, 'studyLogs', id));
+  });
+  await batch.commit();
 };
 
 export const updateLessonStats = async (lessonId, trainingType, durationSeconds, options = {}) => {
