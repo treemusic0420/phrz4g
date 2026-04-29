@@ -111,8 +111,6 @@ const buildDashboardData = (lessons, logs, options = {}) => {
     total = monthlyTotalBeforeCurrentMonth + month;
   }
 
-  const dictationAttempts = lessons.reduce((sum, lesson) => sum + (Number(lesson.dictationCount) || 0), 0);
-  const shadowingAttempts = lessons.reduce((sum, lesson) => sum + (Number(lesson.shadowingCount) || 0), 0);
 
   let streak = 0;
   if (shouldUseLogsSummary) {
@@ -144,14 +142,8 @@ const buildDashboardData = (lessons, logs, options = {}) => {
       month,
       total,
       streak,
-      dictationAttempts,
-      shadowingAttempts,
     },
     last7Days,
-    practiceBalance: [
-      { label: 'Dictation', value: dictationAttempts },
-      { label: 'Shadowing', value: shadowingAttempts },
-    ],
   };
 };
 
@@ -320,8 +312,6 @@ export default function StatsPage() {
     { label: 'This Month', value: formatDurationCompact(dashboard.summary.month), tone: 'purple' },
     { label: 'Total', value: formatDurationCompact(dashboard.summary.total), tone: 'gradient' },
     { label: 'Study Streak', value: `${dashboard.summary.streak} days`, tone: 'blue' },
-    { label: 'Dictation Attempts', value: dashboard.summary.dictationAttempts, tone: 'blue' },
-    { label: 'Shadowing Attempts', value: dashboard.summary.shadowingAttempts, tone: 'purple' },
   ];
 
   const hasLessons = lessons.length > 0;
@@ -351,9 +341,6 @@ export default function StatsPage() {
         {hasLessons ? (
           <>
             <p className="dashboard-hero-time">{formatDurationCompact(dashboard.summary.today)}</p>
-            <p className="dashboard-hero-meta">
-              Dictation {dashboard.summary.dictationAttempts} · Shadowing {dashboard.summary.shadowingAttempts}
-            </p>
             <p className="dashboard-hero-meta">Streak {dashboard.summary.streak} day{dashboard.summary.streak === 1 ? '' : 's'}</p>
           </>
         ) : (
@@ -395,13 +382,6 @@ export default function StatsPage() {
           emptyText="No study logs yet. Start a lesson to see your progress."
         />
 
-        <SimpleBarChart
-          title="Practice Balance"
-          data={dashboard.practiceBalance}
-          valueKey="value"
-          variant="practiceBalance"
-          emptyText="No practice attempts yet."
-        />
       </section>
 
       <article className="card">

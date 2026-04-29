@@ -57,10 +57,6 @@ const mapLesson = (snap) => {
     createdAt: data.createdAt || null,
     updatedAt: data.updatedAt || null,
     lastStudiedAt: data.lastStudiedAt || null,
-    dictationCount: data.dictationCount || 0,
-    shadowingCount: data.shadowingCount || 0,
-    shadowingDidItCount: data.shadowingDidItCount || 0,
-    shadowingCouldntDoItCount: data.shadowingCouldntDoItCount || 0,
     lastShadowingRating: data.lastShadowingRating || '',
     totalStudySeconds: data.totalStudySeconds || 0,
   };
@@ -103,10 +99,6 @@ export const createLesson = async (payload) => {
     memo: payload.memo || '',
     imageUrl: payload.imageUrl || '',
     imagePath: payload.imagePath || '',
-    dictationCount: 0,
-    shadowingCount: 0,
-    shadowingDidItCount: 0,
-    shadowingCouldntDoItCount: 0,
     lastShadowingRating: '',
     totalStudySeconds: 0,
     lastStudiedAt: null,
@@ -170,12 +162,6 @@ export const createStudyLog = async (payload) => {
   });
 };
 
-export const createDictationAttempt = async (payload) => {
-  return addDoc(collection(db, 'dictationAttempts'), {
-    ...payload,
-    createdAt: serverTimestamp(),
-  });
-};
 
 export const fetchStudyLogs = async (userId) => {
   const q = query(collection(db, 'studyLogs'), where('userId', '==', userId));
@@ -254,21 +240,9 @@ export const updateLessonStats = async (lessonId, trainingType, durationSeconds,
   const snap = await getDoc(lessonRef);
   if (!snap.exists()) return;
   const data = snap.data();
-  const dictationCount = data.dictationCount || 0;
-  const shadowingCount = data.shadowingCount || 0;
-  const shadowingDidItCount = data.shadowingDidItCount || 0;
-  const shadowingCouldntDoItCount = data.shadowingCouldntDoItCount || 0;
   const totalStudySeconds = data.totalStudySeconds || 0;
 
   await updateDoc(lessonRef, {
-    dictationCount: trainingType === 'dictation' ? dictationCount + 1 : dictationCount,
-    shadowingCount: trainingType === 'shadowing' ? shadowingCount + 1 : shadowingCount,
-    shadowingDidItCount:
-      trainingType === 'shadowing' && shadowingRating === 'didIt' ? shadowingDidItCount + 1 : shadowingDidItCount,
-    shadowingCouldntDoItCount:
-      trainingType === 'shadowing' && shadowingRating === 'couldntDoIt'
-        ? shadowingCouldntDoItCount + 1
-        : shadowingCouldntDoItCount,
     lastShadowingRating: trainingType === 'shadowing' && shadowingRating ? shadowingRating : data.lastShadowingRating || '',
     totalStudySeconds: totalStudySeconds + durationSeconds,
     lastStudiedAt: serverTimestamp(),
