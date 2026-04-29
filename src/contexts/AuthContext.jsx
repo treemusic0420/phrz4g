@@ -1,10 +1,11 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import {
   GoogleAuthProvider,
-  getRedirectResult,
   onAuthStateChanged,
+  signInWithCredential,
   signInWithPopup,
-  signInWithRedirect,
   signOut,
 } from 'firebase/auth';
 import { auth } from '../lib/firebase';
@@ -13,14 +14,20 @@ const AuthContext = createContext(null);
 const googleProvider = new GoogleAuthProvider();
 const AUTH_LOADING_TIMEOUT_MS = 9000;
 
-const isCapacitorEnvironment = () => {
-  const capacitorGlobal = typeof globalThis !== 'undefined' ? globalThis.Capacitor : undefined;
-  const isNative = typeof capacitorGlobal?.isNativePlatform === 'function' ? capacitorGlobal.isNativePlatform() : false;
-  if (typeof window === 'undefined') return isNative;
-  if (isNative) return true;
-  if (window.Capacitor) return true;
-  const userAgent = window.navigator?.userAgent || '';
-  return /Capacitor/i.test(userAgent);
+const isCapacitorEnvironment = () => Capacitor.isNativePlatform();
+
+const getGoogleCredentialFromResult = (result) => {
+  const credential = result?.credential;
+  if (!credential) return null;
+
+  const idToken = credential.idToken ?? null;
+  const accessToken = credential.accessToken ?? null;
+
+  if (!idToken && !accessToken) {
+    return null;
+  }
+
+  return GoogleAuthProvider.credential(idToken, accessToken);
 };
 
 export const AuthProvider = ({ children }) => {
@@ -39,28 +46,6 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
       console.log('[AuthDebug] loading=false set (timeout fallback)');
     }, AUTH_LOADING_TIMEOUT_MS);
-
-    if (isCapacitor) {
-      console.log('[AuthDebug] getRedirectResult start');
-      getRedirectResult(auth)
-        .then((result) => {
-          if (result?.user) {
-            console.log('[AuthDebug] getRedirectResult success: user resolved');
-          } else {
-            console.log('[AuthDebug] getRedirectResult success: no pending redirect result');
-          }
-        })
-        .catch((error) => {
-          console.error('[AuthDebug] getRedirectResult failed', {
-            code: error?.code,
-            message: error?.message,
-            name: error?.name,
-          });
-        })
-        .finally(() => {
-          console.log('[AuthDebug] getRedirectResult complete');
-        });
-    }
 
     console.log('[AuthDebug] onAuthStateChanged subscribed');
     const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
@@ -91,14 +76,21 @@ export const AuthProvider = ({ children }) => {
       isAuthenticated: Boolean(user),
       login: async () => {
         const isCapacitor = isCapacitorEnvironment();
-        console.log(`[AuthDebug] login method: ${isCapacitor ? 'redirect' : 'popup'}`);
+        console.log(`[AuthDebug] login method: ${isCapacitor ? 'capacitor-google' : 'popup'}`);
         console.log(`[AuthDebug] isCapacitor=${isCapacitor}`);
 
         try {
           if (isCapacitor) {
-            await signInWithRedirect(auth, googleProvider);
-            console.log('[AuthDebug] signInWithRedirect initiated');
-            return null;
+            const result = await FirebaseAuthentication.signInWithGoogle();
+            const firebaseCredential = getGoogleCredentialFromResult(result);
+
+            if (!firebaseCredential) {
+              throw new Error('Google credential is missing from Capacitor authentication result.');
+            }
+
+            const firebaseResult = await signInWithCredential(auth, firebaseCredential);
+            console.log('[AuthDebug] Capacitor Google sign-in success');
+            return firebaseResult;
           }
 
           const result = await signInWithPopup(auth, googleProvider);
@@ -114,6 +106,17 @@ export const AuthProvider = ({ children }) => {
         }
       },
       logout: async () => {
+        if (isCapacitorEnvironment()) {
+          try {
+            await FirebaseAuthentication.signOut();
+          } catch (error) {
+            console.warn('[AuthDebug] Capacitor signOut failed; continuing Firebase signOut', {
+              code: error?.code,
+              message: error?.message,
+              name: error?.name,
+            });
+          }
+        }
         await signOut(auth);
       },
     }),
