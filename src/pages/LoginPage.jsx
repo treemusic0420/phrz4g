@@ -32,14 +32,14 @@ export default function LoginPage() {
       <h2 className="section-title">Sign in</h2>
       <p className="section-subtle">Sign in with your Google account.</p>
 
-      <div className="stack">
+      <div className="stack login-google-action">
         <button type="button" onClick={handleGoogleLogin}>
           Sign in with Google
         </button>
       </div>
 
       {loginError ? (
-        <div className="stack">
+        <div className="stack login-error-block">
           <p className="error">{loginError}</p>
           {loginErrorCode ? <p className="error">Google sign in failed: {loginErrorCode}</p> : null}
         </div>
