@@ -1,9 +1,16 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
+import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 
 const AuthContext = createContext(null);
 const googleProvider = new GoogleAuthProvider();
+
+const isCapacitorEnvironment = () => {
+  if (typeof window === 'undefined') return false;
+  if (window.Capacitor) return true;
+  const userAgent = window.navigator?.userAgent || '';
+  return /Capacitor/i.test(userAgent);
+};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -34,7 +41,14 @@ export const AuthProvider = ({ children }) => {
       login: async () => {
         console.log('[AuthDebug] [Auth] Google sign-in started');
         try {
-          console.log('[AuthDebug] [Auth] signInWithPopup calling');
+          if (isCapacitorEnvironment()) {
+            console.log('[AuthDebug] [Auth] signInWithRedirect calling (Capacitor environment)');
+            await signInWithRedirect(auth, googleProvider);
+            console.log('[AuthDebug] [Auth] signInWithRedirect initiated');
+            return null;
+          }
+
+          console.log('[AuthDebug] [Auth] signInWithPopup calling (Web environment)');
           const result = await signInWithPopup(auth, googleProvider);
           console.log('[AuthDebug] [Auth] signInWithPopup success');
           return result;
