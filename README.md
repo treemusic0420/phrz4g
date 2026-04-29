@@ -93,3 +93,18 @@ Set the following in **Repository Secrets**.
 - Delete old lesson data in Firestore Console or re-register lessons.
 - The app does not include automatic full deletion of old lessons.
 - Since the monthly archive fields (`registeredMonth` / `registeredMonthLabel`) were introduced, deleting or re-registering old lessons is recommended.
+
+## Localユーザーデータ移行（Admin SDK）
+
+`userId: "local"` のFirestore/Storageデータを実UIDへ安全にコピー/更新するための管理スクリプトを追加しています。
+
+- Dry-run: `npm run migrate:local -- --uid=<TARGET_UID> --dry-run`
+- 本実行: `npm run migrate:local -- --uid=<TARGET_UID>`
+
+認証情報は以下のいずれかで読み込みます（フロントエンドのAPIキーは不使用）。
+
+- `FIREBASE_SERVICE_ACCOUNT_JSON`
+- `FIREBASE_SERVICE_ACCOUNT_BASE64` または `FIREBASE_SERVICE_ACCOUNT_PHRZ4G`
+- `GOOGLE_APPLICATION_CREDENTIALS` または `FIREBASE_SERVICE_ACCOUNT_PATH`
+
+必要に応じて `FIREBASE_STORAGE_BUCKET` も指定してください。
