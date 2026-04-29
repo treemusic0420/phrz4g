@@ -19,6 +19,16 @@ service firebase.storage {
         && request.resource.contentType.matches('image/(jpeg|png|webp)');
     }
 
+    // TEMP: Allow migration UID to read legacy local lesson-audio files only during /admin/migrate-local.
+    match /users/local/lesson-audio/{allPaths=**} {
+      allow read: if isLocalMigrationUser();
+    }
+
+    // TEMP: Allow migration UID to read legacy local lesson-images files only during /admin/migrate-local.
+    match /users/local/lesson-images/{allPaths=**} {
+      allow read: if isLocalMigrationUser();
+    }
+
     match /users/{userId}/lesson-audio/{fileName=**} {
       allow read: if isOwner(userId) || (userId == 'local' && isLocalMigrationUser());
       allow write: if isOwner(userId);
