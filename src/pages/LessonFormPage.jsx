@@ -12,7 +12,7 @@ import {
   validateAudioFile,
   validateImageFile,
 } from '../lib/storage';
-import { LOCAL_USER_ID } from '../lib/auth';
+import { useAuth } from '../contexts/AuthContext';
 import { sortCategories } from '../utils/lessons';
 import { DIFFICULTY_OPTIONS, normalizeDifficulty } from '../utils/difficulty';
 
@@ -33,6 +33,8 @@ const defaultForm = {
 const MP3_ONLY_ERROR = 'Only MP3 files are currently supported. Convert m4a files to MP3 before uploading.';
 
 export default function LessonFormPage({ mode }) {
+  const { user } = useAuth();
+  const userId = user?.uid || ''; 
   const navigate = useNavigate();
   const { id } = useParams();
   const [form, setForm] = useState(defaultForm);
@@ -56,7 +58,7 @@ export default function LessonFormPage({ mode }) {
     const loadData = async () => {
       setIsLoadingCategories(true);
       setError('');
-      const loadedCategories = sortCategories(await ensureInitialCategories(LOCAL_USER_ID));
+      const loadedCategories = sortCategories(await ensureInitialCategories(userId));
       const activeCategories = loadedCategories.filter((category) => category.isActive);
       setCategories(activeCategories);
 
@@ -73,7 +75,7 @@ export default function LessonFormPage({ mode }) {
         setIsLoadingCategories(false);
         return;
       }
-      if (lesson.userId !== LOCAL_USER_ID) {
+      if (lesson.userId !== userId) {
         setIsLoadingCategories(false);
         return navigate('/lessons');
       }
@@ -116,7 +118,7 @@ export default function LessonFormPage({ mode }) {
       if (audioFile) {
         const message = validateAudioFile(audioFile);
         if (message) throw new Error(message);
-        const uploaded = await uploadLessonAudio({ file: audioFile });
+        const uploaded = await uploadLessonAudio({ file: audioFile, userId });
         audioUrl = uploaded.audioUrl;
         audioPath = uploaded.audioPath;
         audioContentType = uploaded.audioContentType;
@@ -133,7 +135,7 @@ export default function LessonFormPage({ mode }) {
       }
 
       const payload = {
-        userId: LOCAL_USER_ID,
+        userId: userId,
         title: form.title,
         categoryId: form.categoryId,
         scriptEn: form.scriptEn,
@@ -160,7 +162,7 @@ export default function LessonFormPage({ mode }) {
       if (mode === 'create') {
         const docRef = await createLesson(payload);
         if (compressedImageFile) {
-          const uploadedImage = await uploadLessonImage({ file: compressedImageFile, lessonId: docRef.id });
+          const uploadedImage = await uploadLessonImage({ file: compressedImageFile, lessonId: docRef.id, userId });
           await updateLesson(docRef.id, {
             ...payload,
             imageUrl: uploadedImage.imageUrl,
@@ -170,7 +172,7 @@ export default function LessonFormPage({ mode }) {
         navigate(`/lessons/${docRef.id}`);
       } else {
         if (compressedImageFile) {
-          const uploadedImage = await uploadLessonImage({ file: compressedImageFile, lessonId: id });
+          const uploadedImage = await uploadLessonImage({ file: compressedImageFile, lessonId: id, userId });
           imageUrl = uploadedImage.imageUrl;
           imagePath = uploadedImage.imagePath;
           if (form.imagePath && form.imagePath !== uploadedImage.imagePath) {
@@ -192,7 +194,7 @@ export default function LessonFormPage({ mode }) {
     const confirmed = window.confirm('Delete this lesson? This action cannot be undone.');
     if (!confirmed) return;
 
-    if (form.userId && form.userId !== LOCAL_USER_ID) {
+    if (form.userId && form.userId !== userId) {
       setError('This lesson cannot be deleted.');
       return;
     }

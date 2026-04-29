@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { LOCAL_USER_ID } from '../lib/auth';
+import { useAuth } from '../contexts/AuthContext';
 import { ensureInitialCategories, fetchLessons } from '../lib/firestore';
 import { formatDateTime, formatSeconds } from '../utils/format';
 import {
@@ -10,6 +10,8 @@ import {
 } from '../utils/lessons';
 
 export default function CategoryLessonsPage() {
+  const { user } = useAuth();
+  const userId = user?.uid || '';
   const { categoryId } = useParams();
   const [allLessons, setAllLessons] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -20,8 +22,8 @@ export default function CategoryLessonsPage() {
       setError(null);
       try {
         const [fetchedLessons, fetchedCategories] = await Promise.all([
-          fetchLessons(LOCAL_USER_ID),
-          ensureInitialCategories(LOCAL_USER_ID),
+          fetchLessons(userId),
+          ensureInitialCategories(userId),
         ]);
         setAllLessons(fetchedLessons);
         setCategories(fetchedCategories);

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { LOCAL_USER_ID } from '../lib/auth';
+import { useAuth } from '../contexts/AuthContext';
 import { createCategory, ensureInitialCategories, fetchCategoryById, updateCategory } from '../lib/firestore';
 import { getDuplicateSlugError, normalizeName, normalizeSlug } from '../utils/categories';
 import { sortCategories } from '../utils/lessons';
@@ -13,6 +13,8 @@ const defaultForm = {
 };
 
 export default function CategoryFormPage({ mode }) {
+  const { user } = useAuth();
+  const userId = user?.uid || ''; 
   const navigate = useNavigate();
   const { id } = useParams();
   const [form, setForm] = useState(defaultForm);
@@ -25,12 +27,12 @@ export default function CategoryFormPage({ mode }) {
       setLoading(true);
       setError('');
       try {
-        const loadedCategories = sortCategories(await ensureInitialCategories(LOCAL_USER_ID));
+        const loadedCategories = sortCategories(await ensureInitialCategories(userId));
         setCategories(loadedCategories);
 
         if (mode === 'edit' && id) {
           const current = await fetchCategoryById(id);
-          if (!current || current.userId !== LOCAL_USER_ID) {
+          if (!current || current.userId !== userId) {
             navigate('/categories');
             return;
           }
@@ -83,7 +85,7 @@ export default function CategoryFormPage({ mode }) {
     }
 
     const payload = {
-      userId: LOCAL_USER_ID,
+      userId: userId,
       name,
       slug,
       order,

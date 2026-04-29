@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { LOCAL_USER_ID } from '../lib/auth';
+import { useAuth } from '../contexts/AuthContext';
 import { ensureInitialCategories, fetchLessons } from '../lib/firestore';
 import { formatDateTime } from '../utils/format';
 import {
@@ -17,6 +17,8 @@ import { getDifficultyLabel, getDifficultyStyle } from '../utils/difficulty';
 import { getRegisteredMonthLabel } from '../utils/registeredMonth';
 
 export default function MonthLessonsPage() {
+  const { user } = useAuth();
+  const userId = user?.uid || '';
   const { categoryId, registeredMonth } = useParams();
   const [allLessons, setAllLessons] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -32,8 +34,8 @@ export default function MonthLessonsPage() {
       setError(null);
       try {
         const [fetchedLessons, fetchedCategories] = await Promise.all([
-          fetchLessons(LOCAL_USER_ID),
-          ensureInitialCategories(LOCAL_USER_ID),
+          fetchLessons(userId),
+          ensureInitialCategories(userId),
         ]);
         setAllLessons(fetchedLessons);
         setCategories(fetchedCategories);

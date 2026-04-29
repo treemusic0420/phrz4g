@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import AudioControls from '../components/AudioControls';
 import { ensureInitialCategories, fetchLessonById, updateLessonAudioUrl } from '../lib/firestore';
-import { LOCAL_USER_ID } from '../lib/auth';
+import { useAuth } from '../contexts/AuthContext';
 import { getAudioDownloadUrlByPath } from '../lib/storage';
 import { formatDateTime, formatSeconds } from '../utils/format';
 import { getDifficultyLabel, getDifficultyStyle } from '../utils/difficulty';
@@ -18,6 +18,8 @@ const isUnsupportedAudioFormat = (ext, contentType = '') =>
   ext === 'm4a' || contentType === 'audio/mp4' || contentType === 'audio/x-m4a';
 
 export default function LessonDetailPage() {
+  const { user } = useAuth();
+  const userId = user?.uid || '';
   const { id } = useParams();
   const navigate = useNavigate();
   const [lesson, setLesson] = useState(null);
@@ -32,14 +34,14 @@ export default function LessonDetailPage() {
 
   useEffect(() => {
     fetchLessonById(id).then((doc) => {
-      if (!doc || doc.userId !== LOCAL_USER_ID) return navigate('/lessons');
+      if (!doc || doc.userId !== userId) return navigate('/lessons');
       setLesson(doc);
     });
-  }, [id, navigate, LOCAL_USER_ID]);
+  }, [id, navigate, userId]);
 
 
   useEffect(() => {
-    ensureInitialCategories(LOCAL_USER_ID)
+    ensureInitialCategories(userId)
       .then(setCategories)
       .catch(() => setCategories([]));
   }, []);

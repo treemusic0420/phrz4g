@@ -1,33 +1,34 @@
-import { createContext, useContext, useMemo, useState } from 'react';
-import { AUTH_STORAGE_KEY, LOCAL_USER_ID } from '../lib/auth';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { auth } from '../lib/firebase';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [authenticated, setAuthenticated] = useState(localStorage.getItem(AUTH_STORAGE_KEY) === 'true');
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
+      setUser(nextUser);
+      setLoading(false);
+    });
+    return unsubscribe;
+  }, []);
 
   const value = useMemo(
     () => ({
-      user: authenticated ? { uid: LOCAL_USER_ID } : null,
-      loading: false,
-      isAuthenticated: authenticated,
-      loginWithPasscode: (passcode) => {
-        const expected = (import.meta.env.VITE_APP_PASSCODE || '').trim();
-        if (!expected) {
-          throw new Error('VITE_APP_PASSCODE is not configured.');
-        }
-        if (passcode !== expected) {
-          throw new Error('Passcode does not match.');
-        }
-        localStorage.setItem(AUTH_STORAGE_KEY, 'true');
-        setAuthenticated(true);
+      user,
+      loading,
+      isAuthenticated: Boolean(user),
+      login: async (email, password) => {
+        await signInWithEmailAndPassword(auth, email, password);
       },
-      logout: () => {
-        localStorage.removeItem(AUTH_STORAGE_KEY);
-        setAuthenticated(false);
+      logout: async () => {
+        await signOut(auth);
       },
     }),
-    [authenticated],
+    [user, loading],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
