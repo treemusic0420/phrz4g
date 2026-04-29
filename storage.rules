@@ -2,6 +2,13 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
+    // TEMP: Local data migration exception for UID EpwjD8uFm2YNgqFB8SGPzMB5jfg1.
+    // Remove this helper and local-read allow clause after /admin/migrate-local migration is complete.
+    function isLocalMigrationUser() {
+      return request.auth != null
+        && request.auth.uid == 'EpwjD8uFm2YNgqFB8SGPzMB5jfg1';
+    }
+
     function isOwner(userId) {
       return request.auth != null && request.auth.uid == userId;
     }
@@ -13,11 +20,12 @@ service firebase.storage {
     }
 
     match /users/{userId}/lesson-audio/{fileName=**} {
-      allow read, write: if isOwner(userId);
+      allow read: if isOwner(userId) || (userId == 'local' && isLocalMigrationUser());
+      allow write: if isOwner(userId);
     }
 
     match /users/{userId}/lesson-images/{lessonId}/{fileName=**} {
-      allow read: if isOwner(userId);
+      allow read: if isOwner(userId) || (userId == 'local' && isLocalMigrationUser());
       allow write: if isOwner(userId)
         && (request.resource == null || isAllowedImageUpload());
     }
