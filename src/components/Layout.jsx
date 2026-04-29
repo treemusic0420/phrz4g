@@ -4,7 +4,6 @@ import { useAuth } from '../contexts/AuthContext';
 
 const navItems = [
   { to: '/lessons', label: 'Lessons' },
-  { to: '/analytics', label: 'Analytics' },
 ];
 
 const isActivePath = (pathname, to) => pathname === to || pathname.startsWith(`${to}/`);
