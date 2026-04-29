@@ -389,6 +389,12 @@ export default function StatsPage() {
         />
         <article className="card dashboard-chart-card dashboard-active-days-card">
           <h3>Active Days (This Month)</h3>
+          <div className="dashboard-active-days-progress" aria-hidden="true">
+            <div
+              className="dashboard-active-days-progress-fill"
+              style={{ width: `${Math.min(100, dashboard.summary.activeDaysRateThisMonth)}%` }}
+            />
+          </div>
           <div className="dashboard-active-days-main">
             <p className="dashboard-active-days-value">
               {dashboard.summary.activeDaysThisMonth} / {dashboard.summary.daysElapsedThisMonth} days
@@ -400,12 +406,6 @@ export default function StatsPage() {
           <p className="dashboard-active-days-subtle">
             Active on {dashboard.summary.activeDaysThisMonth} of {dashboard.summary.daysElapsedThisMonth} days so far
           </p>
-          <div className="dashboard-active-days-progress" aria-hidden="true">
-            <div
-              className="dashboard-active-days-progress-fill"
-              style={{ width: `${Math.min(100, dashboard.summary.activeDaysRateThisMonth)}%` }}
-            />
-          </div>
         </article>
       </section>
 
