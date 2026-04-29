@@ -214,6 +214,13 @@ export const fetchMonthlyStatsByMonthKeys = async (userId, monthKeys = []) => {
     .filter((item) => set.has(item.monthKey));
 };
 
+export const fetchMonthlyStats = async (userId) => {
+  if (!userId) return [];
+  const q = query(collection(db, 'monthlyStats'), where('userId', '==', userId));
+  const snap = await getDocs(q);
+  return snap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }));
+};
+
 export const upsertMonthlyStat = async (userId, monthKey, payload) => {
   const docId = `${userId}_${monthKey}`;
   const ref = doc(db, 'monthlyStats', docId);
