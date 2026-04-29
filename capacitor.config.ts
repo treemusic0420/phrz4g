@@ -4,6 +4,12 @@ const config: CapacitorConfig = {
   appId: 'com.phrz4g.app',
   appName: 'Phrz4g',
   webDir: 'dist',
+  plugins: {
+    FirebaseAuthentication: {
+      skipNativeAuth: false,
+      providers: ['google.com'],
+    },
+  },
 };
 
 export default config;
