@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { fetchLessons, fetchStudyLogs } from '../lib/firestore';
+import { fetchLessons, fetchMonthlyStats, fetchStudyLogsInRange } from '../lib/firestore';
 import { formatDateTime, toDate } from '../utils/format';
 
 const TZ = 'Asia/Tokyo';
@@ -63,7 +63,7 @@ const formatDurationCompact = (seconds = 0) => {
 };
 
 const buildDashboardData = (lessons, logs, options = {}) => {
-  const { canUseStudyLogs = true } = options;
+  const { canUseStudyLogs = true, monthlyTotalBeforeCurrentMonth = 0 } = options;
   const now = new Date();
   const nowParts = getDatePartsInTz(now);
   const todayKey = getDateKeyInTz(now);
@@ -93,7 +93,6 @@ const buildDashboardData = (lessons, logs, options = {}) => {
     const dayKey = getDateKeyInTz(created);
     const seconds = Math.max(0, Number(log.durationSeconds) || 0);
 
-    total += seconds;
     if (dayKey === todayKey) today += seconds;
     if (dayKey >= mondayKey) week += seconds;
     if (dayKey.startsWith(monthPrefix)) month += seconds;
@@ -108,6 +107,8 @@ const buildDashboardData = (lessons, logs, options = {}) => {
     today = 0;
     week = 0;
     month = 0;
+  } else {
+    total = monthlyTotalBeforeCurrentMonth + month;
   }
 
   const dictationAttempts = lessons.reduce((sum, lesson) => sum + (Number(lesson.dictationCount) || 0), 0);
@@ -214,6 +215,7 @@ export default function StatsPage() {
   const [studyLogsStatus, setStudyLogsStatus] = useState('idle');
   const [lessonsError, setLessonsError] = useState('');
   const [studyLogsError, setStudyLogsError] = useState('');
+  const [monthlyStatsTotalBeforeCurrentMonth, setMonthlyStatsTotalBeforeCurrentMonth] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -224,9 +226,17 @@ export default function StatsPage() {
       setLessonsError('');
       setStudyLogsError('');
 
-      const [lessonsResult, logsResult] = await Promise.allSettled([
+      const now = new Date();
+      const nowParts = getDatePartsInTz(now);
+      const nextMonthStart = new Date(Date.UTC(nowParts.year, nowParts.month, 1));
+      const streakWindowStart = addDaysInTz(nowParts, -90);
+      const logsWindowStart = toUtcFromTzDateParts(streakWindowStart);
+      const currentMonthKey = `${nowParts.year}-${String(nowParts.month).padStart(2, '0')}`;
+
+      const [lessonsResult, logsResult, monthlyStatsResult] = await Promise.allSettled([
         fetchLessons(userId),
-        fetchStudyLogs(userId),
+        fetchStudyLogsInRange(userId, logsWindowStart, nextMonthStart),
+        fetchMonthlyStats(userId),
       ]);
 
       if (!active) return;
@@ -248,6 +258,17 @@ export default function StatsPage() {
         setStudyLogsStatus('error');
         setStudyLogsError(logsResult.reason?.message || 'Unknown error');
       }
+
+      if (monthlyStatsResult.status === 'fulfilled') {
+        const totalBeforeCurrentMonth = monthlyStatsResult.value.reduce((sum, item) => {
+          const monthKey = String(item.monthKey || '');
+          if (!monthKey || monthKey >= currentMonthKey) return sum;
+          return sum + (Number(item.totalStudySeconds) || 0);
+        }, 0);
+        setMonthlyStatsTotalBeforeCurrentMonth(totalBeforeCurrentMonth);
+      } else {
+        setMonthlyStatsTotalBeforeCurrentMonth(0);
+      }
     };
 
     load();
@@ -260,8 +281,9 @@ export default function StatsPage() {
     () =>
       buildDashboardData(lessons, logs, {
         canUseStudyLogs: studyLogsStatus === 'success',
+        monthlyTotalBeforeCurrentMonth: monthlyStatsTotalBeforeCurrentMonth,
       }),
-    [lessons, logs, studyLogsStatus],
+    [lessons, logs, monthlyStatsTotalBeforeCurrentMonth, studyLogsStatus],
   );
 
   const lessonsById = useMemo(() => new Map(lessons.map((lesson) => [lesson.id, lesson])), [lessons]);
