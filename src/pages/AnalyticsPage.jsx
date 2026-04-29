@@ -3,8 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   deleteStudyLogsByIds,
   fetchMonthlyStatsByMonthKeys,
-  fetchStudyLogsBeforeDate,
-  fetchStudyLogsInRange,
+  fetchStudyLogs,
   upsertMonthlyStat,
 } from '../lib/firestore';
 import { toDate } from '../utils/format';
@@ -16,8 +15,6 @@ const parseMonthKey = (monthKey) => {
   const [year, month] = monthKey.split('-').map(Number);
   return { year, month };
 };
-const monthStartUtc = (year, month1) => new Date(Date.UTC(year, month1 - 1, 1, 0, 0, 0));
-const nextMonth = ({ year, month }) => (month === 12 ? { year: year + 1, month: 1 } : { year, month: month + 1 });
 const prevMonth = ({ year, month }) => (month === 1 ? { year: year - 1, month: 12 } : { year, month: month - 1 });
 const getJstParts = (date = new Date()) => {
   const parts = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(date);
@@ -56,18 +53,22 @@ export default function AnalyticsPage() {
     setStatus('loading');
     setError('');
     try {
-      const thisStart = monthStartUtc(nowParts.year, nowParts.month);
-      const nextStart = monthStartUtc(nextMonth(nowParts).year, nextMonth(nowParts).month);
       const [logs, stats] = await Promise.all([
-        fetchStudyLogsInRange(userId, thisStart, nextStart),
+        fetchStudyLogs(userId),
         fetchMonthlyStatsByMonthKeys(userId, monthKeysNeeded),
       ]);
-      setCurrentLogs(logs);
+      const thisMonthLogs = logs.filter((log) => {
+        const created = toDate(log.createdAt);
+        if (!created) return false;
+        const parts = getJstParts(created);
+        return parts.year === nowParts.year && parts.month === nowParts.month;
+      });
+      setCurrentLogs(thisMonthLogs);
       setMonthlyStats(stats);
       setStatus('success');
     } catch (e) {
       setStatus('error');
-      setError(e?.message || 'Failed to load analytics data.');
+      setError('Analytics data could not be loaded.');
     }
   };
 
@@ -108,8 +109,14 @@ export default function AnalyticsPage() {
   const prepareClosingPreview = async () => {
     setClosingStatus('loading');
     try {
-      const thisStart = monthStartUtc(nowParts.year, nowParts.month);
-      const oldLogs = await fetchStudyLogsBeforeDate(userId, thisStart);
+      const oldLogsAll = await fetchStudyLogs(userId);
+      const oldLogs = oldLogsAll.filter((log) => {
+        const created = toDate(log.createdAt);
+        if (!created) return false;
+        const parts = getJstParts(created);
+        if (parts.year < nowParts.year) return true;
+        return parts.year === nowParts.year && parts.month < nowParts.month;
+      });
       const byMonth = new Map();
       oldLogs.forEach((log) => {
         const created = toDate(log.createdAt);
@@ -126,7 +133,7 @@ export default function AnalyticsPage() {
       setClosingStatus('ready');
     } catch (e) {
       setClosingStatus('error');
-      setError(`月締め対象取得に失敗: ${e?.message || ''}`);
+      setError('Analytics data could not be loaded.');
     }
   };
 
@@ -157,7 +164,7 @@ export default function AnalyticsPage() {
       await loadData();
     } catch (e) {
       setClosingStatus('error');
-      setError(`月締め実行失敗(保存または削除段階): ${e?.message || ''}`);
+      setError('Analytics data could not be loaded.');
     }
   };
 
