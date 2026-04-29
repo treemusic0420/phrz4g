@@ -171,27 +171,27 @@ export default function AnalyticsPage() {
   return <section className="stack"><h2 className="section-title">Analytics</h2>
     {status === 'error' ? <p className="error">{error}</p> : null}
     <div className="analytics-grid">
-      <article className="card"><h3>今月学習時間</h3><p>{secondsToHoursLabel(currentMonthSeconds)}</p></article>
-      <article className="card"><h3>先月比</h3><p>{secondsToHoursLabel(diffSeconds)} ({diffRate.toFixed(1)}%)</p></article>
-      <article className="card"><h3>今年累計</h3><p>{secondsToHoursLabel(currentYtd)}</p></article>
-      <article className="card"><h3>前年同期間比</h3><p>{secondsToHoursLabel(currentYtd - lastYearYtd)}</p></article>
+      <article className="card"><h3>This Month</h3><p>{secondsToHoursLabel(currentMonthSeconds)}</p></article>
+      <article className="card"><h3>Compared with Last Month</h3><p>{secondsToHoursLabel(diffSeconds)} ({diffRate.toFixed(1)}%)</p></article>
+      <article className="card"><h3>Year to Date</h3><p>{secondsToHoursLabel(currentYtd)}</p></article>
+      <article className="card"><h3>Compared with Same Period Last Year</h3><p>{secondsToHoursLabel(currentYtd - lastYearYtd)}</p></article>
     </div>
-    <article className="card"><h3>今月累計 vs 先月合計</h3><p>今月: {secondsToHoursLabel(currentMonthSeconds)} / 先月: {secondsToHoursLabel(prevMonthSeconds)} / 増減: {secondsToHoursLabel(diffSeconds)} ({diffRate.toFixed(1)}%)</p></article>
-    <article className="card"><h3>当月 週別比較</h3>{weeklyData.map((w) => <div className="simple-bar-row" key={w.label}><p className="simple-bar-label">{w.label}</p><div className="simple-bar-track"><div className="simple-bar-fill simple-bar-fill-study-time" style={{ width: `${Math.max(5, (w.seconds / Math.max(...weeklyData.map((x) => x.seconds), 1)) * 100)}%` }} /></div><p className="simple-bar-value">{secondsToHoursLabel(w.seconds)}</p></div>)}</article>
-    <article className="card"><h3>年間 月別比較</h3>{yearlyData.map((m) => <div className="simple-bar-row" key={m.label}><p className="simple-bar-label">{m.label}月</p><div className="simple-bar-track"><div className="simple-bar-fill simple-bar-fill-study-time" style={{ width: `${Math.max(5, (m.seconds / Math.max(...yearlyData.map((x) => x.seconds), 1)) * 100)}%` }} /></div><p className="simple-bar-value">{secondsToHoursLabel(m.seconds)}</p></div>)}</article>
-    <article className="card"><h3>昨対比</h3><p>今年同月: {secondsToHoursLabel(currentMonthSeconds)} / 前年同月: {secondsToHoursLabel(lastYearSameMonth)}</p><p>今年累計: {secondsToHoursLabel(currentYtd)} / 前年同期間: {secondsToHoursLabel(lastYearYtd)}</p></article>
-    <article className="card"><h3>月締め</h3>
-      <button className="btn danger-ghost" type="button" onClick={prepareClosingPreview}>月締め対象を確認</button>
+    <article className="card"><h3>This Month vs Last Month</h3><p>This Month: {secondsToHoursLabel(currentMonthSeconds)} / Last Month: {secondsToHoursLabel(prevMonthSeconds)} / Difference: {secondsToHoursLabel(diffSeconds)} ({diffRate.toFixed(1)}%)</p></article>
+    <article className="card"><h3>Weekly Study Time This Month</h3>{weeklyData.map((w) => <div className="simple-bar-row" key={w.label}><p className="simple-bar-label">{w.label}</p><div className="simple-bar-track"><div className="simple-bar-fill simple-bar-fill-study-time" style={{ width: `${Math.max(5, (w.seconds / Math.max(...weeklyData.map((x) => x.seconds), 1)) * 100)}%` }} /></div><p className="simple-bar-value">{secondsToHoursLabel(w.seconds)}</p></div>)}</article>
+    <article className="card"><h3>Monthly Study Time This Year</h3>{yearlyData.map((m) => <div className="simple-bar-row" key={m.label}><p className="simple-bar-label">{m.label}</p><div className="simple-bar-track"><div className="simple-bar-fill simple-bar-fill-study-time" style={{ width: `${Math.max(5, (m.seconds / Math.max(...yearlyData.map((x) => x.seconds), 1)) * 100)}%` }} /></div><p className="simple-bar-value">{secondsToHoursLabel(m.seconds)}</p></div>)}</article>
+    <article className="card"><h3>Year-over-Year Snapshot</h3><p>This Month (This Year): {secondsToHoursLabel(currentMonthSeconds)} / This Month (Last Year): {secondsToHoursLabel(lastYearSameMonth)}</p><p>Year to Date: {secondsToHoursLabel(currentYtd)} / Same Period Last Year: {secondsToHoursLabel(lastYearYtd)}</p></article>
+    <article className="card"><h3>Close Previous Month</h3>
+      <button className="btn danger-ghost" type="button" onClick={prepareClosingPreview}>Review Close Candidates</button>
       {closingPreview ? <div className="stack" style={{ marginTop: 12 }}>
-        {closingPreview.months.length === 0 ? <p>対象なし（前月以前のstudyLogsがありません）</p> : closingPreview.months.map((m) => {
+        {closingPreview.months.length === 0 ? <p>No entries to close (no study logs before this month).</p> : closingPreview.months.map((m) => {
           const exists = Boolean(statsMap.get(m.key));
-          return <p key={m.key}>{m.key}: {m.count}件 / {secondsToHoursLabel(m.seconds)} {exists ? '（既存monthlyStatsあり: 上書き確認要）' : ''}</p>;
+          return <p key={m.key}>{m.key}: {m.count} logs / {secondsToHoursLabel(m.seconds)} {exists ? '(existing monthly stats found: review before overwrite)' : ''}</p>;
         })}
         {closingPreview.months.length > 0 ? <button className="btn" type="button" onClick={() => {
-          if (window.confirm('monthlyStatsへ保存後に前月以前のstudyLogsを削除します。実行しますか？')) executeClosing();
-        }}>月締めを実行</button> : null}
+          if (window.confirm('This will save monthly stats and delete study logs before this month. Continue?')) executeClosing();
+        }}>Run Close</button> : null}
       </div> : null}
-      {closingStatus === 'success' ? <p>月締め完了: monthlyStats保存確認後、前月以前のstudyLogsを削除しました。</p> : null}
+      {closingStatus === 'success' ? <p>Close complete: monthly stats saved and older study logs deleted.</p> : null}
     </article>
   </section>;
 }
