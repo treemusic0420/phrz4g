@@ -23,17 +23,18 @@ export default function AdminMigrateLocalPage() {
 
   const pushLog = (message) => setLogs((prev) => [...prev, `[${new Date().toLocaleTimeString()}] ${message}`]);
 
-  const run = async ({ dryRun }) => {
+  const run = async ({ dryRun, skipStorage = false, lessonsOnly = false }) => {
     setRunning(true);
     setLogs([]);
     setSummary(null);
     const counters = { firestoreTargets: 0, lessonsUpdated: 0, docsUpdated: 0, storageCopied: 0, skipped: 0, errors: 0 };
 
     try {
-      pushLog(`開始: ${dryRun ? 'Dry Run' : '本実行'} / target UID=${TARGET_UID}`);
+      pushLog(`開始: ${dryRun ? 'Dry Run' : '本実行'} / target UID=${TARGET_UID} / mode=${skipStorage ? 'firestore-only' : 'full'}`);
 
+      const targetCollections = lessonsOnly ? ['lessons'] : COLLECTIONS;
       const existingTargetCounts = await Promise.all(
-        COLLECTIONS.map(async (name) => {
+        targetCollections.map(async (name) => {
           const countSnap = await getCountFromServer(query(collection(db, name), where('userId', '==', TARGET_UID)));
           return { name, count: countSnap.data().count || 0 };
         }),
@@ -44,7 +45,8 @@ export default function AdminMigrateLocalPage() {
       }
 
       const snapshots = {};
-      for (const colName of COLLECTIONS) {
+
+      for (const colName of targetCollections) {
         const snap = await getDocs(query(collection(db, colName), where('userId', '==', 'local')));
         snapshots[colName] = snap;
         counters.firestoreTargets += snap.size;
@@ -61,49 +63,61 @@ export default function AdminMigrateLocalPage() {
         const data = docSnap.data() || {};
         const patch = { userId: TARGET_UID };
 
-        const audioPath = replaceLocalPath(data.audioPath);
-        const imagePath = replaceLocalPath(data.imagePath);
+        if (!skipStorage) {
+          const audioPath = replaceLocalPath(data.audioPath);
+          const imagePath = replaceLocalPath(data.imagePath);
 
-        try {
-          if (audioPath) {
-            const sourceRef = ref(storage, data.audioPath);
-            const sourceUrl = await getDownloadURL(sourceRef);
-            const blob = await fetch(sourceUrl).then((res) => {
-              if (!res.ok) throw new Error(`audio fetch failed: ${res.status}`);
-              return res.blob();
-            });
-            await uploadBytes(ref(storage, audioPath), blob, { contentType: data.audioContentType || blob.type || 'audio/mpeg' });
-            patch.audioPath = audioPath;
-            patch.audioUrl = await getDownloadURL(ref(storage, audioPath));
-            counters.storageCopied += 1;
-          }
+          try {
+            if (audioPath) {
+              const sourceRef = ref(storage, data.audioPath);
+              const sourceUrl = await getDownloadURL(sourceRef);
+              const blob = await fetch(sourceUrl).then((res) => {
+                if (!res.ok) throw new Error(`audio fetch failed: ${res.status}`);
+                return res.blob();
+              });
+              await uploadBytes(ref(storage, audioPath), blob, { contentType: data.audioContentType || blob.type || 'audio/mpeg' });
+              patch.audioPath = audioPath;
+              patch.audioUrl = await getDownloadURL(ref(storage, audioPath));
+              counters.storageCopied += 1;
+            }
 
-          if (imagePath) {
-            const sourceRef = ref(storage, data.imagePath);
-            const sourceUrl = await getDownloadURL(sourceRef);
-            const blob = await fetch(sourceUrl).then((res) => {
-              if (!res.ok) throw new Error(`image fetch failed: ${res.status}`);
-              return res.blob();
-            });
-            await uploadBytes(ref(storage, imagePath), blob, { contentType: blob.type || 'image/webp' });
-            patch.imagePath = imagePath;
-            patch.imageUrl = await getDownloadURL(ref(storage, imagePath));
-            counters.storageCopied += 1;
+            if (imagePath) {
+              const sourceRef = ref(storage, data.imagePath);
+              const sourceUrl = await getDownloadURL(sourceRef);
+              const blob = await fetch(sourceUrl).then((res) => {
+                if (!res.ok) throw new Error(`image fetch failed: ${res.status}`);
+                return res.blob();
+              });
+              await uploadBytes(ref(storage, imagePath), blob, { contentType: blob.type || 'image/webp' });
+              patch.imagePath = imagePath;
+              patch.imageUrl = await getDownloadURL(ref(storage, imagePath));
+              counters.storageCopied += 1;
+            }
+          } catch (error) {
+            counters.errors += 1;
+            pushLog(`[error] lesson ${docSnap.id} storage copy: ${error.message}`);
           }
-        } catch (error) {
-          counters.errors += 1;
-          pushLog(`[error] lesson ${docSnap.id} storage copy: ${error.message}`);
         }
 
-        await updateDoc(doc(db, 'lessons', docSnap.id), patch);
-        counters.lessonsUpdated += 1;
-        counters.docsUpdated += 1;
+        try {
+          await updateDoc(doc(db, 'lessons', docSnap.id), patch);
+          counters.lessonsUpdated += 1;
+          counters.docsUpdated += 1;
+        } catch (error) {
+          counters.errors += 1;
+          pushLog(`[error] lesson ${docSnap.id} firestore update: ${error.message}`);
+        }
       }
 
-      for (const colName of COLLECTIONS.filter((name) => name !== 'lessons')) {
+      for (const colName of targetCollections.filter((name) => name !== 'lessons')) {
         for (const docSnap of snapshots[colName].docs) {
-          await updateDoc(doc(db, colName, docSnap.id), { userId: TARGET_UID });
-          counters.docsUpdated += 1;
+          try {
+            await updateDoc(doc(db, colName, docSnap.id), { userId: TARGET_UID });
+            counters.docsUpdated += 1;
+          } catch (error) {
+            counters.errors += 1;
+            pushLog(`[error] ${colName}/${docSnap.id} firestore update: ${error.message}`);
+          }
         }
       }
 
@@ -130,6 +144,16 @@ export default function AdminMigrateLocalPage() {
 
       <div className="admin-migrate-actions">
         <button className="btn ghost" disabled={!canRun} onClick={() => run({ dryRun: true })} type="button">Dry Run</button>
+        <button
+          className="btn ghost"
+          disabled={!canRun}
+          onClick={() => {
+            if (window.confirm('Firestoreのみ移行を実行します（Storageは一切処理しません）。続行しますか？')) run({ dryRun: false, skipStorage: true, lessonsOnly: true });
+          }}
+          type="button"
+        >
+          Firestoreのみ移行（推奨）
+        </button>
         <button
           className="btn"
           disabled={!canRun}
