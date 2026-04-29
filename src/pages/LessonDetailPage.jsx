@@ -134,8 +134,6 @@ export default function LessonDetailPage() {
         <p className="section-subtle">Only MP3 files are currently supported.</p>
         <h3>Study Summary</h3>
         <p>Last studied: {formatDateTime(lesson.lastStudiedAt)}</p>
-        <p>Dictation attempts: {lesson.dictationCount || 0}</p>
-        <p>Shadowing attempts: {lesson.shadowingCount || 0}</p>
         <p>Total study time: {formatSeconds(lesson.totalStudySeconds || 0)}</p>
       </article>
       <div className="row gap-sm wrap">

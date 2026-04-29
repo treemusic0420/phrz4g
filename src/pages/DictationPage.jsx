@@ -4,7 +4,6 @@ import AudioControls from '../components/AudioControls';
 import LessonImageThumbnail from '../components/LessonImageThumbnail';
 import { useAuth } from '../contexts/AuthContext';
 import {
-  createDictationAttempt,
   createStudyLog,
   fetchLessons,
   fetchLessonById,
@@ -317,14 +316,6 @@ export default function DictationPage() {
       completed: true,
     });
 
-    await createDictationAttempt({
-      userId: userId,
-      lessonId: lesson.id,
-      inputText,
-      correctText: lesson.scriptEn,
-      diffResult: diff,
-      durationSeconds,
-    });
 
     await updateLessonStats(lesson.id, 'dictation', durationSeconds);
 
