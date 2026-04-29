@@ -97,10 +97,27 @@ export const AuthProvider = ({ children }) => {
           console.log('[AuthDebug] signInWithPopup success');
           return result;
         } catch (error) {
+          const sanitizedError =
+            error && typeof error === 'object'
+              ? Object.fromEntries(
+                  Object.entries(error).filter(([key]) => {
+                    const normalized = key.toLowerCase();
+                    return !normalized.includes('token') && !normalized.includes('credential');
+                  }),
+                )
+              : error;
+
+          const serializedError =
+            sanitizedError && typeof sanitizedError === 'object'
+              ? JSON.stringify(sanitizedError, null, 2)
+              : String(sanitizedError);
+
           console.error('[AuthDebug] Google sign in failed', {
             code: error?.code,
             message: error?.message,
             name: error?.name,
+            error: sanitizedError,
+            serializedError,
           });
           throw error;
         }
