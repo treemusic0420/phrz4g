@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { LOCAL_USER_ID } from '../lib/auth';
+import { useAuth } from '../contexts/AuthContext';
 import { ensureInitialCategories, fetchLessons } from '../lib/firestore';
 import { formatDateTime, formatSeconds } from '../utils/format';
 import { getDifficultyLabel } from '../utils/difficulty';
@@ -8,6 +8,8 @@ import { resolveRegisteredMonthFields } from '../utils/registeredMonth';
 import { groupLessonsByCategory, hasLessonAudio, sortLessonsByRecency } from '../utils/lessons';
 
 export default function LessonsPage() {
+  const { user } = useAuth();
+  const userId = user?.uid || '';
   const [lessons, setLessons] = useState([]);
   const [categories, setCategories] = useState([]);
   const [error, setError] = useState(null);
@@ -18,8 +20,8 @@ export default function LessonsPage() {
       setError(null);
       try {
         const [fetchedLessons, fetchedCategories] = await Promise.all([
-          fetchLessons(LOCAL_USER_ID),
-          ensureInitialCategories(LOCAL_USER_ID),
+          fetchLessons(userId),
+          ensureInitialCategories(userId),
         ]);
         setLessons(fetchedLessons);
         setCategories(fetchedCategories);
@@ -68,7 +70,7 @@ export default function LessonsPage() {
       </article>
       <details className="debug-panel">
         <summary>Debug Info</summary>
-        <p>debug.userId: {LOCAL_USER_ID}</p>
+        <p>debug.userId: {userId}</p>
         <p>debug.lessonCount: {lessons.length}</p>
         <p>debug.categoryCount: {categories.length}</p>
         {error ? (

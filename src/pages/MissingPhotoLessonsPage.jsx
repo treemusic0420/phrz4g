@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { LOCAL_USER_ID } from '../lib/auth';
+import { useAuth } from '../contexts/AuthContext';
 import { ensureInitialCategories, fetchLessons, updateLessonImage } from '../lib/firestore';
 import { compressLessonImage, uploadLessonImage, validateImageFile } from '../lib/storage';
 import { formatDateTime, toDate } from '../utils/format';
@@ -26,6 +26,8 @@ const getSortTime = (lesson) => {
 };
 
 export default function MissingPhotoLessonsPage() {
+  const { user } = useAuth();
+  const userId = user?.uid || '';
   const [lessons, setLessons] = useState([]);
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,8 +46,8 @@ export default function MissingPhotoLessonsPage() {
       setError('');
       try {
         const [fetchedLessons, fetchedCategories] = await Promise.all([
-          fetchLessons(LOCAL_USER_ID),
-          ensureInitialCategories(LOCAL_USER_ID),
+          fetchLessons(userId),
+          ensureInitialCategories(userId),
         ]);
         setLessons(fetchedLessons);
         setCategories(fetchedCategories);
@@ -128,7 +130,7 @@ export default function MissingPhotoLessonsPage() {
 
     try {
       const compressed = await compressLessonImage({ file });
-      const uploaded = await uploadLessonImage({ file: compressed, lessonId });
+      const uploaded = await uploadLessonImage({ file: compressed, lessonId, userId });
       await updateLessonImage(lessonId, {
         imagePath: uploaded.imagePath,
         imageUrl: uploaded.imageUrl,

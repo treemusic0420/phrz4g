@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { LOCAL_USER_ID } from '../lib/auth';
+import { useAuth } from '../contexts/AuthContext';
 import { deleteCategory, ensureInitialCategories, fetchLessons } from '../lib/firestore';
 import { sortCategories } from '../utils/lessons';
 
 export default function CategoriesPage() {
+  const { user } = useAuth();
+  const userId = user?.uid || '';
   const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
   const [lessons, setLessons] = useState([]);
@@ -16,8 +18,8 @@ export default function CategoriesPage() {
     setError('');
     try {
       const [loadedCategories, loadedLessons] = await Promise.all([
-        ensureInitialCategories(LOCAL_USER_ID),
-        fetchLessons(LOCAL_USER_ID),
+        ensureInitialCategories(userId),
+        fetchLessons(userId),
       ]);
       setCategories(sortCategories(loadedCategories));
       setLessons(loadedLessons);

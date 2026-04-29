@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import AudioControls from '../components/AudioControls';
 import LessonImageThumbnail from '../components/LessonImageThumbnail';
-import { LOCAL_USER_ID } from '../lib/auth';
+import { useAuth } from '../contexts/AuthContext';
 import { createStudyLog, fetchLessonById, fetchLessons, updateLessonStats } from '../lib/firestore';
 import {
   filterLessonsByCategoryAndMonth,
@@ -13,6 +13,8 @@ import {
 import { getRegisteredMonthLabel } from '../utils/registeredMonth';
 
 export default function ShadowingPage() {
+  const { user } = useAuth();
+  const userId = user?.uid || '';
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -40,7 +42,7 @@ export default function ShadowingPage() {
     setAutoPlayMessage('');
     fetchLessonById(id).then((doc) => {
       if (!isActive) return;
-      if (!doc || doc.userId !== LOCAL_USER_ID) return navigate('/lessons');
+      if (!doc || doc.userId !== userId) return navigate('/lessons');
       setLesson(doc);
       suppressAudioAutoplayRef.current = false;
       setAutoPlayToken((prev) => prev + 1);
@@ -56,7 +58,7 @@ export default function ShadowingPage() {
       setMonthLessons([]);
       return;
     }
-    fetchLessons(LOCAL_USER_ID).then((lessons) => {
+    fetchLessons(userId).then((lessons) => {
       const filtered = filterLessonsByCategoryAndMonth(lessons, categoryId, registeredMonth);
       const audioReady = filtered.filter((monthLesson) => hasLessonAudio(monthLesson));
       setMonthLessons(sortLessonsForMonthTraining(audioReady));
@@ -239,7 +241,7 @@ export default function ShadowingPage() {
     const endedAt = new Date();
     const durationSeconds = Math.max(1, Math.floor((endedAt - startedAt) / 1000));
     await createStudyLog({
-      userId: LOCAL_USER_ID,
+      userId: userId,
       lessonId: lesson.id,
       trainingType: 'shadowing',
       startedAt,

@@ -2,8 +2,8 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    function isLocalUser(userId) {
-      return userId == 'local';
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
     }
 
     function isAllowedImageUpload() {
@@ -12,15 +12,13 @@ service firebase.storage {
         && request.resource.contentType.matches('image/(jpeg|png|webp)');
     }
 
-    // Existing audio policy for MVP: allow local user path access.
     match /users/{userId}/lesson-audio/{fileName=**} {
-      allow read, write: if isLocalUser(userId);
+      allow read, write: if isOwner(userId);
     }
 
-    // Image upload policy mirrors audio auth (local path) + image-specific constraints.
     match /users/{userId}/lesson-images/{lessonId}/{fileName=**} {
-      allow read: if isLocalUser(userId);
-      allow write: if isLocalUser(userId)
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId)
         && (request.resource == null || isAllowedImageUpload());
     }
   }

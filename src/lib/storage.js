@@ -1,5 +1,4 @@
 import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage';
-import { LOCAL_USER_ID } from './auth';
 import { storage } from './firebase';
 
 const MAX_BYTES = 20 * 1024 * 1024;
@@ -91,10 +90,11 @@ export const compressLessonImage = async ({ file, maxDimension = 1200, quality =
   return new File([blob], `lesson-image.${extension}`, { type: blob.type });
 };
 
-export const uploadLessonAudio = async ({ file }) => {
+export const uploadLessonAudio = async ({ file, userId }) => {
   const ext = getFileExtension(file.name);
   const filename = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
-  const audioPath = `users/${LOCAL_USER_ID}/lesson-audio/${filename}`;
+  if (!userId) throw new Error('User ID is required for audio upload.');
+  const audioPath = `users/${userId}/lesson-audio/${filename}`;
   const storageRef = ref(storage, audioPath);
   const contentType = 'audio/mpeg';
   const metadata = { contentType };
@@ -103,11 +103,12 @@ export const uploadLessonAudio = async ({ file }) => {
   return { audioPath, audioUrl, audioContentType: contentType, fileExtension: ext };
 };
 
-export const uploadLessonImage = async ({ file, lessonId }) => {
+export const uploadLessonImage = async ({ file, lessonId, userId }) => {
   if (!lessonId) throw new Error('Lesson ID is required for image upload.');
   const ext = getFileExtension(file.name) || 'webp';
   const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-  const imagePath = `users/${LOCAL_USER_ID}/lesson-images/${lessonId}/${filename}`;
+  if (!userId) throw new Error('User ID is required for image upload.');
+  const imagePath = `users/${userId}/lesson-images/${lessonId}/${filename}`;
   const storageRef = ref(storage, imagePath);
   await uploadBytes(storageRef, file, { contentType: file.type || 'image/webp' });
   const imageUrl = await getDownloadURL(storageRef);

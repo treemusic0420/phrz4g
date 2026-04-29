@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { LOCAL_USER_ID } from '../lib/auth';
+import { useAuth } from '../contexts/AuthContext';
 import { ensureInitialCategories, fetchLessons, updateLessonAudio } from '../lib/firestore';
 import { uploadLessonAudio, validateAudioFile } from '../lib/storage';
 import { formatDateTime, toDate } from '../utils/format';
@@ -24,6 +24,8 @@ const getSortTime = (lesson) => {
 };
 
 export default function MissingAudioLessonsPage() {
+  const { user } = useAuth();
+  const userId = user?.uid || '';
   const [lessons, setLessons] = useState([]);
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -42,8 +44,8 @@ export default function MissingAudioLessonsPage() {
       setError('');
       try {
         const [fetchedLessons, fetchedCategories] = await Promise.all([
-          fetchLessons(LOCAL_USER_ID),
-          ensureInitialCategories(LOCAL_USER_ID),
+          fetchLessons(userId),
+          ensureInitialCategories(userId),
         ]);
         setLessons(fetchedLessons);
         setCategories(fetchedCategories);
@@ -125,7 +127,7 @@ export default function MissingAudioLessonsPage() {
     setLessonErrors((prev) => ({ ...prev, [lessonId]: '' }));
 
     try {
-      const uploaded = await uploadLessonAudio({ file });
+      const uploaded = await uploadLessonAudio({ file, userId });
       await updateLessonAudio(lessonId, {
         audioPath: uploaded.audioPath,
         audioUrl: uploaded.audioUrl,

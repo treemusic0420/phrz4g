@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { LOCAL_USER_ID } from '../lib/auth';
+import { useAuth } from '../contexts/AuthContext';
 import { fetchLessons, fetchStudyLogs } from '../lib/firestore';
 import { formatDateTime, toDate } from '../utils/format';
 
@@ -205,6 +205,8 @@ const toMonthRoute = (lesson) => {
 };
 
 export default function StatsPage() {
+  const { user } = useAuth();
+  const userId = user?.uid || '';
   const navigate = useNavigate();
   const [logs, setLogs] = useState([]);
   const [lessons, setLessons] = useState([]);
@@ -223,8 +225,8 @@ export default function StatsPage() {
       setStudyLogsError('');
 
       const [lessonsResult, logsResult] = await Promise.allSettled([
-        fetchLessons(LOCAL_USER_ID),
-        fetchStudyLogs(LOCAL_USER_ID),
+        fetchLessons(userId),
+        fetchStudyLogs(userId),
       ]);
 
       if (!active) return;
@@ -305,7 +307,7 @@ export default function StatsPage() {
 
       <details className="debug-panel">
         <summary>Debug Info</summary>
-        <p>debug.userId: {LOCAL_USER_ID}</p>
+        <p>debug.userId: {userId}</p>
         <p>debug.lessonsStatus: {lessonsStatus}</p>
         <p>debug.lessonsCount: {lessons.length}</p>
         <p>debug.studyLogsStatus: {studyLogsStatus}</p>

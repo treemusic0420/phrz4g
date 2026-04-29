@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ensureInitialCategories, createLesson } from '../lib/firestore';
-import { LOCAL_USER_ID } from '../lib/auth';
+import { useAuth } from '../contexts/AuthContext';
 import { sortCategories } from '../utils/lessons';
 import { DIFFICULTY_OPTIONS, normalizeDifficulty } from '../utils/difficulty';
 
@@ -13,6 +13,8 @@ const buildAutoTitle = (script = '') => {
 };
 
 export default function QuickAddLessonPage() {
+  const { user } = useAuth();
+  const userId = user?.uid || '';
   const scriptRef = useRef(null);
   const [categories, setCategories] = useState([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
@@ -33,7 +35,7 @@ export default function QuickAddLessonPage() {
       setIsLoadingCategories(true);
       setError('');
       try {
-        const loaded = await ensureInitialCategories(LOCAL_USER_ID);
+        const loaded = await ensureInitialCategories(userId);
         const activeCategories = sortCategories(loaded).filter((category) => category.isActive);
         setCategories(activeCategories);
         setCategoryId((prev) => prev || activeCategories[0]?.id || '');
@@ -89,7 +91,7 @@ export default function QuickAddLessonPage() {
     try {
       const title = buildAutoTitle(scriptEn);
       await createLesson({
-        userId: LOCAL_USER_ID,
+        userId: userId,
         title,
         scriptEn: scriptEn.trim(),
         scriptJa: scriptJa.trim(),
