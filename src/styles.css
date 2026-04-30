@@ -521,6 +521,9 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
 
 .shadowing-script-card pre {
   margin-top: 0;
+  font-size: clamp(1.125rem, 1.05rem + 0.4vw, 1.25rem);
+  line-height: 1.6;
+  letter-spacing: 0.01em;
 }
 
 .shadowing-rating-actions {
