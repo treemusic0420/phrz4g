@@ -28,7 +28,7 @@ a { color: inherit; text-decoration: none; }
 .app-header {
   position: sticky;
   top: 0;
-  padding-top: max(16px, env(safe-area-inset-top));
+  padding-top: 16px;
   z-index: 50;
   background: rgba(255, 255, 255, 0.86);
   backdrop-filter: blur(16px);
@@ -36,21 +36,21 @@ a { color: inherit; text-decoration: none; }
   border-bottom: 1px solid rgba(210, 210, 215, 0.7);
 }
 
-html.ios-capacitor .app-header {
+body.is-capacitor-ios .app-header {
   padding-top: calc(env(safe-area-inset-top) + 20px);
 }
 
 .header-inner {
   max-width: 920px;
   margin: 0 auto;
-  min-height: calc(64px + env(safe-area-inset-top));
+  min-height: 64px;
   padding: 8px 18px 10px;
   display: flex;
   align-items: flex-end;
   gap: 10px;
 }
 
-html.ios-capacitor .header-inner {
+body.is-capacitor-ios .header-inner {
   min-height: calc(76px + env(safe-area-inset-top));
 }
 
@@ -143,7 +143,7 @@ html.ios-capacitor .header-inner {
   padding: 16px 0 28px;
 }
 
-html.ios-capacitor .main-content {
+body.is-capacitor-ios .main-content {
   padding-top: 24px;
 }
 
@@ -530,7 +530,7 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
 @media (max-width: 640px) {
   .header-inner {
     padding: 8px 12px 10px;
-    min-height: calc(64px + env(safe-area-inset-top));
+    min-height: 64px;
     gap: 6px;
   }
 
@@ -1241,7 +1241,7 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
 
 @media (max-width: 720px) {
   .header-inner {
-    min-height: calc(64px + env(safe-area-inset-top));
+    min-height: 64px;
     padding: 8px 14px 10px;
     gap: 8px;
   }
