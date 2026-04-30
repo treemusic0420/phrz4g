@@ -15,21 +15,6 @@ export default function Layout({ children }) {
   const menuRef = useRef(null);
 
   useEffect(() => {
-    const root = document.documentElement;
-    const body = document.body;
-    const capacitorPlatform = window?.Capacitor?.getPlatform?.();
-    const isIosCapacitor = capacitorPlatform === 'ios';
-
-    root.classList.toggle('ios-capacitor', isIosCapacitor);
-    body.classList.toggle('is-capacitor-ios', isIosCapacitor);
-
-    return () => {
-      root.classList.remove('ios-capacitor');
-      body.classList.remove('is-capacitor-ios');
-    };
-  }, []);
-
-  useEffect(() => {
     setIsMenuOpen(false);
   }, [pathname]);
 
