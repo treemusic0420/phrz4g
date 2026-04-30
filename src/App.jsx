@@ -21,11 +21,15 @@ import AnalyticsPage from './pages/AnalyticsPage';
 
 export default function App() {
   useEffect(() => {
-    const isIosCapacitor = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios';
+    const platform = Capacitor.getPlatform();
 
-    if (isIosCapacitor) {
+    console.log('[LayoutDebug] Capacitor platform', platform);
+
+    if (platform === 'ios') {
       document.body.classList.add('is-capacitor-ios');
     }
+
+    console.log('[LayoutDebug] body class after App init', document.body.className);
 
     return () => {
       document.body.classList.remove('is-capacitor-ios');
