@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { fetchLessons, fetchMonthlyStats, fetchStudyLogs } from '../lib/firestore';
@@ -60,6 +61,64 @@ const formatDurationCompact = (seconds = 0) => {
   if (hours > 0) return `${hours}h ${minutes}m`;
   if (minutes > 0) return `${minutes}m`;
   return `${remainder}s`;
+};
+
+const readSafeAreaInsetTop = () => {
+  const envProbe = document.createElement('div');
+  envProbe.style.paddingTop = 'env(safe-area-inset-top)';
+  envProbe.style.position = 'absolute';
+  envProbe.style.visibility = 'hidden';
+  envProbe.style.pointerEvents = 'none';
+  document.body.appendChild(envProbe);
+  const envValue = getComputedStyle(envProbe).paddingTop;
+  document.body.removeChild(envProbe);
+
+  const constantProbe = document.createElement('div');
+  constantProbe.style.paddingTop = 'constant(safe-area-inset-top)';
+  constantProbe.style.position = 'absolute';
+  constantProbe.style.visibility = 'hidden';
+  constantProbe.style.pointerEvents = 'none';
+  document.body.appendChild(constantProbe);
+  const constantValue = getComputedStyle(constantProbe).paddingTop;
+  document.body.removeChild(constantProbe);
+
+  return { envValue, constantValue };
+};
+
+const collectDebugInfo = () => {
+  const appHeader = document.querySelector('.app-header');
+  const headerInner = document.querySelector('.header-inner');
+  const appHeaderStyle = appHeader ? getComputedStyle(appHeader) : null;
+  const headerInnerStyle = headerInner ? getComputedStyle(headerInner) : null;
+  const safeAreaInsetTop = readSafeAreaInsetTop();
+
+  return {
+    platform: Capacitor.getPlatform(),
+    bodyClassName: document.body.className,
+    appHeader: {
+      exists: Boolean(appHeader),
+      position: appHeaderStyle?.position ?? 'N/A',
+      top: appHeaderStyle?.top ?? 'N/A',
+      height: appHeaderStyle?.height ?? 'N/A',
+      paddingTop: appHeaderStyle?.paddingTop ?? 'N/A',
+      zIndex: appHeaderStyle?.zIndex ?? 'N/A',
+    },
+    headerInner: {
+      exists: Boolean(headerInner),
+      height: headerInnerStyle?.height ?? 'N/A',
+      minHeight: headerInnerStyle?.minHeight ?? 'N/A',
+      paddingTop: headerInnerStyle?.paddingTop ?? 'N/A',
+      marginTop: headerInnerStyle?.marginTop ?? 'N/A',
+      alignItems: headerInnerStyle?.alignItems ?? 'N/A',
+    },
+    viewport: {
+      innerWidth: window.innerWidth,
+      innerHeight: window.innerHeight,
+      visualViewportWidth: window.visualViewport?.width ?? null,
+      visualViewportHeight: window.visualViewport?.height ?? null,
+    },
+    safeAreaInsetTop,
+  };
 };
 
 const buildDashboardData = (lessons, logs, options = {}) => {
@@ -219,6 +278,8 @@ export default function StatsPage() {
   const [studyLogsStatus, setStudyLogsStatus] = useState('idle');
   const [lessonsError, setLessonsError] = useState('');
   const [studyLogsError, setStudyLogsError] = useState('');
+  const [layoutDebugInfo, setLayoutDebugInfo] = useState(null);
+  const debugDetailsRef = useRef(null);
   const [monthlyStatsTotalBeforeCurrentMonth, setMonthlyStatsTotalBeforeCurrentMonth] = useState(0);
 
   useEffect(() => {
@@ -321,18 +382,30 @@ export default function StatsPage() {
   ];
 
   const hasLessons = lessons.length > 0;
+  const handleDebugToggle = () => {
+    if (!debugDetailsRef.current?.open || layoutDebugInfo) return;
+    setLayoutDebugInfo(collectDebugInfo());
+  };
+
+  const refreshDebugInfo = () => {
+    setLayoutDebugInfo(collectDebugInfo());
+  };
 
   return (
     <section className="stack dashboard-page">
       <h2 className="section-title">Study Dashboard</h2>
 
-      <details className="debug-panel">
+      <details className="debug-panel" onToggle={handleDebugToggle} ref={debugDetailsRef}>
         <summary>Debug Info</summary>
         <p>debug.userId: {userId}</p>
         <p>debug.lessonsStatus: {lessonsStatus}</p>
         <p>debug.lessonsCount: {lessons.length}</p>
         <p>debug.studyLogsStatus: {studyLogsStatus}</p>
         <p>debug.studyLogsCount: {logs.length}</p>
+        <button className="btn ghost compact-btn" onClick={refreshDebugInfo} type="button">
+          Refresh Debug Info
+        </button>
+        {layoutDebugInfo ? <pre>{JSON.stringify(layoutDebugInfo, null, 2)}</pre> : <p>Open panel to collect layout debug info.</p>}
         {lessonsError ? <p className="error">debug.lessonsError: {lessonsError}</p> : null}
         {studyLogsError ? <p className="error">debug.studyLogsError: {studyLogsError}</p> : null}
       </details>
