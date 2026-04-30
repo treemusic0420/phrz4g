@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import {
@@ -50,6 +50,8 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [authDelayWarning, setAuthDelayWarning] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const isLoggingInRef = useRef(false);
 
   useEffect(() => {
     console.log('[AuthDebug] AuthProvider mounted');
@@ -96,6 +98,16 @@ export const AuthProvider = ({ children }) => {
         console.log(`[AuthDebug] login method: ${isCapacitor ? 'capacitor-google' : 'popup'}`);
         console.log(`[AuthDebug] isCapacitor=${isCapacitor}`);
 
+        if (isCapacitor && isLoggingInRef.current) {
+          console.warn('[AuthDebug] login already in progress; skipping duplicate request');
+          return null;
+        }
+
+        if (isCapacitor) {
+          isLoggingInRef.current = true;
+          setIsLoggingIn(true);
+        }
+
         try {
           if (isCapacitor) {
             const result = await FirebaseAuthentication.signInWithGoogle();
@@ -103,26 +115,39 @@ export const AuthProvider = ({ children }) => {
 
             const nativeUser = normalizeNativeUser(result?.user);
             if (nativeUser) {
+              setUser(nativeUser);
+              setLoading(false);
+              setAuthDelayWarning(false);
               console.log('[AuthDebug] native google user received', {
                 uid: nativeUser.uid,
                 hasEmail: Boolean(nativeUser.email),
                 emailVerified: nativeUser.emailVerified,
               });
+              console.log('[AuthDebug] auth user state updated');
             }
 
             const credentialForWebAuth = getGoogleCredentialFromResult(result);
             if (credentialForWebAuth.credential) {
               try {
                 console.log('[AuthDebug] signInWithCredential start');
-                const firebaseResult = await signInWithCredential(auth, credentialForWebAuth.credential);
+                const firebaseResult = await Promise.race([
+                  signInWithCredential(auth, credentialForWebAuth.credential),
+                  new Promise((_, reject) => {
+                    window.setTimeout(() => reject(new Error('signInWithCredential timeout')), 3000);
+                  }),
+                ]);
                 console.log('[AuthDebug] signInWithCredential success');
                 return firebaseResult;
               } catch (credentialError) {
-                console.error('[AuthDebug] signInWithCredential failed', {
-                  name: credentialError?.name,
-                  code: credentialError?.code,
-                  message: credentialError?.message,
-                });
+                if (credentialError?.message === 'signInWithCredential timeout') {
+                  console.warn('[AuthDebug] signInWithCredential timeout');
+                } else {
+                  console.error('[AuthDebug] signInWithCredential failed', {
+                    name: credentialError?.name,
+                    code: credentialError?.code,
+                    message: credentialError?.message,
+                  });
+                }
               }
             } else {
               console.warn('[AuthDebug] signInWithCredential failed', {
@@ -178,6 +203,11 @@ export const AuthProvider = ({ children }) => {
           });
           console.dir(error);
           throw error;
+        } finally {
+          if (isCapacitor) {
+            isLoggingInRef.current = false;
+            setIsLoggingIn(false);
+          }
         }
       },
       logout: async () => {
@@ -195,7 +225,7 @@ export const AuthProvider = ({ children }) => {
         await signOut(auth);
       },
     }),
-    [user, loading, authDelayWarning],
+    [user, loading, authDelayWarning, isLoggingIn],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
