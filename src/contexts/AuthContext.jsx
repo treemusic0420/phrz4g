@@ -16,6 +16,20 @@ const AUTH_LOADING_TIMEOUT_MS = 9000;
 
 const isCapacitorEnvironment = () => Capacitor.isNativePlatform();
 
+const normalizeNativeUser = (nativeUser) => {
+  if (!nativeUser?.uid) return null;
+
+  return {
+    uid: nativeUser.uid,
+    email: nativeUser.email ?? null,
+    displayName: nativeUser.displayName ?? null,
+    photoURL: nativeUser.photoUrl ?? nativeUser.photoURL ?? null,
+    emailVerified: Boolean(nativeUser.emailVerified),
+    providerId: nativeUser.providerId ?? 'google.com',
+    isNativeFallbackUser: true,
+  };
+};
+
 const getGoogleCredentialFromResult = (result) => {
   const credential = result?.credential ?? null;
   const idToken = credential?.idToken ?? result?.idToken ?? null;
@@ -58,6 +72,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       setUser(nextUser);
+      console.log('[AuthDebug] auth user state updated');
       setLoading(false);
       setAuthDelayWarning(false);
       console.log('[AuthDebug] loading=false set');
@@ -86,32 +101,47 @@ export const AuthProvider = ({ children }) => {
             const result = await FirebaseAuthentication.signInWithGoogle();
             console.log('[AuthDebug] native google sign-in returned');
 
+            const nativeUser = normalizeNativeUser(result?.user);
+            if (nativeUser) {
+              console.log('[AuthDebug] native google user received', {
+                uid: nativeUser.uid,
+                hasEmail: Boolean(nativeUser.email),
+                emailVerified: nativeUser.emailVerified,
+              });
+            }
+
             const credentialForWebAuth = getGoogleCredentialFromResult(result);
-            if (!credentialForWebAuth.credential) {
-              const error = new Error('Native Google sign-in did not return idToken/accessToken');
-              console.error('[AuthDebug] signInWithCredential failed', {
-                message: error.message,
+            if (credentialForWebAuth.credential) {
+              try {
+                console.log('[AuthDebug] signInWithCredential start');
+                const firebaseResult = await signInWithCredential(auth, credentialForWebAuth.credential);
+                console.log('[AuthDebug] signInWithCredential success');
+                return firebaseResult;
+              } catch (credentialError) {
+                console.error('[AuthDebug] signInWithCredential failed', {
+                  name: credentialError?.name,
+                  code: credentialError?.code,
+                  message: credentialError?.message,
+                });
+              }
+            } else {
+              console.warn('[AuthDebug] signInWithCredential failed', {
+                message: 'Native Google sign-in did not return idToken/accessToken',
                 hasIdToken: credentialForWebAuth.idToken,
                 hasAccessToken: credentialForWebAuth.accessToken,
               });
-              throw error;
             }
 
-            console.log('[AuthDebug] web credential created');
-
-            try {
-              console.log('[AuthDebug] signInWithCredential start');
-              const firebaseResult = await signInWithCredential(auth, credentialForWebAuth.credential);
-              console.log('[AuthDebug] signInWithCredential success');
-              return firebaseResult;
-            } catch (credentialError) {
-              console.error('[AuthDebug] signInWithCredential failed', {
-                name: credentialError?.name,
-                code: credentialError?.code,
-                message: credentialError?.message,
-              });
-              throw credentialError;
+            if (nativeUser) {
+              setUser(nativeUser);
+              setLoading(false);
+              setAuthDelayWarning(false);
+              console.log('[AuthDebug] native user fallback applied');
+              console.log('[AuthDebug] auth user state updated');
+              return { user: nativeUser };
             }
+
+            throw new Error('Native Google sign-in succeeded, but no usable auth user was returned');
           }
 
           const result = await signInWithPopup(auth, googleProvider);
