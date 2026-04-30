@@ -37,7 +37,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 html.ios-capacitor .app-header {
-  padding-top: calc(env(safe-area-inset-top) + 12px);
+  padding-top: calc(env(safe-area-inset-top) + 20px);
 }
 
 .header-inner {
