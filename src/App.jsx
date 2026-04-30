@@ -21,9 +21,15 @@ import AnalyticsPage from './pages/AnalyticsPage';
 
 export default function App() {
   useEffect(() => {
-    if (Capacitor.isNativePlatform()) {
+    const isIosCapacitor = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios';
+
+    if (isIosCapacitor) {
       document.body.classList.add('is-capacitor-ios');
     }
+
+    return () => {
+      document.body.classList.remove('is-capacitor-ios');
+    };
   }, []);
 
   return (
