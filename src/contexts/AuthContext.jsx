@@ -122,7 +122,7 @@ export const AuthProvider = ({ children }) => {
             let timeoutId = null;
             try {
               const firebaseResult = await Promise.race([
-                signInWithCredential(auth, GoogleAuthProvider.credential(result?.idToken ?? result?.credential?.idToken ?? null, result?.accessToken ?? result?.credential?.accessToken ?? null)),
+                signInWithCredential(auth, credentialForWebAuth.credential),
                 new Promise((_, reject) => {
                   timeoutId = window.setTimeout(() => {
                     console.error('[AuthDebug] signInWithCredential timeout');

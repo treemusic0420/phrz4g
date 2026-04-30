@@ -1,5 +1,10 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { Capacitor } from '@capacitor/core';
+import {
+  getAuth,
+  initializeAuth,
+  inMemoryPersistence,
+} from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
@@ -23,6 +28,31 @@ console.info('[firebase] config debug', {
 
 const app = initializeApp(firebaseConfig);
 
-export const auth = getAuth(app);
+const isCapacitor = Capacitor.isNativePlatform();
+let authInstance;
+
+if (isCapacitor) {
+  try {
+    authInstance = initializeAuth(app, {
+      persistence: inMemoryPersistence,
+    });
+  } catch (error) {
+    const isAlreadyInitializedError =
+      error?.code === 'auth/already-initialized' ||
+      String(error?.message ?? '').includes('already-initialized');
+
+    if (isAlreadyInitializedError) {
+      authInstance = getAuth(app);
+    } else {
+      throw error;
+    }
+  }
+  console.info('[firebase] auth initialized for capacitor with inMemoryPersistence');
+} else {
+  authInstance = getAuth(app);
+  console.info('[firebase] auth initialized for web');
+}
+
+export const auth = authInstance;
 export const db = getFirestore(app);
 export const storage = getStorage(app);
