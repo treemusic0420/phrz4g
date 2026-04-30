@@ -18,9 +18,11 @@ const isCapacitorEnvironment = () => Capacitor.isNativePlatform();
 
 const normalizeNativeUser = (nativeUser) => {
   if (!nativeUser?.uid) return null;
+  const providerUid = nativeUser?.providerData?.[0]?.uid ?? null;
 
   return {
     uid: nativeUser.uid,
+    providerUid,
     email: nativeUser.email ?? null,
     displayName: nativeUser.displayName ?? null,
     photoURL: nativeUser.photoUrl ?? nativeUser.photoURL ?? null,
@@ -115,6 +117,12 @@ export const AuthProvider = ({ children }) => {
 
             const nativeUser = normalizeNativeUser(result?.user);
             if (nativeUser) {
+              if (nativeUser.providerUid) {
+                console.log('[AuthDebug] provider uid ignored for app user id', {
+                  providerUid: nativeUser.providerUid,
+                });
+              }
+              console.log('[AuthDebug] normalized native uid', { uid: nativeUser.uid });
               setUser(nativeUser);
               setLoading(false);
               setAuthDelayWarning(false);
@@ -158,6 +166,12 @@ export const AuthProvider = ({ children }) => {
             }
 
             if (nativeUser) {
+              if (nativeUser.providerUid) {
+                console.log('[AuthDebug] provider uid ignored for app user id', {
+                  providerUid: nativeUser.providerUid,
+                });
+              }
+              console.log('[AuthDebug] normalized native uid', { uid: nativeUser.uid });
               setUser(nativeUser);
               setLoading(false);
               setAuthDelayWarning(false);
