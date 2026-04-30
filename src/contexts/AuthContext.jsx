@@ -13,24 +13,10 @@ import { auth } from '../lib/firebase';
 const AuthContext = createContext(null);
 const googleProvider = new GoogleAuthProvider();
 const AUTH_LOADING_TIMEOUT_MS = 9000;
+const WEB_SIGN_IN_TIMEOUT_MS = 10000;
 
 const isCapacitorEnvironment = () => Capacitor.isNativePlatform();
 
-const normalizeNativeUser = (nativeUser) => {
-  if (!nativeUser?.uid) return null;
-  const providerUid = nativeUser?.providerData?.[0]?.uid ?? null;
-
-  return {
-    uid: nativeUser.uid,
-    providerUid,
-    email: nativeUser.email ?? null,
-    displayName: nativeUser.displayName ?? null,
-    photoURL: nativeUser.photoUrl ?? nativeUser.photoURL ?? null,
-    emailVerified: Boolean(nativeUser.emailVerified),
-    providerId: nativeUser.providerId ?? 'google.com',
-    isNativeFallbackUser: true,
-  };
-};
 
 const getGoogleCredentialFromResult = (result) => {
   const credential = result?.credential ?? null;
@@ -112,75 +98,47 @@ export const AuthProvider = ({ children }) => {
 
         try {
           if (isCapacitor) {
-            const result = await FirebaseAuthentication.signInWithGoogle();
+            const result = await FirebaseAuthentication.signInWithGoogle({
+              scopes: ['profile', 'email'],
+              skipNativeAuth: true,
+            });
             console.log('[AuthDebug] native google sign-in returned');
 
-            const nativeUser = normalizeNativeUser(result?.user);
-            if (nativeUser) {
-              if (nativeUser.providerUid) {
-                console.log('[AuthDebug] provider uid ignored for app user id', {
-                  providerUid: nativeUser.providerUid,
-                });
-              }
-              console.log('[AuthDebug] normalized native uid', { uid: nativeUser.uid });
-              setUser(nativeUser);
-              setLoading(false);
-              setAuthDelayWarning(false);
-              console.log('[AuthDebug] native google user received', {
-                uid: nativeUser.uid,
-                hasEmail: Boolean(nativeUser.email),
-                emailVerified: nativeUser.emailVerified,
-              });
-              console.log('[AuthDebug] auth user state updated');
-            }
-
             const credentialForWebAuth = getGoogleCredentialFromResult(result);
-            if (credentialForWebAuth.credential) {
-              try {
-                console.log('[AuthDebug] signInWithCredential start');
-                const firebaseResult = await Promise.race([
-                  signInWithCredential(auth, credentialForWebAuth.credential),
-                  new Promise((_, reject) => {
-                    window.setTimeout(() => reject(new Error('signInWithCredential timeout')), 3000);
-                  }),
-                ]);
-                console.log('[AuthDebug] signInWithCredential success');
-                return firebaseResult;
-              } catch (credentialError) {
-                if (credentialError?.message === 'signInWithCredential timeout') {
-                  console.warn('[AuthDebug] signInWithCredential timeout');
-                } else {
-                  console.error('[AuthDebug] signInWithCredential failed', {
-                    name: credentialError?.name,
-                    code: credentialError?.code,
-                    message: credentialError?.message,
-                  });
-                }
-              }
-            } else {
-              console.warn('[AuthDebug] signInWithCredential failed', {
+            console.log('[AuthDebug] capacitor google credential received', {
+              hasIdToken: credentialForWebAuth.idToken,
+              hasAccessToken: credentialForWebAuth.accessToken,
+            });
+
+            if (!credentialForWebAuth.credential) {
+              console.error('[AuthDebug] signInWithCredential failed', {
                 message: 'Native Google sign-in did not return idToken/accessToken',
-                hasIdToken: credentialForWebAuth.idToken,
-                hasAccessToken: credentialForWebAuth.accessToken,
               });
+              console.warn('[AuthDebug] fallback disabled because Firestore requires request.auth');
+              throw new Error('Google credential is missing idToken/accessToken.');
             }
 
-            if (nativeUser) {
-              if (nativeUser.providerUid) {
-                console.log('[AuthDebug] provider uid ignored for app user id', {
-                  providerUid: nativeUser.providerUid,
-                });
-              }
-              console.log('[AuthDebug] normalized native uid', { uid: nativeUser.uid });
-              setUser(nativeUser);
-              setLoading(false);
-              setAuthDelayWarning(false);
-              console.log('[AuthDebug] native user fallback applied');
-              console.log('[AuthDebug] auth user state updated');
-              return { user: nativeUser };
+            try {
+              console.log('[AuthDebug] signInWithCredential start');
+              const firebaseResult = await Promise.race([
+                signInWithCredential(auth, credentialForWebAuth.credential),
+                new Promise((_, reject) => {
+                  window.setTimeout(() => reject(new Error('Firebase web sign-in timed out.')), WEB_SIGN_IN_TIMEOUT_MS);
+                }),
+              ]);
+              console.log('[AuthDebug] signInWithCredential success with uid', {
+                uid: firebaseResult?.user?.uid ?? null,
+              });
+              return firebaseResult;
+            } catch (credentialError) {
+              console.error('[AuthDebug] signInWithCredential failed', {
+                name: credentialError?.name,
+                code: credentialError?.code,
+                message: credentialError?.message,
+              });
+              console.warn('[AuthDebug] fallback disabled because Firestore requires request.auth');
+              throw credentialError;
             }
-
-            throw new Error('Native Google sign-in succeeded, but no usable auth user was returned');
           }
 
           const result = await signInWithPopup(auth, googleProvider);
