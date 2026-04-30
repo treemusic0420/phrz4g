@@ -49,12 +49,11 @@ body.is-capacitor-ios .app-header * {
   gap: 10px;
 }
 
-body.is-capacitor-ios .header-inner,
-body.is-capacitor-ios .app-header-inner {
-  min-height: 56px;
-  height: 56px;
-  padding: 6px 14px;
-  margin-top: env(safe-area-inset-top);
+body.is-capacitor-ios .header-inner {
+  padding-top: env(safe-area-inset-top);
+  min-height: calc(56px + env(safe-area-inset-top));
+  display: flex;
+  align-items: center;
 }
 
 .brand {
