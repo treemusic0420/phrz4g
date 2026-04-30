@@ -83,28 +83,35 @@ export const AuthProvider = ({ children }) => {
 
         try {
           if (isCapacitor) {
-            console.log('[AuthDebug] signInWithGoogle start');
             const result = await FirebaseAuthentication.signInWithGoogle();
-            console.log('[AuthDebug] signInWithGoogle returned');
-            const hasCredentialObject = Boolean(result?.credential);
+            console.log('[AuthDebug] native google sign-in returned');
+
             const credentialForWebAuth = getGoogleCredentialFromResult(result);
-
-            console.log('[AuthDebug] Capacitor signInWithGoogle result metadata', {
-              hasCredentialObject,
-              hasIdToken: credentialForWebAuth.idToken,
-              hasAccessToken: credentialForWebAuth.accessToken,
-              resultKeys: Object.keys(result ?? {}),
-              credentialKeys: Object.keys(result?.credential ?? {}),
-            });
-
             if (!credentialForWebAuth.credential) {
-              console.warn('[AuthDebug] Capacitor Google sign-in returned no OAuth token pair; skipping Web SDK signInWithCredential');
-              return result;
+              const error = new Error('Native Google sign-in did not return idToken/accessToken');
+              console.error('[AuthDebug] signInWithCredential failed', {
+                message: error.message,
+                hasIdToken: credentialForWebAuth.idToken,
+                hasAccessToken: credentialForWebAuth.accessToken,
+              });
+              throw error;
             }
 
-            const firebaseResult = await signInWithCredential(auth, credentialForWebAuth.credential);
-            console.log('[AuthDebug] Capacitor Google sign-in success (Web SDK synchronized)');
-            return firebaseResult;
+            console.log('[AuthDebug] web credential created');
+
+            try {
+              console.log('[AuthDebug] signInWithCredential start');
+              const firebaseResult = await signInWithCredential(auth, credentialForWebAuth.credential);
+              console.log('[AuthDebug] signInWithCredential success');
+              return firebaseResult;
+            } catch (credentialError) {
+              console.error('[AuthDebug] signInWithCredential failed', {
+                name: credentialError?.name,
+                code: credentialError?.code,
+                message: credentialError?.message,
+              });
+              throw credentialError;
+            }
           }
 
           const result = await signInWithPopup(auth, googleProvider);
