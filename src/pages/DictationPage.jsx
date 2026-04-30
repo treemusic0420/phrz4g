@@ -508,6 +508,12 @@ export default function DictationPage() {
             ref={hiddenInputRef}
             className="dictation-hidden-input"
             type="text"
+            lang="en-US"
+            inputMode="latin"
+            autoCapitalize="none"
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
             onChange={onHiddenInputChange}
             onKeyDown={onHiddenInputKeyDown}
             onPaste={onHiddenInputPaste}
