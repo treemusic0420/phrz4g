@@ -23,7 +23,11 @@ export default function LoginPage() {
         stack: error?.stack,
       });
       setLoginErrorCode(error?.code || 'unknown-error');
-      setLoginError('Google sign in failed. Please try again.');
+      if (error?.code === 'auth/timeout') {
+        setLoginError('Firebase sign-in timed out. Please try again.');
+      } else {
+        setLoginError('Google sign in failed. Please try again.');
+      }
     }
   };
 

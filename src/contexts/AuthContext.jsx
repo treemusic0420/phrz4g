@@ -13,7 +13,8 @@ import { auth } from '../lib/firebase';
 const AuthContext = createContext(null);
 const googleProvider = new GoogleAuthProvider();
 const AUTH_LOADING_TIMEOUT_MS = 9000;
-const WEB_SIGN_IN_TIMEOUT_MS = 10000;
+const WEB_SIGN_IN_TIMEOUT_MS = 30000;
+const FIREBASE_SIGN_IN_TIMEOUT_MESSAGE = 'Firebase sign-in timed out. Please try again.';
 
 const isCapacitorEnvironment = () => Capacitor.isNativePlatform();
 
@@ -114,30 +115,37 @@ export const AuthProvider = ({ children }) => {
               console.error('[AuthDebug] signInWithCredential failed', {
                 message: 'Native Google sign-in did not return idToken/accessToken',
               });
-              console.warn('[AuthDebug] fallback disabled because Firestore requires request.auth');
               throw new Error('Google credential is missing idToken/accessToken.');
             }
 
+            console.log('[AuthDebug] signInWithCredential start');
+            let timeoutId = null;
             try {
-              console.log('[AuthDebug] signInWithCredential start');
               const firebaseResult = await Promise.race([
-                signInWithCredential(auth, credentialForWebAuth.credential),
+                signInWithCredential(auth, GoogleAuthProvider.credential(result?.idToken ?? result?.credential?.idToken ?? null, result?.accessToken ?? result?.credential?.accessToken ?? null)),
                 new Promise((_, reject) => {
-                  window.setTimeout(() => reject(new Error('Firebase web sign-in timed out.')), WEB_SIGN_IN_TIMEOUT_MS);
+                  timeoutId = window.setTimeout(() => {
+                    console.error('[AuthDebug] signInWithCredential timeout');
+                    const timeoutError = new Error(FIREBASE_SIGN_IN_TIMEOUT_MESSAGE);
+                    timeoutError.code = 'auth/timeout';
+                    reject(timeoutError);
+                  }, WEB_SIGN_IN_TIMEOUT_MS);
                 }),
               ]);
-              console.log('[AuthDebug] signInWithCredential success with uid', {
+              console.log('[AuthDebug] signInWithCredential success', {
                 uid: firebaseResult?.user?.uid ?? null,
               });
               return firebaseResult;
             } catch (credentialError) {
               console.error('[AuthDebug] signInWithCredential failed', {
-                name: credentialError?.name,
-                code: credentialError?.code,
-                message: credentialError?.message,
+                code: credentialError?.code ?? 'unknown',
+                message: credentialError?.message ?? 'Unknown error',
               });
-              console.warn('[AuthDebug] fallback disabled because Firestore requires request.auth');
               throw credentialError;
+            } finally {
+              if (timeoutId !== null) {
+                window.clearTimeout(timeoutId);
+              }
             }
           }
 
@@ -179,6 +187,7 @@ export const AuthProvider = ({ children }) => {
           if (isCapacitor) {
             isLoggingInRef.current = false;
             setIsLoggingIn(false);
+            console.log('[AuthDebug] loginInProgress=false');
           }
         }
       },
