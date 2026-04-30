@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -18,6 +20,12 @@ import QuickAddLessonPage from './pages/QuickAddLessonPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 
 export default function App() {
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      document.body.classList.add('is-capacitor-ios');
+    }
+  }, []);
+
   return (
     <Layout>
       <Routes>
