@@ -210,19 +210,27 @@ export const fetchMonthlyStats = async (userId) => {
 export const upsertMonthlyStat = async (userId, monthKey, payload) => {
   const docId = `${userId}_${monthKey}`;
   const ref = doc(db, 'monthlyStats', docId);
-  const existing = await getDoc(ref);
-  await setDoc(
-    ref,
-    {
-      ...payload,
-      userId,
-      monthKey,
-      updatedAt: serverTimestamp(),
-      ...(existing.exists() ? {} : { createdAt: serverTimestamp() }),
-    },
-    { merge: true },
-  );
-  return { existed: existing.exists(), id: docId };
+  console.log('[CloseDebug] upsertMonthlyStat start', { userId, monthKey, docId });
+  console.log('[CloseDebug] writing to monthlyStats', { collection: 'monthlyStats', docId });
+  try {
+    const existing = await getDoc(ref);
+    await setDoc(
+      ref,
+      {
+        ...payload,
+        userId,
+        monthKey,
+        updatedAt: serverTimestamp(),
+        ...(existing.exists() ? {} : { createdAt: serverTimestamp() }),
+      },
+      { merge: true },
+    );
+    console.log('[CloseDebug] monthlyStats write success', { docId, existed: existing.exists() });
+    return { existed: existing.exists(), id: docId };
+  } catch (error) {
+    console.error('[CloseDebug] monthlyStats write failed', { userId, monthKey, docId, error });
+    throw error;
+  }
 };
 
 export const deleteStudyLogsByIds = async (ids = []) => {
