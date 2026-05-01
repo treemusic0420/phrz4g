@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import AudioControls from '../components/AudioControls';
 import LessonImageThumbnail from '../components/LessonImageThumbnail';
@@ -88,6 +89,7 @@ export default function DictationPage() {
   const categoryId = searchParams.get('categoryId') || '';
   const registeredMonth = searchParams.get('registeredMonth') || '';
   const isMonthMode = mode === 'month' && categoryId && registeredMonth;
+  const isNativePlatform = Capacitor.isNativePlatform();
 
   useEffect(() => {
     let isActive = true;
@@ -348,6 +350,10 @@ export default function DictationPage() {
   }, [isFinished]);
 
   const onHiddenInputChange = (event) => {
+    if (!isNativePlatform) {
+      event.target.value = '';
+      return;
+    }
     if (isComposingRef.current) return;
     const typedChars = splitToChars(event.target.value);
     if (typedChars.length > 0) handleRawInputChars(typedChars, { stopOnWrong: true, playRejectedFeedback: true });
@@ -355,7 +361,7 @@ export default function DictationPage() {
   };
 
   const onHiddenInputKeyDown = (event) => {
-    if (isComposingRef.current || event.nativeEvent.isComposing) return;
+    if (isComposingRef.current || event.isComposing || event.nativeEvent.isComposing || event.key === 'Process') return;
     if (event.key === 'Backspace') {
       event.preventDefault();
       removeLastInputChar();
@@ -371,6 +377,12 @@ export default function DictationPage() {
     }
     if (event.key.length === 1 && !event.metaKey && !event.ctrlKey && !event.altKey) {
       event.preventDefault();
+      if (!isNativePlatform) {
+        if (/^[a-zA-Z]$/.test(event.key)) {
+          handleRawInputChars([event.key], { stopOnWrong: true, playRejectedFeedback: true });
+        }
+        return;
+      }
       handleRawInputChars([event.key], { stopOnWrong: true, playRejectedFeedback: true });
     }
   };
@@ -383,10 +395,15 @@ export default function DictationPage() {
   };
 
   const onHiddenInputCompositionStart = () => {
+    if (!isNativePlatform) return;
     isComposingRef.current = true;
   };
 
   const onHiddenInputCompositionEnd = (event) => {
+    if (!isNativePlatform) {
+      event.currentTarget.value = '';
+      return;
+    }
     isComposingRef.current = false;
     const committedText = event.data || event.currentTarget.value;
     if (committedText) {
