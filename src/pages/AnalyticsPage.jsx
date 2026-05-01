@@ -36,6 +36,8 @@ export default function AnalyticsPage() {
   const [error, setError] = useState('');
   const [closingPreview, setClosingPreview] = useState(null);
   const [closingStatus, setClosingStatus] = useState('idle');
+  const [debugCloseMonth, setDebugCloseMonth] = useState('');
+  const [closingResultMessage, setClosingResultMessage] = useState('');
 
   const nowParts = getJstParts(new Date());
 
@@ -109,14 +111,27 @@ export default function AnalyticsPage() {
   const prepareClosingPreview = async () => {
     setClosingStatus('loading');
     try {
+      setClosingResultMessage('');
       const oldLogsAll = await fetchStudyLogs(userId);
+      const normalizedDebugMonth = debugCloseMonth.trim();
+      const isDebugMonth = /^\d{4}-\d{2}$/.test(normalizedDebugMonth);
+      if (isDebugMonth) {
+        console.log('[CloseDebug] debug close month', normalizedDebugMonth);
+      }
+
       const oldLogs = oldLogsAll.filter((log) => {
         const created = toDate(log.createdAt);
         if (!created) return false;
         const parts = getJstParts(created);
+        if (isDebugMonth) {
+          return toMonthKey(parts.year, parts.month) === normalizedDebugMonth;
+        }
         if (parts.year < nowParts.year) return true;
         return parts.year === nowParts.year && parts.month < nowParts.month;
       });
+      if (isDebugMonth) {
+        console.log('[CloseDebug] target logs count', oldLogs.length);
+      }
       const byMonth = new Map();
       oldLogs.forEach((log) => {
         const created = toDate(log.createdAt);
@@ -129,7 +144,13 @@ export default function AnalyticsPage() {
       });
       const months = [...byMonth.keys()].sort();
       const preview = months.map((key) => ({ key, count: byMonth.get(key).length, seconds: aggregateSeconds(byMonth.get(key)) }));
-      setClosingPreview({ months: preview, ids: oldLogs.map((l) => l.id), grouped: byMonth });
+      setClosingPreview({
+        months: preview,
+        ids: oldLogs.map((l) => l.id),
+        grouped: byMonth,
+        isDebugMode: isDebugMonth,
+        debugMonth: isDebugMonth ? normalizedDebugMonth : '',
+      });
       setClosingStatus('ready');
     } catch (e) {
       setClosingStatus('error');
@@ -141,6 +162,7 @@ export default function AnalyticsPage() {
     if (!closingPreview) return;
     setClosingStatus('running');
     try {
+      setClosingResultMessage('');
       for (const month of closingPreview.months) {
         const logs = closingPreview.grouped.get(month.key) || [];
         const first = parseMonthKey(month.key);
@@ -158,7 +180,14 @@ export default function AnalyticsPage() {
           sourceLogCount: logs.length,
         });
       }
-      await deleteStudyLogsByIds(closingPreview.ids);
+      if (!closingPreview.isDebugMode) {
+        await deleteStudyLogsByIds(closingPreview.ids);
+      }
+      setClosingResultMessage(
+        closingPreview.isDebugMode
+          ? 'Debug close complete: monthly stats saved (study logs were not deleted).'
+          : 'Close complete: monthly stats saved and older study logs deleted.',
+      );
       setClosingStatus('success');
       setClosingPreview(null);
       await loadData();
@@ -181,17 +210,36 @@ export default function AnalyticsPage() {
     <article className="card"><h3>Monthly Study Time This Year</h3>{yearlyData.map((m) => <div className="simple-bar-row" key={m.label}><p className="simple-bar-label">{m.label}</p><div className="simple-bar-track"><div className="simple-bar-fill simple-bar-fill-study-time" style={{ width: `${Math.max(5, (m.seconds / Math.max(...yearlyData.map((x) => x.seconds), 1)) * 100)}%` }} /></div><p className="simple-bar-value">{secondsToHoursLabel(m.seconds)}</p></div>)}</article>
     <article className="card"><h3>Year-over-Year Snapshot</h3><p>This Month (This Year): {secondsToHoursLabel(currentMonthSeconds)} / This Month (Last Year): {secondsToHoursLabel(lastYearSameMonth)}</p><p>Year to Date: {secondsToHoursLabel(currentYtd)} / Same Period Last Year: {secondsToHoursLabel(lastYearYtd)}</p></article>
     <article className="card"><h3>Close Previous Month</h3>
+      <label className="field" htmlFor="debug-close-month" style={{ marginTop: 8 }}>
+        <span>Debug close month (YYYY-MM)</span>
+        <input
+          id="debug-close-month"
+          className="input"
+          type="text"
+          placeholder="2026-04"
+          value={debugCloseMonth}
+          onChange={(e) => setDebugCloseMonth(e.target.value)}
+        />
+      </label>
       <button className="btn danger-ghost" type="button" onClick={prepareClosingPreview}>Review Close Candidates</button>
       {closingPreview ? <div className="stack" style={{ marginTop: 12 }}>
         {closingPreview.months.length === 0 ? <p>No entries to close (no study logs before this month).</p> : closingPreview.months.map((m) => {
           const exists = Boolean(statsMap.get(m.key));
           return <p key={m.key}>{m.key}: {m.count} logs / {secondsToHoursLabel(m.seconds)} {exists ? '(existing monthly stats found: review before overwrite)' : ''}</p>;
         })}
-        {closingPreview.months.length > 0 ? <button className="btn" type="button" onClick={() => {
-          if (window.confirm('This will save monthly stats and delete study logs before this month. Continue?')) executeClosing();
-        }}>Run Close</button> : null}
+        {closingPreview.months.length > 0 ? (
+          closingPreview.isDebugMode ? (
+            <button className="btn" type="button" onClick={() => {
+              if (window.confirm(`Debug close for ${closingPreview.debugMonth}: save monthly stats only (no study log deletion). Continue?`)) executeClosing();
+            }}>Run Debug Close (No Delete)</button>
+          ) : (
+            <button className="btn" type="button" onClick={() => {
+              if (window.confirm('This will save monthly stats and delete study logs before this month. Continue?')) executeClosing();
+            }}>Run Close</button>
+          )
+        ) : null}
       </div> : null}
-      {closingStatus === 'success' ? <p>Close complete: monthly stats saved and older study logs deleted.</p> : null}
+      {closingStatus === 'success' ? <p>{closingResultMessage}</p> : null}
     </article>
   </section>;
 }
