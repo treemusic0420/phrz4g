@@ -39,7 +39,11 @@ service cloud.firestore {
     }
 
     match /monthlyStats/{docId} {
-      allow read: if isOwnerByUserId(resource.data.userId);
+      allow read: if request.auth != null
+        && (
+          isOwnerByUserId(resource.data.userId)
+          || docId.matches('^' + request.auth.uid + '_.*$')
+        );
       allow create: if isOwnerByUserId(request.resource.data.userId);
       allow update: if isOwnerByUserId(resource.data.userId)
         && isOwnerByUserId(request.resource.data.userId);
