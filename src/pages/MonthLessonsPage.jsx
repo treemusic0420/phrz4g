@@ -12,6 +12,7 @@ import {
   paginateLessons,
   sortLessonsByRecency,
   sortLessonsForMonthTraining,
+  hasInstantRecallContent,
 } from '../utils/lessons';
 import { getDifficultyLabel, getDifficultyStyle } from '../utils/difficulty';
 import { getRegisteredMonthLabel } from '../utils/registeredMonth';
@@ -67,6 +68,11 @@ export default function MonthLessonsPage() {
   );
 
   const firstTrainingLessonId = monthTrainingLessons[0]?.id || '';
+  const instantRecallLessons = useMemo(
+    () => sortLessonsForMonthTraining(monthLessons.filter((lesson) => hasInstantRecallContent(lesson))),
+    [monthLessons],
+  );
+  const firstInstantRecallLessonId = instantRecallLessons[0]?.id || '';
   const audioLessonCount = monthTrainingLessons.length;
 
   const paging = useMemo(
@@ -112,6 +118,20 @@ export default function MonthLessonsPage() {
             }}
           >
             Start Shadowing
+          </Link>
+          <Link
+            className="btn"
+            to={
+              firstInstantRecallLessonId
+                ? `/lessons/${firstInstantRecallLessonId}/instant-recall?mode=month&categoryId=${categoryId}&registeredMonth=${registeredMonth}`
+                : '#'
+            }
+            aria-disabled={!firstInstantRecallLessonId}
+            onClick={(event) => {
+              if (!firstInstantRecallLessonId) event.preventDefault();
+            }}
+          >
+            Instant Recall
           </Link>
           <Link className="btn ghost" to={`/lessons/category/${categoryId}`}>
             Back to Monthly Archive
