@@ -1311,4 +1311,24 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
 .youtube-player-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 .lesson-list-item { padding: 14px; margin: 0; }
 .lesson-list-item h4 { margin: 0 0 6px; }
+.youtube-study-page { position: relative; overflow: hidden; }
+.youtube-study-player-stack { display: grid; gap: 10px; }
+.youtube-study-actions { margin-bottom: 2px; }
+.youtube-lesson-panel-overlay { position: fixed; inset: 0; background: rgba(20, 20, 26, 0.16); opacity: 0; pointer-events: none; transition: opacity 200ms ease; z-index: 70; }
+.youtube-lesson-panel-overlay.is-open { opacity: 1; pointer-events: auto; }
+.youtube-lesson-panel { position: fixed; right: 0; top: 0; height: 100vh; width: min(46vw, 500px); min-width: 420px; background: rgba(252, 252, 254, 0.96); backdrop-filter: blur(10px); border-left: 1px solid #e6e8ee; box-shadow: -16px 0 34px rgba(15, 23, 42, 0.14); padding: 16px; transform: translateX(100%); transition: transform 220ms ease; z-index: 80; overflow-y: auto; display: grid; gap: 14px; align-content: start; }
+.youtube-lesson-panel.is-open { transform: translateX(0); }
+.youtube-lesson-panel-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.youtube-lesson-panel-header .section-subtitle { margin: 0; }
+.youtube-lesson-panel-list { display: grid; gap: 10px; }
+.youtube-lesson-panel-list summary { cursor: pointer; font-weight: 600; }
+.youtube-lesson-panel-mobile-trigger { display: none; }
 @media (min-width: 920px) { .youtube-study-grid { grid-template-columns: 1fr 1fr; } }
+
+@media (max-width: 860px) {
+  .youtube-lesson-panel { top: auto; bottom: 0; width: 100%; min-width: 0; height: min(76vh, 700px); border-left: 0; border-top: 1px solid #e6e8ee; border-radius: 18px 18px 0 0; transform: translateY(100%); }
+  .youtube-lesson-panel.is-open { transform: translateY(0); }
+  .youtube-lesson-panel-overlay { background: rgba(20, 20, 26, 0.1); }
+  .youtube-study-actions { display: none; }
+  .youtube-lesson-panel-mobile-trigger { display: flex; justify-content: flex-end; position: sticky; bottom: 10px; z-index: 20; }
+}

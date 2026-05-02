@@ -61,6 +61,7 @@ export default function YouTubeStudyPage() {
   const [audioFile, setAudioFile] = useState(null);
 
   const [recentLessons, setRecentLessons] = useState([]);
+  const [isLessonPanelOpen, setIsLessonPanelOpen] = useState(false);
 
   const [form, setForm] = useState({
     title: '',
@@ -180,7 +181,7 @@ export default function YouTubeStudyPage() {
   };
 
   return (
-    <section className="card stack">
+    <section className="card stack youtube-study-page">
       <h2 className="section-title">YouTube Study</h2>
 
       <div className="stack">
@@ -198,8 +199,17 @@ export default function YouTubeStudyPage() {
         {videoLoadError ? <p className="error">{videoLoadError}</p> : null}
       </div>
 
-      <div className="stack">
-        <h3 className="section-subtitle">Player</h3>
+      <div className="youtube-study-player-stack">
+        <div className="row gap-sm wrap youtube-study-actions">
+          <button
+            aria-controls="lesson-panel"
+            aria-expanded={isLessonPanelOpen}
+            onClick={() => setIsLessonPanelOpen(true)}
+            type="button"
+          >
+            Open Lesson Form
+          </button>
+        </div>
         {selectedVideoId ? (
           <div className="youtube-player-wrap">
             <iframe
@@ -214,68 +224,91 @@ export default function YouTubeStudyPage() {
         )}
       </div>
 
-      <form className="stack" onSubmit={handleAddLesson}>
-        <h3 className="section-subtitle">Add Lesson</h3>
-        <label>Title<input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></label>
-        <label>English Script<textarea required rows="4" value={form.scriptEn} onChange={(e) => setForm({ ...form, scriptEn: e.target.value })} /></label>
-        <label>Translation<textarea rows="3" value={form.scriptJa} onChange={(e) => setForm({ ...form, scriptJa: e.target.value })} /></label>
-        <label>
-          Audio (optional, MP3)
-          <input
-            accept="audio/mpeg,.mp3"
-            type="file"
-            onChange={(e) => {
-              const nextFile = e.target.files?.[0] || null;
-              if (!nextFile) {
-                setAudioFile(null);
-                return;
-              }
-              setAudioFile(nextFile);
-            }}
-          />
-        </label>
-        <label>
-          Category
-          <select
-            required
-            disabled={isLoadingCategories || categoryOptions.length === 0}
-            value={form.categoryId}
-            onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
-          >
-            {categoryOptions.map((category) => (
-              <option key={category.id} value={category.id}>{category.name}</option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Difficulty
-          <select value={form.difficulty} onChange={(e) => setForm({ ...form, difficulty: e.target.value })}>
-            {DIFFICULTY_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>{option.label}</option>
-            ))}
-          </select>
-        </label>
-        <label>Note<textarea rows="3" value={form.memo} onChange={(e) => setForm({ ...form, memo: e.target.value })} /></label>
-        <div className="row gap-sm wrap">
-          <button disabled={isSaving || isLoadingCategories || !categoryOptions.length} type="submit">
-            {isSaving ? 'Adding...' : 'Add Lesson'}
-          </button>
+      <div
+        className={`youtube-lesson-panel-overlay${isLessonPanelOpen ? ' is-open' : ''}`}
+        onClick={() => setIsLessonPanelOpen(false)}
+      />
+      <aside
+        aria-hidden={!isLessonPanelOpen}
+        className={`youtube-lesson-panel${isLessonPanelOpen ? ' is-open' : ''}`}
+        id="lesson-panel"
+      >
+        <div className="youtube-lesson-panel-header">
+          <h3 className="section-subtitle">Add Lesson</h3>
+          <button onClick={() => setIsLessonPanelOpen(false)} type="button">Close</button>
         </div>
-        {saveError ? <p className="error">{saveError}</p> : null}
-        {successMessage ? <p className="section-subtle">{successMessage}</p> : null}
-      </form>
+        <form className="stack" onSubmit={handleAddLesson}>
+          <label>Title<input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></label>
+          <label>English Script<textarea required rows="4" value={form.scriptEn} onChange={(e) => setForm({ ...form, scriptEn: e.target.value })} /></label>
+          <label>Translation<textarea rows="3" value={form.scriptJa} onChange={(e) => setForm({ ...form, scriptJa: e.target.value })} /></label>
+          <label>
+            Audio (optional, MP3)
+            <input
+              accept="audio/mpeg,.mp3"
+              type="file"
+              onChange={(e) => {
+                const nextFile = e.target.files?.[0] || null;
+                if (!nextFile) {
+                  setAudioFile(null);
+                  return;
+                }
+                setAudioFile(nextFile);
+              }}
+            />
+          </label>
+          <label>
+            Category
+            <select
+              required
+              disabled={isLoadingCategories || categoryOptions.length === 0}
+              value={form.categoryId}
+              onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
+            >
+              {categoryOptions.map((category) => (
+                <option key={category.id} value={category.id}>{category.name}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Difficulty
+            <select value={form.difficulty} onChange={(e) => setForm({ ...form, difficulty: e.target.value })}>
+              {DIFFICULTY_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </label>
+          <label>Note<textarea rows="3" value={form.memo} onChange={(e) => setForm({ ...form, memo: e.target.value })} /></label>
+          <div className="row gap-sm wrap">
+            <button disabled={isSaving || isLoadingCategories || !categoryOptions.length} type="submit">
+              {isSaving ? 'Adding...' : 'Add Lesson'}
+            </button>
+          </div>
+          {saveError ? <p className="error">{saveError}</p> : null}
+          {successMessage ? <p className="section-subtle">{successMessage}</p> : null}
+        </form>
 
-      <div className="stack">
-        <h3 className="section-subtitle">Added in this screen</h3>
-        {recentLessons.length === 0 ? <p className="section-subtle">No lessons yet.</p> : null}
-        <div className="stack">
-          {recentLessons.map((lesson) => (
-            <article key={lesson.id} className="card lesson-list-item">
-              <h4>{lesson.title}</h4>
-              <p className="section-subtle">{lesson.scriptEn}</p>
-            </article>
-          ))}
-        </div>
+        <details className="youtube-lesson-panel-list" open>
+          <summary>Added in this screen</summary>
+          {recentLessons.length === 0 ? <p className="section-subtle">No lessons yet.</p> : null}
+          <div className="stack">
+            {recentLessons.map((lesson) => (
+              <article key={lesson.id} className="card lesson-list-item">
+                <h4>{lesson.title}</h4>
+                <p className="section-subtle">{lesson.scriptEn}</p>
+              </article>
+            ))}
+          </div>
+        </details>
+      </aside>
+      <div className="youtube-lesson-panel-mobile-trigger">
+        <button
+          aria-controls="lesson-panel"
+          aria-expanded={isLessonPanelOpen}
+          onClick={() => setIsLessonPanelOpen(true)}
+          type="button"
+        >
+          Add Lesson
+        </button>
       </div>
     </section>
   );
