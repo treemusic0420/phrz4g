@@ -44,8 +44,6 @@ const extractYouTubeVideoId = (value) => {
   return '';
 };
 
-const DEFAULT_YOUTUBE_URL = 'https://www.youtube.com/watch?v=f3Mb_lVEcezU&list=PLOSFPbO9J2JAxRs9LKo6Xigf8nKvnAIJs';
-
 export default function YouTubeStudyPage() {
   const { user } = useAuth();
   const userId = user?.uid || '';
@@ -53,8 +51,8 @@ export default function YouTubeStudyPage() {
   const [categories, setCategories] = useState([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
 
-  const [youtubeUrlInput, setYoutubeUrlInput] = useState(DEFAULT_YOUTUBE_URL);
-  const [selectedVideoId, setSelectedVideoId] = useState(extractYouTubeVideoId(DEFAULT_YOUTUBE_URL));
+  const [youtubeUrlInput, setYoutubeUrlInput] = useState('');
+  const [selectedVideoId, setSelectedVideoId] = useState('');
   const [videoLoadError, setVideoLoadError] = useState('');
 
   const [isSaving, setIsSaving] = useState(false);
@@ -207,6 +205,14 @@ export default function YouTubeStudyPage() {
           </button>
         </div>
         {videoLoadError ? <p className="error">{videoLoadError}</p> : null}
+        <div className="row gap-sm wrap">
+          <a className="btn ghost" href="https://www.youtube.com/" rel="noreferrer" target="_blank">
+            Open YouTube
+          </a>
+          <a className="btn ghost" href="https://www.youtube.com/@Atsueigo" rel="noreferrer" target="_blank">
+            Open Atsueigo on YouTube
+          </a>
+        </div>
       </div>
 
       <div className="youtube-study-player-stack">
@@ -220,7 +226,9 @@ export default function YouTubeStudyPage() {
             />
           </div>
         ) : (
-          <p className="section-subtle">Paste a YouTube URL and load a video.</p>
+          <div className="youtube-player-placeholder" role="status">
+            <p>Paste a YouTube video URL to start collecting phrases.</p>
+          </div>
         )}
       </div>
 
