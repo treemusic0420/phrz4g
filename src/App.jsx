@@ -11,12 +11,14 @@ import LessonFormPage from './pages/LessonFormPage';
 import LessonDetailPage from './pages/LessonDetailPage';
 import DictationPage from './pages/DictationPage';
 import ShadowingPage from './pages/ShadowingPage';
+import InstantRecallPage from './pages/InstantRecallPage';
 import StatsPage from './pages/StatsPage';
 import CategoriesPage from './pages/CategoriesPage';
 import CategoryFormPage from './pages/CategoryFormPage';
 import MissingAudioLessonsPage from './pages/MissingAudioLessonsPage';
 import MissingPhotoLessonsPage from './pages/MissingPhotoLessonsPage';
 import QuickAddLessonPage from './pages/QuickAddLessonPage';
+import MissingTranslationLessonsPage from './pages/MissingTranslationLessonsPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import YouTubeStudyPage from './pages/YouTubeStudyPage';
 
@@ -140,6 +142,14 @@ export default function App() {
           }
         />
         <Route
+          path="/lessons/:id/instant-recall"
+          element={
+            <ProtectedRoute>
+              <InstantRecallPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/categories"
           element={
             <ProtectedRoute>
@@ -160,6 +170,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <CategoryFormPage mode="edit" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/missing-translation"
+          element={
+            <ProtectedRoute>
+              <MissingTranslationLessonsPage />
             </ProtectedRoute>
           }
         />

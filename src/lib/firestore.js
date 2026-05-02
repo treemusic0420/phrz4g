@@ -155,6 +155,14 @@ export const updateLessonImage = async (lessonId, payload) => {
   });
 };
 
+export const updateLessonTranslation = async (lessonId, scriptJa) => {
+  if (!lessonId) return;
+  return updateDoc(doc(db, 'lessons', lessonId), {
+    scriptJa: scriptJa || '',
+    updatedAt: serverTimestamp(),
+  });
+};
+
 export const createStudyLog = async (payload) => {
   return addDoc(collection(db, 'studyLogs'), {
     ...payload,
