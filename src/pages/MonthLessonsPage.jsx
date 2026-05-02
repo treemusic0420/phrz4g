@@ -103,7 +103,7 @@ export default function MonthLessonsPage() {
               if (!firstTrainingLessonId) event.preventDefault();
             }}
           >
-            Start Dictation
+            Dictation
           </Link>
           <Link
             className="btn"
@@ -117,7 +117,7 @@ export default function MonthLessonsPage() {
               if (!firstTrainingLessonId) event.preventDefault();
             }}
           >
-            Start Shadowing
+            Shadowing
           </Link>
           <Link
             className="btn"
