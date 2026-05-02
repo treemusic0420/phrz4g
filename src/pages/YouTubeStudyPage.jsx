@@ -44,6 +44,8 @@ const extractYouTubeVideoId = (value) => {
   return '';
 };
 
+const DEFAULT_YOUTUBE_URL = 'https://www.youtube.com/watch?v=f3Mb_lVEcezU&list=PLOSFPbO9J2JAxRs9LKo6Xigf8nKvnAIJs';
+
 export default function YouTubeStudyPage() {
   const { user } = useAuth();
   const userId = user?.uid || '';
@@ -51,8 +53,8 @@ export default function YouTubeStudyPage() {
   const [categories, setCategories] = useState([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
 
-  const [youtubeUrlInput, setYoutubeUrlInput] = useState('');
-  const [selectedVideoId, setSelectedVideoId] = useState('');
+  const [youtubeUrlInput, setYoutubeUrlInput] = useState(DEFAULT_YOUTUBE_URL);
+  const [selectedVideoId, setSelectedVideoId] = useState(extractYouTubeVideoId(DEFAULT_YOUTUBE_URL));
   const [videoLoadError, setVideoLoadError] = useState('');
 
   const [isSaving, setIsSaving] = useState(false);
@@ -195,21 +197,19 @@ export default function YouTubeStudyPage() {
         </label>
         <div className="row gap-sm wrap">
           <button onClick={handleLoadVideo} type="button">Load Video</button>
-        </div>
-        {videoLoadError ? <p className="error">{videoLoadError}</p> : null}
-      </div>
-
-      <div className="youtube-study-player-stack">
-        <div className="row gap-sm wrap youtube-study-actions">
           <button
             aria-controls="lesson-panel"
             aria-expanded={isLessonPanelOpen}
             onClick={() => setIsLessonPanelOpen(true)}
             type="button"
           >
-            Open Lesson Form
+            Open Add Lesson
           </button>
         </div>
+        {videoLoadError ? <p className="error">{videoLoadError}</p> : null}
+      </div>
+
+      <div className="youtube-study-player-stack">
         {selectedVideoId ? (
           <div className="youtube-player-wrap">
             <iframe
