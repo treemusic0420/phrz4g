@@ -18,6 +18,7 @@ import MissingAudioLessonsPage from './pages/MissingAudioLessonsPage';
 import MissingPhotoLessonsPage from './pages/MissingPhotoLessonsPage';
 import QuickAddLessonPage from './pages/QuickAddLessonPage';
 import AnalyticsPage from './pages/AnalyticsPage';
+import YouTubeStudyPage from './pages/YouTubeStudyPage';
 
 export default function App() {
   useEffect(() => {
@@ -159,6 +160,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <CategoryFormPage mode="edit" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/youtube-study"
+          element={
+            <ProtectedRoute>
+              <YouTubeStudyPage />
             </ProtectedRoute>
           }
         />
