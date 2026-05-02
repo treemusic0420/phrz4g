@@ -519,6 +519,15 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
   width: 100%;
 }
 
+
+.instant-recall-translation-card pre,
+.instant-recall-answer-card pre {
+  margin-top: 0;
+  font-size: clamp(1rem, 0.9rem + 0.8vw, 1.375rem);
+  line-height: 1.75;
+  letter-spacing: 0.01em;
+}
+
 .shadowing-script-card pre {
   margin-top: 0;
   font-size: clamp(1.125rem, 1.05rem + 0.4vw, 1.25rem);
