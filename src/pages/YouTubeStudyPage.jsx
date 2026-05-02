@@ -10,21 +10,50 @@ import { useAuth } from '../contexts/AuthContext';
 import { sortCategories } from '../utils/lessons';
 import { DIFFICULTY_OPTIONS, normalizeDifficulty } from '../utils/difficulty';
 
-const MAX_RESULTS = 10;
+const extractYouTubeVideoId = (value) => {
+  if (!value) return '';
+
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+
+  try {
+    const url = new URL(trimmed);
+    const host = url.hostname.replace(/^www\./, '');
+
+    if (host === 'youtu.be') {
+      return url.pathname.split('/').filter(Boolean)[0] || '';
+    }
+
+    if (host === 'youtube.com' || host === 'm.youtube.com') {
+      if (url.pathname === '/watch') {
+        return url.searchParams.get('v') || '';
+      }
+
+      if (url.pathname.startsWith('/shorts/')) {
+        return url.pathname.split('/').filter(Boolean)[1] || '';
+      }
+
+      if (url.pathname.startsWith('/embed/')) {
+        return url.pathname.split('/').filter(Boolean)[1] || '';
+      }
+    }
+  } catch {
+    return '';
+  }
+
+  return '';
+};
 
 export default function YouTubeStudyPage() {
   const { user } = useAuth();
   const userId = user?.uid || '';
-  const apiKey = import.meta.env.VITE_YOUTUBE_API_KEY;
 
   const [categories, setCategories] = useState([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
 
-  const [query, setQuery] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchError, setSearchError] = useState('');
-  const [results, setResults] = useState([]);
-  const [selectedVideo, setSelectedVideo] = useState(null);
+  const [youtubeUrlInput, setYoutubeUrlInput] = useState('');
+  const [selectedVideoId, setSelectedVideoId] = useState('');
+  const [videoLoadError, setVideoLoadError] = useState('');
 
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -65,39 +94,15 @@ export default function YouTubeStudyPage() {
 
   const categoryOptions = useMemo(() => sortCategories(categories), [categories]);
 
-  const handleSearch = async () => {
-    if (!apiKey) return;
-    const trimmed = query.trim();
-    if (!trimmed) {
-      setSearchError('Please enter a search keyword.');
-      setResults([]);
+  const handleLoadVideo = () => {
+    const videoId = extractYouTubeVideoId(youtubeUrlInput);
+    if (!videoId) {
+      setVideoLoadError('Please enter a valid YouTube URL.');
       return;
     }
 
-    setIsSearching(true);
-    setSearchError('');
-
-    try {
-      const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=${MAX_RESULTS}&q=${encodeURIComponent(trimmed)}&key=${encodeURIComponent(apiKey)}`;
-      const response = await fetch(url);
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data?.error?.message || 'Failed to search YouTube videos.');
-      }
-      const items = Array.isArray(data.items) ? data.items : [];
-      setResults(items);
-      if (items.length === 0) {
-        setSearchError('No videos found.');
-        setSelectedVideo(null);
-      } else if (!selectedVideo) {
-        setSelectedVideo(items[0]);
-      }
-    } catch (error) {
-      setSearchError(error?.message || 'Failed to search YouTube videos.');
-      setResults([]);
-    } finally {
-      setIsSearching(false);
-    }
+    setVideoLoadError('');
+    setSelectedVideoId(videoId);
   };
 
   const handleAddLesson = async (event) => {
@@ -178,62 +183,35 @@ export default function YouTubeStudyPage() {
     <section className="card stack">
       <h2 className="section-title">YouTube Study</h2>
 
-      {!apiKey ? <p className="error">YouTube API key is not configured.</p> : null}
-
       <div className="stack">
         <label>
-          YouTube Keyword
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search videos..." />
+          YouTube URL
+          <input
+            value={youtubeUrlInput}
+            onChange={(e) => setYoutubeUrlInput(e.target.value)}
+            placeholder="https://www.youtube.com/watch?v=..."
+          />
         </label>
         <div className="row gap-sm wrap">
-          <button disabled={!apiKey || isSearching} onClick={handleSearch} type="button">
-            {isSearching ? 'Searching...' : 'Search'}
-          </button>
+          <button onClick={handleLoadVideo} type="button">Load Video</button>
         </div>
-        {searchError ? <p className="error">{searchError}</p> : null}
+        {videoLoadError ? <p className="error">{videoLoadError}</p> : null}
       </div>
 
-      <div className="youtube-study-grid">
-        <div className="stack">
-          <h3 className="section-subtitle">Results</h3>
-          <div className="youtube-results">
-            {results.map((item) => {
-              const videoId = item?.id?.videoId;
-              const snippet = item?.snippet || {};
-              const thumb = snippet?.thumbnails?.medium?.url || snippet?.thumbnails?.default?.url;
-              return (
-                <button
-                  key={videoId}
-                  className={`youtube-result-item ${selectedVideo?.id?.videoId === videoId ? 'active' : ''}`}
-                  onClick={() => setSelectedVideo(item)}
-                  type="button"
-                >
-                  {thumb ? <img alt={snippet?.title || 'thumbnail'} src={thumb} /> : null}
-                  <div>
-                    <p className="youtube-result-title">{snippet?.title}</p>
-                    <p className="section-subtle">{snippet?.channelTitle}</p>
-                  </div>
-                </button>
-              );
-            })}
+      <div className="stack">
+        <h3 className="section-subtitle">Player</h3>
+        {selectedVideoId ? (
+          <div className="youtube-player-wrap">
+            <iframe
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+              src={`https://www.youtube.com/embed/${selectedVideoId}`}
+              title="YouTube player"
+            />
           </div>
-        </div>
-
-        <div className="stack">
-          <h3 className="section-subtitle">Player</h3>
-          {selectedVideo?.id?.videoId ? (
-            <div className="youtube-player-wrap">
-              <iframe
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-                src={`https://www.youtube.com/embed/${selectedVideo.id.videoId}`}
-                title={selectedVideo?.snippet?.title || 'YouTube player'}
-              />
-            </div>
-          ) : (
-            <p className="section-subtle">Select a video to play.</p>
-          )}
-        </div>
+        ) : (
+          <p className="section-subtle">Paste a YouTube URL and load a video.</p>
+        )}
       </div>
 
       <form className="stack" onSubmit={handleAddLesson}>
