@@ -27,8 +27,9 @@ const WHITESPACE_REGEX = /\s/;
 const ALLOWED_DICTATION_CHAR_REGEX = /^[A-Za-z0-9.,?!'"\-:;()/&@]$/;
 const FULL_WIDTH_ASCII_REGEX = /[！-～]/g;
 const AUTO_INSERTED_PUNCTUATION = new Set([',', '.', "'", '’', '?', '-']);
+const DIGIT_REGEX = /^[0-9]$/;
 const isAutoInsertedDictationChar = (char) =>
-  WHITESPACE_REGEX.test(char) || AUTO_INSERTED_PUNCTUATION.has(char);
+  WHITESPACE_REGEX.test(char) || AUTO_INSERTED_PUNCTUATION.has(char) || DIGIT_REGEX.test(char);
 
 const normalizeWidth = (char) =>
   char.replace(FULL_WIDTH_ASCII_REGEX, (value) => String.fromCharCode(value.charCodeAt(0) - 0xfee0));
