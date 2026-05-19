@@ -28,6 +28,8 @@ export default function ShadowingPage() {
   const mode = searchParams.get('mode');
   const categoryId = searchParams.get('categoryId') || '';
   const registeredMonth = searchParams.get('registeredMonth') || '';
+  const lessonIdsParam = searchParams.get('lessonIds') || '';
+  const allowedLessonIds = lessonIdsParam ? new Set(lessonIdsParam.split(',').filter(Boolean)) : null;
   const isMonthMode = mode === 'month' && categoryId && registeredMonth;
   const fileExtension = lesson?.audioPath?.split('.').pop()?.toLowerCase() || '';
   const fallbackAudioContentType =
@@ -60,10 +62,11 @@ export default function ShadowingPage() {
     }
     fetchLessons(userId).then((lessons) => {
       const filtered = filterLessonsByCategoryAndMonth(lessons, categoryId, registeredMonth);
-      const audioReady = filtered.filter((monthLesson) => hasLessonAudio(monthLesson));
+      const scoped = allowedLessonIds ? filtered.filter((monthLesson) => allowedLessonIds.has(monthLesson.id)) : filtered;
+      const audioReady = scoped.filter((monthLesson) => hasLessonAudio(monthLesson));
       setMonthLessons(sortLessonsForMonthTraining(audioReady));
     });
-  }, [isMonthMode, categoryId, registeredMonth]);
+  }, [isMonthMode, userId, categoryId, registeredMonth, lessonIdsParam]);
 
   const monthIndex = monthLessons.findIndex((monthLesson) => monthLesson.id === id);
   const nextLesson = monthIndex >= 0 ? monthLessons[monthIndex + 1] : null;
@@ -253,7 +256,7 @@ export default function ShadowingPage() {
     await updateLessonStats(lesson.id, 'shadowing', durationSeconds, { shadowingRating });
     if (nextLesson) {
       navigate(
-        `/lessons/${nextLesson.id}/shadowing?mode=month&categoryId=${categoryId}&registeredMonth=${registeredMonth}`,
+        `/lessons/${nextLesson.id}/shadowing?mode=month&categoryId=${categoryId}&registeredMonth=${registeredMonth}${lessonIdsParam ? `&lessonIds=${encodeURIComponent(lessonIdsParam)}` : ''}`,
       );
       return;
     }

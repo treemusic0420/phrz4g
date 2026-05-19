@@ -36,6 +36,23 @@ export const getLessonMonthTrainingSortTime = (lesson) => {
 export const sortLessonsForMonthTraining = (lessons = []) =>
   [...lessons].sort((a, b) => getLessonMonthTrainingSortTime(b) - getLessonMonthTrainingSortTime(a));
 
+
+
+export const sortLessonsByCreatedOrder = (lessons = []) =>
+  [...lessons].sort((a, b) => {
+    const diff = getLessonMonthTrainingSortTime(a) - getLessonMonthTrainingSortTime(b);
+    if (diff !== 0) return diff;
+    return String(a?.id || '').localeCompare(String(b?.id || ''));
+  });
+
+export const chunkLessons = (lessons = [], chunkSize = 10) => {
+  const size = Math.max(1, Number(chunkSize) || 10);
+  const chunks = [];
+  for (let i = 0; i < lessons.length; i += size) {
+    chunks.push(lessons.slice(i, i + size));
+  }
+  return chunks;
+};
 export const toOrderNumber = (value) => {
   const n = Number(value);
   return Number.isFinite(n) ? n : Number.MAX_SAFE_INTEGER;

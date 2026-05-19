@@ -13,6 +13,8 @@ import {
   sortLessonsByRecency,
   sortLessonsForMonthTraining,
   hasInstantRecallContent,
+  sortLessonsByCreatedOrder,
+  chunkLessons,
 } from '../utils/lessons';
 import { getDifficultyLabel, getDifficultyStyle } from '../utils/difficulty';
 import { getRegisteredMonthLabel } from '../utils/registeredMonth';
@@ -67,6 +69,32 @@ export default function MonthLessonsPage() {
     [monthLessons],
   );
 
+  const monthLessonsInCreatedOrder = useMemo(() => sortLessonsByCreatedOrder(monthLessons), [monthLessons]);
+  const practiceSets = useMemo(() => {
+    const chunks = chunkLessons(monthLessonsInCreatedOrder, 10);
+    return chunks.map((lessons, index) => {
+      const audioLessons = lessons.filter((lesson) => hasLessonAudio(lesson));
+      const instantRecallReadyLessons = lessons.filter((lesson) => hasInstantRecallContent(lesson));
+      const latestLastStudiedAt = lessons.reduce((latest, lesson) => {
+        const value = lesson?.lastStudiedAt;
+        const time = value?.toDate ? value.toDate().getTime() : value ? new Date(value).getTime() : 0;
+        if (!Number.isFinite(time)) return latest;
+        return Math.max(latest, time);
+      }, 0);
+      return {
+        id: `set-${index + 1}`,
+        index: index + 1,
+        lessons,
+        lessonIdsParam: lessons.map((lesson) => lesson.id).join(','),
+        audioFirstId: audioLessons[0]?.id || '',
+        instantRecallFirstId: instantRecallReadyLessons[0]?.id || '',
+        audioCount: audioLessons.length,
+        instantRecallCount: instantRecallReadyLessons.length,
+        latestLastStudiedAt: latestLastStudiedAt ? new Date(latestLastStudiedAt) : null,
+      };
+    });
+  }, [monthLessonsInCreatedOrder]);
+
   const firstTrainingLessonId = monthTrainingLessons[0]?.id || '';
   const instantRecallLessons = useMemo(
     () => sortLessonsForMonthTraining(monthLessons.filter((lesson) => hasInstantRecallContent(lesson))),
@@ -103,7 +131,7 @@ export default function MonthLessonsPage() {
               if (!firstTrainingLessonId) event.preventDefault();
             }}
           >
-            Dictation
+            Start All Dictation
           </Link>
           <Link
             className="btn"
@@ -117,7 +145,7 @@ export default function MonthLessonsPage() {
               if (!firstTrainingLessonId) event.preventDefault();
             }}
           >
-            Shadowing
+            Start All Shadowing
           </Link>
           <Link
             className="btn"
@@ -131,7 +159,7 @@ export default function MonthLessonsPage() {
               if (!firstInstantRecallLessonId) event.preventDefault();
             }}
           >
-            Instant Recall
+            Start All Instant Recall
           </Link>
           <Link className="btn ghost" to={`/lessons/category/${categoryId}`}>
             Back to Monthly Archive
@@ -155,6 +183,27 @@ export default function MonthLessonsPage() {
         <article className="card">
           <p className="section-subtle">No audio lessons available in this month.</p>
         </article>
+      ) : null}
+
+      {practiceSets.length > 0 ? (
+        <div className="stack">
+          {practiceSets.map((set) => (
+            <article className="card" key={set.id}>
+              <div className="row between wrap gap-sm">
+                <div>
+                  <h3 className="section-title">Practice Set {set.index}</h3>
+                  <p className="section-subtle">{set.lessons.length} lessons</p>
+                  <p className="section-subtle">Latest last studied: {set.latestLastStudiedAt ? formatDateTime(set.latestLastStudiedAt) : '—'}</p>
+                </div>
+                <div className="row gap-sm wrap month-action-buttons">
+                  <Link className="btn" to={set.audioFirstId ? `/lessons/${set.audioFirstId}/dictation?mode=month&categoryId=${categoryId}&registeredMonth=${registeredMonth}&lessonIds=${encodeURIComponent(set.lessonIdsParam)}` : '#'} aria-disabled={!set.audioFirstId} onClick={(event) => { if (!set.audioFirstId) event.preventDefault(); }}>Dictation</Link>
+                  <Link className="btn" to={set.audioFirstId ? `/lessons/${set.audioFirstId}/shadowing?mode=month&categoryId=${categoryId}&registeredMonth=${registeredMonth}&lessonIds=${encodeURIComponent(set.lessonIdsParam)}` : '#'} aria-disabled={!set.audioFirstId} onClick={(event) => { if (!set.audioFirstId) event.preventDefault(); }}>Shadowing</Link>
+                  <Link className="btn" to={set.instantRecallFirstId ? `/lessons/${set.instantRecallFirstId}/instant-recall?mode=month&categoryId=${categoryId}&registeredMonth=${registeredMonth}&lessonIds=${encodeURIComponent(set.lessonIdsParam)}` : '#'} aria-disabled={!set.instantRecallFirstId} onClick={(event) => { if (!set.instantRecallFirstId) event.preventDefault(); }}>Instant Recall</Link>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
       ) : null}
 
       {paging.items.map((lesson) => {

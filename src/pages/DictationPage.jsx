@@ -89,6 +89,8 @@ export default function DictationPage() {
   const mode = searchParams.get('mode');
   const categoryId = searchParams.get('categoryId') || '';
   const registeredMonth = searchParams.get('registeredMonth') || '';
+  const lessonIdsParam = searchParams.get('lessonIds') || '';
+  const allowedLessonIds = lessonIdsParam ? new Set(lessonIdsParam.split(',').filter(Boolean)) : null;
   const isMonthMode = mode === 'month' && categoryId && registeredMonth;
   const isNativePlatform = Capacitor.isNativePlatform();
 
@@ -122,10 +124,11 @@ export default function DictationPage() {
     }
     fetchLessons(userId).then((lessons) => {
       const filtered = filterLessonsByCategoryAndMonth(lessons, categoryId, registeredMonth);
-      const audioReady = filtered.filter((monthLesson) => hasLessonAudio(monthLesson));
+      const scoped = allowedLessonIds ? filtered.filter((monthLesson) => allowedLessonIds.has(monthLesson.id)) : filtered;
+      const audioReady = scoped.filter((monthLesson) => hasLessonAudio(monthLesson));
       setMonthLessons(sortLessonsForMonthTraining(audioReady));
     });
-  }, [isMonthMode, categoryId, registeredMonth]);
+  }, [isMonthMode, userId, categoryId, registeredMonth, lessonIdsParam]);
 
   const normalizedInput = useMemo(() => normalizeForDictation(inputText), [inputText]);
   const normalizedScript = useMemo(() => normalizeForDictation(lesson?.scriptEn || ''), [lesson?.scriptEn]);
@@ -324,7 +327,7 @@ export default function DictationPage() {
 
     if (nextLesson) {
       navigate(
-        `/lessons/${nextLesson.id}/dictation?mode=month&categoryId=${categoryId}&registeredMonth=${registeredMonth}`,
+        `/lessons/${nextLesson.id}/dictation?mode=month&categoryId=${categoryId}&registeredMonth=${registeredMonth}${lessonIdsParam ? `&lessonIds=${encodeURIComponent(lessonIdsParam)}` : ''}`,
       );
       return;
     }

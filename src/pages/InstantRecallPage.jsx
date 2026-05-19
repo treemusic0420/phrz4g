@@ -36,6 +36,8 @@ export default function InstantRecallPage() {
   const mode = searchParams.get('mode');
   const categoryId = searchParams.get('categoryId') || '';
   const registeredMonth = searchParams.get('registeredMonth') || '';
+  const lessonIdsParam = searchParams.get('lessonIds') || '';
+  const allowedLessonIds = lessonIdsParam ? new Set(lessonIdsParam.split(',').filter(Boolean)) : null;
   const isMonthMode = mode === 'month' && categoryId && registeredMonth;
   const monthLabel = getRegisteredMonthLabel(registeredMonth);
   const fallbackAudioContentType =
@@ -58,10 +60,11 @@ export default function InstantRecallPage() {
     }
     fetchLessons(userId).then((lessons) => {
       const filtered = filterLessonsByCategoryAndMonth(lessons, categoryId, registeredMonth);
-      const ready = sortLessonsForMonthTraining(filtered.filter((row) => hasInstantRecallContent(row)));
+      const scoped = allowedLessonIds ? filtered.filter((row) => allowedLessonIds.has(row.id)) : filtered;
+      const ready = sortLessonsForMonthTraining(scoped.filter((row) => hasInstantRecallContent(row)));
       setMonthLessons(ready);
     });
-  }, [isMonthMode, userId, categoryId, registeredMonth]);
+  }, [isMonthMode, userId, categoryId, registeredMonth, lessonIdsParam]);
 
   useEffect(() => {
     let isActive = true;
@@ -112,7 +115,7 @@ export default function InstantRecallPage() {
     await updateLessonStats(lesson.id, 'instantRecall', durationSeconds, {});
 
     if (nextLesson) {
-      navigate(`/lessons/${nextLesson.id}/instant-recall?mode=month&categoryId=${categoryId}&registeredMonth=${registeredMonth}`);
+      navigate(`/lessons/${nextLesson.id}/instant-recall?mode=month&categoryId=${categoryId}&registeredMonth=${registeredMonth}${lessonIdsParam ? `&lessonIds=${encodeURIComponent(lessonIdsParam)}` : ''}`);
       return;
     }
     setIsFinished(true);
