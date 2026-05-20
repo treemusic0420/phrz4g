@@ -160,6 +160,7 @@ export default function DictationPage() {
   const inputTextRef = useRef('');
   const isComposingRef = useRef(false);
   const [wrongSlotIndex, setWrongSlotIndex] = useState(-1);
+  const focusNextButtonTimeoutRef = useRef(null);
   const slotGroups = useMemo(() => buildSlotGroups(lesson?.scriptEn || ''), [lesson?.scriptEn]);
   const expectedChars = useMemo(
     () => slotGroups.flatMap((group) => group.filter((item) => item.type === 'slot').map((slot) => slot.char)),
@@ -175,9 +176,21 @@ export default function DictationPage() {
   useEffect(
     () => () => {
       if (wrongInputTimeoutRef.current) window.clearTimeout(wrongInputTimeoutRef.current);
+      if (focusNextButtonTimeoutRef.current) window.clearTimeout(focusNextButtonTimeoutRef.current);
     },
     [],
   );
+
+  const focusNextOrFinishButton = useCallback(() => {
+    window.requestAnimationFrame(() => {
+      nextButtonRef.current?.focus();
+    });
+    if (focusNextButtonTimeoutRef.current) window.clearTimeout(focusNextButtonTimeoutRef.current);
+    focusNextButtonTimeoutRef.current = window.setTimeout(() => {
+      nextButtonRef.current?.focus();
+      focusNextButtonTimeoutRef.current = null;
+    }, 0);
+  }, []);
 
   const triggerWrongFeedback = (index) => {
     setWrongSlotIndex(index);
@@ -195,9 +208,7 @@ export default function DictationPage() {
     setIsCorrect(result);
     if (result) {
       await playDictationCompleteSound();
-      window.requestAnimationFrame(() => {
-        nextButtonRef.current?.focus();
-      });
+      focusNextOrFinishButton();
     }
   };
 
@@ -352,6 +363,11 @@ export default function DictationPage() {
       backToListButtonRef.current?.focus();
     });
   }, [isFinished]);
+
+  useEffect(() => {
+    if (!hasChecked || !isCorrect || isFinished) return;
+    focusNextOrFinishButton();
+  }, [hasChecked, isCorrect, isFinished, isLastLesson, focusNextOrFinishButton]);
 
   const onHiddenInputChange = (event) => {
     if (!isNativePlatform) {
