@@ -182,12 +182,29 @@ export default function DictationPage() {
   );
 
   const focusNextOrFinishButton = useCallback(() => {
+    const button = nextButtonRef.current;
+    if (!button || button.disabled) return;
+
+    const style = window.getComputedStyle(button);
+    if (style.display === 'none' || style.visibility === 'hidden') return;
+
     window.requestAnimationFrame(() => {
-      nextButtonRef.current?.focus();
+      if (!button.disabled) button.focus();
     });
+
     if (focusNextButtonTimeoutRef.current) window.clearTimeout(focusNextButtonTimeoutRef.current);
     focusNextButtonTimeoutRef.current = window.setTimeout(() => {
-      nextButtonRef.current?.focus();
+      const latestButton = nextButtonRef.current;
+      if (!latestButton || latestButton.disabled) {
+        focusNextButtonTimeoutRef.current = null;
+        return;
+      }
+      const latestStyle = window.getComputedStyle(latestButton);
+      if (latestStyle.display === 'none' || latestStyle.visibility === 'hidden') {
+        focusNextButtonTimeoutRef.current = null;
+        return;
+      }
+      latestButton.focus();
       focusNextButtonTimeoutRef.current = null;
     }, 0);
   }, []);
@@ -208,7 +225,6 @@ export default function DictationPage() {
     setIsCorrect(result);
     if (result) {
       await playDictationCompleteSound();
-      focusNextOrFinishButton();
     }
   };
 
@@ -365,7 +381,7 @@ export default function DictationPage() {
   }, [isFinished]);
 
   useEffect(() => {
-    if (!hasChecked || !isCorrect || isFinished) return;
+    if (!hasChecked || isFinished) return;
     focusNextOrFinishButton();
   }, [hasChecked, isCorrect, isFinished, isLastLesson, focusNextOrFinishButton]);
 
