@@ -9,6 +9,7 @@ import {
   getLessonDisplayTitle,
   hasInstantRecallContent,
   hasLessonAudio,
+  sortLessonsByIdOrder,
   sortLessonsForMonthTraining,
 } from '../utils/lessons';
 import { getRegisteredMonthLabel } from '../utils/registeredMonth';
@@ -37,7 +38,8 @@ export default function InstantRecallPage() {
   const categoryId = searchParams.get('categoryId') || '';
   const registeredMonth = searchParams.get('registeredMonth') || '';
   const lessonIdsParam = searchParams.get('lessonIds') || '';
-  const allowedLessonIds = lessonIdsParam ? new Set(lessonIdsParam.split(',').filter(Boolean)) : null;
+  const orderedLessonIds = useMemo(() => lessonIdsParam.split(',').filter(Boolean), [lessonIdsParam]);
+  const allowedLessonIds = orderedLessonIds.length > 0 ? new Set(orderedLessonIds) : null;
   const isMonthMode = mode === 'month' && categoryId && registeredMonth;
   const monthLabel = getRegisteredMonthLabel(registeredMonth);
   const fallbackAudioContentType =
@@ -61,10 +63,13 @@ export default function InstantRecallPage() {
     fetchLessons(userId).then((lessons) => {
       const filtered = filterLessonsByCategoryAndMonth(lessons, categoryId, registeredMonth);
       const scoped = allowedLessonIds ? filtered.filter((row) => allowedLessonIds.has(row.id)) : filtered;
-      const ready = sortLessonsForMonthTraining(scoped.filter((row) => hasInstantRecallContent(row)));
+      const readyLessons = scoped.filter((row) => hasInstantRecallContent(row));
+      const ready = orderedLessonIds.length > 0
+        ? sortLessonsByIdOrder(readyLessons, orderedLessonIds)
+        : sortLessonsForMonthTraining(readyLessons);
       setMonthLessons(ready);
     });
-  }, [isMonthMode, userId, categoryId, registeredMonth, lessonIdsParam]);
+  }, [isMonthMode, userId, categoryId, registeredMonth, orderedLessonIds]);
 
   useEffect(() => {
     let isActive = true;

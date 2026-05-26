@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import AudioControls from '../components/AudioControls';
 import LessonImageThumbnail from '../components/LessonImageThumbnail';
@@ -8,6 +8,7 @@ import {
   filterLessonsByCategoryAndMonth,
   getLessonDisplayTitle,
   hasLessonAudio,
+  sortLessonsByIdOrder,
   sortLessonsForMonthTraining,
 } from '../utils/lessons';
 import { getRegisteredMonthLabel } from '../utils/registeredMonth';
@@ -29,7 +30,8 @@ export default function ShadowingPage() {
   const categoryId = searchParams.get('categoryId') || '';
   const registeredMonth = searchParams.get('registeredMonth') || '';
   const lessonIdsParam = searchParams.get('lessonIds') || '';
-  const allowedLessonIds = lessonIdsParam ? new Set(lessonIdsParam.split(',').filter(Boolean)) : null;
+  const orderedLessonIds = useMemo(() => lessonIdsParam.split(',').filter(Boolean), [lessonIdsParam]);
+  const allowedLessonIds = orderedLessonIds.length > 0 ? new Set(orderedLessonIds) : null;
   const isMonthMode = mode === 'month' && categoryId && registeredMonth;
   const fileExtension = lesson?.audioPath?.split('.').pop()?.toLowerCase() || '';
   const fallbackAudioContentType =
@@ -64,9 +66,12 @@ export default function ShadowingPage() {
       const filtered = filterLessonsByCategoryAndMonth(lessons, categoryId, registeredMonth);
       const scoped = allowedLessonIds ? filtered.filter((monthLesson) => allowedLessonIds.has(monthLesson.id)) : filtered;
       const audioReady = scoped.filter((monthLesson) => hasLessonAudio(monthLesson));
-      setMonthLessons(sortLessonsForMonthTraining(audioReady));
+      const sorted = orderedLessonIds.length > 0
+        ? sortLessonsByIdOrder(audioReady, orderedLessonIds)
+        : sortLessonsForMonthTraining(audioReady);
+      setMonthLessons(sorted);
     });
-  }, [isMonthMode, userId, categoryId, registeredMonth, lessonIdsParam]);
+  }, [isMonthMode, userId, categoryId, registeredMonth, orderedLessonIds]);
 
   const monthIndex = monthLessons.findIndex((monthLesson) => monthLesson.id === id);
   const nextLesson = monthIndex >= 0 ? monthLessons[monthIndex + 1] : null;

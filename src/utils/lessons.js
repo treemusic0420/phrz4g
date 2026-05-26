@@ -53,6 +53,20 @@ export const chunkLessons = (lessons = [], chunkSize = 10) => {
   }
   return chunks;
 };
+
+export const sortLessonsByIdOrder = (lessons = [], orderedLessonIds = []) => {
+  if (!Array.isArray(orderedLessonIds) || orderedLessonIds.length === 0) return [...lessons];
+  const idToIndex = new Map(orderedLessonIds.map((lessonId, index) => [String(lessonId), index]));
+  return [...lessons].sort((a, b) => {
+    const aIndex = idToIndex.get(String(a?.id ?? ''));
+    const bIndex = idToIndex.get(String(b?.id ?? ''));
+    const normalizedA = Number.isInteger(aIndex) ? aIndex : Number.MAX_SAFE_INTEGER;
+    const normalizedB = Number.isInteger(bIndex) ? bIndex : Number.MAX_SAFE_INTEGER;
+    if (normalizedA !== normalizedB) return normalizedA - normalizedB;
+    return String(a?.id || '').localeCompare(String(b?.id || ''));
+  });
+};
+
 export const toOrderNumber = (value) => {
   const n = Number(value);
   return Number.isFinite(n) ? n : Number.MAX_SAFE_INTEGER;
