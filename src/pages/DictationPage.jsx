@@ -17,6 +17,7 @@ import {
   filterLessonsByCategoryAndMonth,
   getLessonDisplayTitle,
   hasLessonAudio,
+  sortLessonsByIdOrder,
   sortLessonsForMonthTraining,
 } from '../utils/lessons';
 import { getRegisteredMonthLabel } from '../utils/registeredMonth';
@@ -90,7 +91,8 @@ export default function DictationPage() {
   const categoryId = searchParams.get('categoryId') || '';
   const registeredMonth = searchParams.get('registeredMonth') || '';
   const lessonIdsParam = searchParams.get('lessonIds') || '';
-  const allowedLessonIds = lessonIdsParam ? new Set(lessonIdsParam.split(',').filter(Boolean)) : null;
+  const orderedLessonIds = useMemo(() => lessonIdsParam.split(',').filter(Boolean), [lessonIdsParam]);
+  const allowedLessonIds = orderedLessonIds.length > 0 ? new Set(orderedLessonIds) : null;
   const isMonthMode = mode === 'month' && categoryId && registeredMonth;
   const isNativePlatform = Capacitor.isNativePlatform();
 
@@ -126,9 +128,12 @@ export default function DictationPage() {
       const filtered = filterLessonsByCategoryAndMonth(lessons, categoryId, registeredMonth);
       const scoped = allowedLessonIds ? filtered.filter((monthLesson) => allowedLessonIds.has(monthLesson.id)) : filtered;
       const audioReady = scoped.filter((monthLesson) => hasLessonAudio(monthLesson));
-      setMonthLessons(sortLessonsForMonthTraining(audioReady));
+      const sorted = orderedLessonIds.length > 0
+        ? sortLessonsByIdOrder(audioReady, orderedLessonIds)
+        : sortLessonsForMonthTraining(audioReady);
+      setMonthLessons(sorted);
     });
-  }, [isMonthMode, userId, categoryId, registeredMonth, lessonIdsParam]);
+  }, [isMonthMode, userId, categoryId, registeredMonth, orderedLessonIds]);
 
   const normalizedInput = useMemo(() => normalizeForDictation(inputText), [inputText]);
   const normalizedScript = useMemo(() => normalizeForDictation(lesson?.scriptEn || ''), [lesson?.scriptEn]);
