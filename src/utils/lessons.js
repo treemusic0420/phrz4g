@@ -23,27 +23,28 @@ export const sortLessonsByRecency = (lessons = []) =>
 
 const safePrimarySortMillis = (value) => {
   const date = toDate(value);
-  if (!date || Number.isNaN(date.getTime())) return -1;
+  if (!date || Number.isNaN(date.getTime())) return null;
   return date.getTime();
 };
 
-export const getLessonMonthTrainingSortTime = (lesson) => {
-  const createdAt = safePrimarySortMillis(lesson?.createdAt);
-  if (createdAt > 0) return createdAt;
-  return safePrimarySortMillis(lesson?.updatedAt);
+export const getLessonMonthTrainingSortTime = (lesson) => safePrimarySortMillis(lesson?.createdAt);
+
+export const compareLessonsByCreatedOrder = (a, b) => {
+  const aTime = getLessonMonthTrainingSortTime(a);
+  const bTime = getLessonMonthTrainingSortTime(b);
+  const aHasCreatedAt = Number.isFinite(aTime);
+  const bHasCreatedAt = Number.isFinite(bTime);
+
+  if (aHasCreatedAt && bHasCreatedAt && aTime !== bTime) return aTime - bTime;
+  if (aHasCreatedAt !== bHasCreatedAt) return aHasCreatedAt ? -1 : 1;
+  return String(a?.id || '').localeCompare(String(b?.id || ''));
 };
 
 export const sortLessonsForMonthTraining = (lessons = []) =>
-  [...lessons].sort((a, b) => getLessonMonthTrainingSortTime(b) - getLessonMonthTrainingSortTime(a));
-
-
+  [...lessons].sort(compareLessonsByCreatedOrder);
 
 export const sortLessonsByCreatedOrder = (lessons = []) =>
-  [...lessons].sort((a, b) => {
-    const diff = getLessonMonthTrainingSortTime(a) - getLessonMonthTrainingSortTime(b);
-    if (diff !== 0) return diff;
-    return String(a?.id || '').localeCompare(String(b?.id || ''));
-  });
+  [...lessons].sort(compareLessonsByCreatedOrder);
 
 export const chunkLessons = (lessons = [], chunkSize = 10) => {
   const size = Math.max(1, Number(chunkSize) || 10);
