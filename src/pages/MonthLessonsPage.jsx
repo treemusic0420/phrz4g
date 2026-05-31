@@ -94,10 +94,18 @@ export default function MonthLessonsPage() {
     });
   }, [monthLessonsInCreatedOrder]);
 
+  const monthTrainingLessonIdsParam = useMemo(
+    () => monthTrainingLessons.map((lesson) => lesson.id).join(','),
+    [monthTrainingLessons],
+  );
   const firstTrainingLessonId = monthTrainingLessons[0]?.id || '';
   const instantRecallLessons = useMemo(
     () => sortLessonsForMonthTraining(monthLessons.filter((lesson) => hasInstantRecallContent(lesson))),
     [monthLessons],
+  );
+  const instantRecallLessonIdsParam = useMemo(
+    () => instantRecallLessons.map((lesson) => lesson.id).join(','),
+    [instantRecallLessons],
   );
   const firstInstantRecallLessonId = instantRecallLessons[0]?.id || '';
   const audioLessonCount = monthTrainingLessons.length;
@@ -122,7 +130,7 @@ export default function MonthLessonsPage() {
             className="btn"
             to={
               firstTrainingLessonId
-                ? `/lessons/${firstTrainingLessonId}/dictation?mode=month&categoryId=${categoryId}&registeredMonth=${registeredMonth}`
+                ? `/lessons/${firstTrainingLessonId}/dictation?mode=month&categoryId=${categoryId}&registeredMonth=${registeredMonth}&lessonIds=${encodeURIComponent(monthTrainingLessonIdsParam)}`
                 : '#'
             }
             aria-disabled={!firstTrainingLessonId}
@@ -136,7 +144,7 @@ export default function MonthLessonsPage() {
             className="btn"
             to={
               firstTrainingLessonId
-                ? `/lessons/${firstTrainingLessonId}/shadowing?mode=month&categoryId=${categoryId}&registeredMonth=${registeredMonth}`
+                ? `/lessons/${firstTrainingLessonId}/shadowing?mode=month&categoryId=${categoryId}&registeredMonth=${registeredMonth}&lessonIds=${encodeURIComponent(monthTrainingLessonIdsParam)}`
                 : '#'
             }
             aria-disabled={!firstTrainingLessonId}
@@ -150,7 +158,7 @@ export default function MonthLessonsPage() {
             className="btn"
             to={
               firstInstantRecallLessonId
-                ? `/lessons/${firstInstantRecallLessonId}/instant-recall?mode=month&categoryId=${categoryId}&registeredMonth=${registeredMonth}`
+                ? `/lessons/${firstInstantRecallLessonId}/instant-recall?mode=month&categoryId=${categoryId}&registeredMonth=${registeredMonth}&lessonIds=${encodeURIComponent(instantRecallLessonIdsParam)}`
                 : '#'
             }
             aria-disabled={!firstInstantRecallLessonId}
