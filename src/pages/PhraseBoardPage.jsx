@@ -1,48 +1,41 @@
-import { useEffect, useMemo, useState } from 'react';
-import AudioControls from '../components/AudioControls';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { ensureInitialCategories, fetchLessons, updateLessonAudioUrl } from '../lib/firestore';
+import { fetchLessons, updateLessonAudioUrl } from '../lib/firestore';
 import { getAudioDownloadUrlByPath } from '../lib/storage';
 import {
-  filterLessonsByCategoryAndMonth,
   getLessonDisplayTitle,
-  groupLessonsByCategory,
-  groupLessonsByRegisteredMonth,
   hasLessonAudio,
   sortLessonsByCreatedOrder,
 } from '../utils/lessons';
-import { getRegisteredMonthLabel } from '../utils/registeredMonth';
 
-const SLIDE_INTERVAL_MS = 10000;
-
-const getExtFromPath = (path = '') => path.split('.').pop()?.toLowerCase() || '';
-
-const inferTypeByExt = (ext) => {
-  if (ext === 'm4a') return 'audio/mp4';
-  if (ext === 'mp3') return 'audio/mpeg';
-  if (ext === 'wav') return 'audio/wav';
-  return '';
-};
-
-const isUnsupportedAudioFormat = (ext, contentType = '') =>
-  ext === 'm4a' || contentType === 'audio/mp4' || contentType === 'audio/x-m4a';
+const PHRASE_INTERVAL_MS = 5000;
+const AUDIO_LOAD_TIMEOUT_MS = 7000;
 
 const hasReadableEnglishScript = (lesson = {}) => Boolean(String(lesson.scriptEn || '').trim());
+
+const withTimeout = (promise, timeoutMs, timeoutMessage) => {
+  let timeoutId;
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = window.setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
+  });
+
+  return Promise.race([promise, timeoutPromise]).finally(() => window.clearTimeout(timeoutId));
+};
 
 export default function PhraseBoardPage() {
   const { user } = useAuth();
   const userId = user?.uid || '';
+  const audioRef = useRef(null);
+  const advanceTimerRef = useRef(null);
   const [allLessons, setAllLessons] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState('');
-  const [selectedMonth, setSelectedMonth] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [hasStarted, setHasStarted] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [playbackKey, setPlaybackKey] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [resolvedAudioUrl, setResolvedAudioUrl] = useState('');
-  const [audioLoadStatus, setAudioLoadStatus] = useState('idle');
-  const [audioErrorMessage, setAudioErrorMessage] = useState('');
+  const [audioStatus, setAudioStatus] = useState('idle');
+  const [audioMessage, setAudioMessage] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -51,206 +44,247 @@ export default function PhraseBoardPage() {
       setLoading(true);
       setError('');
       try {
-        const [fetchedLessons, fetchedCategories] = await Promise.all([
-          fetchLessons(userId),
-          ensureInitialCategories(userId),
-        ]);
+        const fetchedLessons = await fetchLessons(userId);
         if (cancelled) return;
         setAllLessons(fetchedLessons);
-        setCategories(fetchedCategories);
       } catch (fetchError) {
         if (cancelled) return;
         setAllLessons([]);
-        setCategories([]);
         setError(`Failed to load Phrase Board: ${fetchError?.code || 'unknown'} / ${fetchError?.message || 'Unknown error'}`);
       } finally {
         if (!cancelled) setLoading(false);
       }
     };
 
-    if (userId) loadBoardData();
+    if (userId) {
+      loadBoardData();
+    } else {
+      setAllLessons([]);
+      setLoading(false);
+    }
 
     return () => {
       cancelled = true;
     };
   }, [userId]);
 
-  const categoryOptions = useMemo(
-    () => groupLessonsByCategory(allLessons, categories),
-    [allLessons, categories],
+  const boardLessons = useMemo(
+    () => sortLessonsByCreatedOrder(allLessons.filter(hasReadableEnglishScript)),
+    [allLessons],
   );
-
-  useEffect(() => {
-    if (categoryOptions.length === 0) {
-      setSelectedCategoryId('');
-      return;
-    }
-
-    const hasSelectedCategory = categoryOptions.some((category) => category.id === selectedCategoryId);
-    if (!hasSelectedCategory) {
-      setSelectedCategoryId(categoryOptions[0].id);
-    }
-  }, [categoryOptions, selectedCategoryId]);
-
-  const categoryLessons = useMemo(
-    () => allLessons.filter((lesson) => {
-      if (!selectedCategoryId) return false;
-      return selectedCategoryId === '__unset__' ? !lesson.categoryId : lesson.categoryId === selectedCategoryId;
-    }),
-    [allLessons, selectedCategoryId],
-  );
-
-  const monthOptions = useMemo(
-    () => groupLessonsByRegisteredMonth(categoryLessons),
-    [categoryLessons],
-  );
-
-  useEffect(() => {
-    if (monthOptions.length === 0) {
-      setSelectedMonth('');
-      return;
-    }
-
-    const hasSelectedMonth = monthOptions.some((month) => month.registeredMonth === selectedMonth);
-    if (!hasSelectedMonth) {
-      setSelectedMonth(monthOptions[0].registeredMonth);
-    }
-  }, [monthOptions, selectedMonth]);
-
-  const boardLessons = useMemo(() => {
-    if (!selectedCategoryId || !selectedMonth) return [];
-    const filtered = filterLessonsByCategoryAndMonth(allLessons, selectedCategoryId, selectedMonth)
-      .filter(hasReadableEnglishScript);
-    return sortLessonsByCreatedOrder(filtered);
-  }, [allLessons, selectedCategoryId, selectedMonth]);
-
-  useEffect(() => {
-    setCurrentIndex(0);
-    setResolvedAudioUrl('');
-    setAudioLoadStatus('idle');
-    setAudioErrorMessage('');
-  }, [selectedCategoryId, selectedMonth]);
 
   useEffect(() => {
     if (boardLessons.length === 0) {
       setCurrentIndex(0);
+      setHasStarted(false);
       return;
     }
+
     setCurrentIndex((prev) => Math.min(prev, boardLessons.length - 1));
   }, [boardLessons.length]);
 
-  useEffect(() => {
-    if (isPaused || boardLessons.length <= 1) return undefined;
-
-    const intervalId = window.setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % boardLessons.length);
-    }, SLIDE_INTERVAL_MS);
-
-    return () => window.clearInterval(intervalId);
-  }, [boardLessons.length, isPaused]);
-
   const currentLesson = boardLessons[currentIndex] || null;
-  const selectedCategoryName = categoryOptions.find((category) => category.id === selectedCategoryId)?.name || 'Category';
-  const selectedMonthLabel = selectedMonth ? getRegisteredMonthLabel(selectedMonth) : 'Month';
-  const fileExtension = getExtFromPath(currentLesson?.audioPath || '');
-  const audioContentType = currentLesson?.audioContentType || inferTypeByExt(fileExtension);
-  const unsupportedFormat = isUnsupportedAudioFormat(fileExtension, audioContentType);
   const currentLessonHasAudio = hasLessonAudio(currentLesson);
 
-  useEffect(() => {
-    if (!currentLesson) {
-      setResolvedAudioUrl('');
-      return undefined;
+  const clearAdvanceTimer = () => {
+    if (advanceTimerRef.current) {
+      window.clearTimeout(advanceTimerRef.current);
+      advanceTimerRef.current = null;
     }
+  };
+
+  const stopAudio = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.pause();
+    audio.removeAttribute('src');
+    audio.load();
+  };
+
+  const advanceToNextLesson = () => {
+    if (boardLessons.length === 0) return;
+    if (boardLessons.length === 1) {
+      setPlaybackKey((prev) => prev + 1);
+      return;
+    }
+    setCurrentIndex((prev) => (prev + 1) % boardLessons.length);
+  };
+
+  const scheduleNextLesson = () => {
+    clearAdvanceTimer();
+    advanceTimerRef.current = window.setTimeout(() => {
+      advanceTimerRef.current = null;
+      advanceToNextLesson();
+    }, PHRASE_INTERVAL_MS);
+  };
+
+  useEffect(() => () => {
+    clearAdvanceTimer();
+    stopAudio();
+  }, []);
+
+  useEffect(() => {
+    clearAdvanceTimer();
+    stopAudio();
+    setAudioStatus(currentLessonHasAudio ? 'idle' : 'none');
+    setAudioMessage('');
+
+    if (!hasStarted || isPaused || !currentLesson) return undefined;
 
     let cancelled = false;
+    const audio = audioRef.current;
 
-    const resolveUrl = async () => {
-      setAudioErrorMessage('');
-      setAudioLoadStatus('idle');
-      setResolvedAudioUrl('');
+    const finishWithoutAudio = (message = '') => {
+      if (cancelled) return;
+      setAudioStatus(message ? 'unavailable' : 'none');
+      setAudioMessage(message);
+      scheduleNextLesson();
+    };
 
-      if (!currentLessonHasAudio || unsupportedFormat) return;
-
-      if (currentLesson.audioUrl) {
-        setResolvedAudioUrl(currentLesson.audioUrl);
+    const playLessonAudio = async () => {
+      if (!currentLessonHasAudio || !audio) {
+        finishWithoutAudio('');
         return;
       }
 
-      if (!currentLesson.audioPath) return;
+      setAudioStatus('loading');
+      setAudioMessage('');
 
-      setAudioLoadStatus('loading');
       try {
-        const url = await getAudioDownloadUrlByPath(currentLesson.audioPath);
+        const audioUrl = currentLesson.audioUrl || await withTimeout(
+          getAudioDownloadUrlByPath(currentLesson.audioPath),
+          AUDIO_LOAD_TIMEOUT_MS,
+          'Audio URL loading timed out.',
+        );
+
         if (cancelled) return;
-        setResolvedAudioUrl(url);
-        await updateLessonAudioUrl(currentLesson.id, url).catch(() => {});
-      } catch (err) {
+
+        if (!audioUrl) {
+          finishWithoutAudio('Audio unavailable');
+          return;
+        }
+
+        if (!currentLesson.audioUrl && currentLesson.audioPath) {
+          updateLessonAudioUrl(currentLesson.id, audioUrl).catch(() => {});
+        }
+
+        await new Promise((resolve, reject) => {
+          let settled = false;
+          const cleanup = () => {
+            window.clearTimeout(loadTimeoutId);
+            audio.removeEventListener('canplay', handleCanPlay);
+            audio.removeEventListener('error', handleError);
+          };
+          const settle = (callback) => {
+            if (settled) return;
+            settled = true;
+            cleanup();
+            callback();
+          };
+          const handleCanPlay = () => settle(resolve);
+          const handleError = () => settle(() => reject(new Error('Audio unavailable')));
+          const loadTimeoutId = window.setTimeout(
+            () => settle(() => reject(new Error('Audio loading timed out.'))),
+            AUDIO_LOAD_TIMEOUT_MS,
+          );
+
+          audio.addEventListener('canplay', handleCanPlay, { once: true });
+          audio.addEventListener('error', handleError, { once: true });
+          audio.src = audioUrl;
+          audio.load();
+        });
+
         if (cancelled) return;
-        setAudioLoadStatus('error');
-        setAudioErrorMessage(err.message || 'Failed to resolve audio URL from audioPath.');
+
+        await audio.play();
+        if (cancelled) return;
+        setAudioStatus('playing');
+
+        await new Promise((resolve, reject) => {
+          const handleEnded = () => {
+            cleanup();
+            resolve();
+          };
+          const handleError = () => {
+            cleanup();
+            reject(new Error('Audio unavailable'));
+          };
+          const cleanup = () => {
+            audio.removeEventListener('ended', handleEnded);
+            audio.removeEventListener('error', handleError);
+          };
+          audio.addEventListener('ended', handleEnded, { once: true });
+          audio.addEventListener('error', handleError, { once: true });
+        });
+
+        if (cancelled) return;
+        setAudioStatus('ended');
+        scheduleNextLesson();
+      } catch (playError) {
+        if (cancelled) return;
+        finishWithoutAudio(playError?.message || 'Audio unavailable');
       }
     };
 
-    resolveUrl();
+    playLessonAudio();
 
     return () => {
       cancelled = true;
+      clearAdvanceTimer();
+      stopAudio();
     };
-  }, [currentLesson, currentLessonHasAudio, unsupportedFormat]);
+  }, [currentLesson, currentLessonHasAudio, hasStarted, isPaused, playbackKey]);
+
+  const startBoard = () => {
+    if (!currentLesson) return;
+    setHasStarted(true);
+    setIsPaused(false);
+    setPlaybackKey((prev) => prev + 1);
+  };
+
+  const togglePause = () => {
+    if (!hasStarted) return;
+    setIsPaused((prev) => !prev);
+    setPlaybackKey((prev) => prev + 1);
+  };
 
   const goToPrevious = () => {
     if (boardLessons.length === 0) return;
     setCurrentIndex((prev) => (prev - 1 + boardLessons.length) % boardLessons.length);
+    setPlaybackKey((prev) => prev + 1);
   };
 
   const goToNext = () => {
     if (boardLessons.length === 0) return;
     setCurrentIndex((prev) => (prev + 1) % boardLessons.length);
+    setPlaybackKey((prev) => prev + 1);
   };
+
+  const restartBoard = () => {
+    if (boardLessons.length === 0) return;
+    setCurrentIndex(0);
+    setHasStarted(true);
+    setIsPaused(false);
+    setPlaybackKey((prev) => prev + 1);
+  };
+
+  const boardStatusLabel = (() => {
+    if (!hasStarted) return 'Ready';
+    if (isPaused) return 'Paused';
+    if (audioStatus === 'playing') return 'Playing audio';
+    if (audioStatus === 'loading') return 'Preparing audio';
+    return 'Auto board running';
+  })();
 
   return (
     <section className="stack phrase-board-page">
       <div className="phrase-board-header">
         <div>
-          <p className="section-subtle">Always-on monthly lesson phrases</p>
+          <p className="section-subtle">Always-on lesson phrases</p>
           <h2 className="section-title phrase-board-title">Phrase Board</h2>
         </div>
-        <p className="phrase-board-interval">Auto advances every 10 seconds</p>
+        <p className="phrase-board-interval">Audio, then 5 seconds before the next lesson</p>
       </div>
-
-      <article className="card phrase-board-filter-card">
-        <label>
-          Category
-          <select
-            disabled={loading || categoryOptions.length === 0}
-            onChange={(event) => setSelectedCategoryId(event.target.value)}
-            value={selectedCategoryId}
-          >
-            {categoryOptions.length === 0 ? <option value="">No categories</option> : null}
-            {categoryOptions.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Month
-          <select
-            disabled={loading || monthOptions.length === 0}
-            onChange={(event) => setSelectedMonth(event.target.value)}
-            value={selectedMonth}
-          >
-            {monthOptions.length === 0 ? <option value="">No months</option> : null}
-            {monthOptions.map((month) => (
-              <option key={month.registeredMonth} value={month.registeredMonth}>
-                {month.registeredMonthLabel}
-              </option>
-            ))}
-          </select>
-        </label>
-      </article>
 
       {error ? <p className="card error">{error}</p> : null}
       {loading ? <p className="card">Loading Phrase Board...</p> : null}
@@ -258,18 +292,15 @@ export default function PhraseBoardPage() {
       {!loading && !error && !currentLesson ? (
         <article className="card empty-state phrase-board-empty">
           <h3 className="section-title">No displayable lessons.</h3>
-          <p className="section-subtle">
-            Select another Category / Month, or add English Script text to lessons in this month.
-          </p>
+          <p className="section-subtle">Add English Script text to lessons to show them on the board.</p>
         </article>
       ) : null}
 
       {!loading && !error && currentLesson ? (
         <article className="card phrase-board-slide" aria-live="polite">
           <div className="phrase-board-meta-row">
-            <span className="pill">{selectedCategoryName}</span>
-            <span className="pill">{selectedMonthLabel}</span>
             <span className="pill">{currentIndex + 1} / {boardLessons.length}</span>
+            <span className="pill">{boardStatusLabel}</span>
           </div>
 
           <div className="phrase-board-content">
@@ -277,7 +308,7 @@ export default function PhraseBoardPage() {
             <h3 className="phrase-board-lesson-title">{getLessonDisplayTitle(currentLesson)}</h3>
 
             <p className="section-subtle phrase-board-label">English Script</p>
-            <p className="phrase-board-script">{currentLesson.scriptEn}</p>
+            <p className="phrase-board-script">{String(currentLesson.scriptEn || '').trim()}</p>
 
             <p className="section-subtle phrase-board-label">Translation</p>
             <p className="phrase-board-translation">
@@ -286,34 +317,31 @@ export default function PhraseBoardPage() {
           </div>
 
           <div className="phrase-board-controls">
+            <button className="btn" disabled={hasStarted} onClick={startBoard} type="button">
+              Start Board
+            </button>
+            <button className="btn ghost" disabled={!hasStarted} onClick={togglePause} type="button">
+              {isPaused ? 'Resume' : 'Pause'}
+            </button>
             <button className="btn ghost" onClick={goToPrevious} type="button">
               Previous
-            </button>
-            <button className="btn" onClick={() => setIsPaused((prev) => !prev)} type="button">
-              {isPaused ? 'Resume' : 'Pause'}
             </button>
             <button className="btn ghost" onClick={goToNext} type="button">
               Next
             </button>
+            <button className="btn ghost" onClick={restartBoard} type="button">
+              Restart
+            </button>
           </div>
 
-          {currentLessonHasAudio && !unsupportedFormat ? (
-            <div className="phrase-board-audio">
-              <p className="section-subtle">Audio</p>
-              <AudioControls
-                lessonId={currentLesson.id}
-                audioUrl={resolvedAudioUrl}
-                audioContentType={audioContentType}
-                onStatusChange={setAudioLoadStatus}
-                onErrorMessage={setAudioErrorMessage}
-              />
-              {audioLoadStatus === 'loading' ? <p className="section-subtle">Loading audio...</p> : null}
-              {audioErrorMessage ? <p className="error">{audioErrorMessage}</p> : null}
-            </div>
-          ) : null}
-          {currentLessonHasAudio && unsupportedFormat ? (
-            <p className="error">This lesson uses an unsupported audio format. Please re-upload it as MP3.</p>
-          ) : null}
+          <div className="phrase-board-audio" aria-live="polite">
+            <audio ref={audioRef} preload="auto" />
+            {audioStatus === 'loading' ? <p className="section-subtle">Preparing audio...</p> : null}
+            {audioStatus === 'playing' ? <p className="section-subtle">Audio playing</p> : null}
+            {audioStatus === 'none' ? <p className="section-subtle">No audio for this lesson</p> : null}
+            {audioStatus === 'unavailable' ? <p className="section-subtle">Audio unavailable</p> : null}
+            {audioMessage ? <p className="error">{audioMessage}</p> : null}
+          </div>
         </article>
       ) : null}
     </section>
