@@ -21,6 +21,7 @@ import QuickAddLessonPage from './pages/QuickAddLessonPage';
 import MissingTranslationLessonsPage from './pages/MissingTranslationLessonsPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import YouTubeStudyPage from './pages/YouTubeStudyPage';
+import PhraseBoardPage from './pages/PhraseBoardPage';
 
 export default function App() {
   useEffect(() => {
@@ -186,6 +187,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <YouTubeStudyPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/phrase-board"
+          element={
+            <ProtectedRoute>
+              <PhraseBoardPage />
             </ProtectedRoute>
           }
         />
