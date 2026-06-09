@@ -1365,15 +1365,8 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
   font-weight: 600;
 }
 
-.phrase-board-filter-card {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-  padding: 18px;
-}
-
 .phrase-board-slide {
-  min-height: min(68vh, 760px);
+  min-height: min(72vh, 820px);
   padding: clamp(28px, 5vw, 56px);
   display: grid;
   gap: 28px;
@@ -1415,7 +1408,7 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
 }
 
 .phrase-board-script {
-  font-size: clamp(1.75rem, 4.4vw, 2.5rem);
+  font-size: clamp(1.75rem, 4.2vw, 2.65rem);
   line-height: 1.35;
   font-weight: 650;
   letter-spacing: -0.025em;
@@ -1439,8 +1432,8 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
 }
 
 .phrase-board-audio {
-  max-width: 560px;
-  width: 100%;
+  min-height: 24px;
+  text-align: center;
   justify-self: center;
 }
 
@@ -1451,14 +1444,10 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
 }
 
 @media (max-width: 640px) {
-  .phrase-board-header,
-  .phrase-board-filter-card {
+  .phrase-board-header {
+    display: grid;
     grid-template-columns: 1fr;
     align-items: stretch;
-  }
-
-  .phrase-board-filter-card {
-    display: grid;
   }
 
   .phrase-board-slide {
