@@ -190,7 +190,8 @@ export const groupLessonsByRegisteredMonth = (lessons = []) => {
 
 export const filterLessonsByCategoryAndMonth = (lessons = [], categoryId = '', registeredMonth = '') =>
   lessons.filter((lesson) => {
-    if (lesson.categoryId !== categoryId) return false;
+    const matchesCategory = categoryId === '__unset__' ? !lesson.categoryId : lesson.categoryId === categoryId;
+    if (!matchesCategory) return false;
     const monthFields = resolveRegisteredMonthFields(lesson);
     return monthFields.registeredMonth === registeredMonth;
   });

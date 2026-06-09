@@ -1343,3 +1343,130 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
   .youtube-study-actions { display: none; }
   .youtube-lesson-panel-mobile-trigger { display: flex; justify-content: flex-end; position: sticky; bottom: 10px; z-index: 20; }
 }
+
+.phrase-board-page {
+  gap: 18px;
+}
+
+.phrase-board-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.phrase-board-title {
+  font-size: clamp(2rem, 5vw, 3.2rem);
+}
+
+.phrase-board-interval {
+  margin: 0;
+  color: #6e6e73;
+  font-weight: 600;
+}
+
+.phrase-board-filter-card {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  padding: 18px;
+}
+
+.phrase-board-slide {
+  min-height: min(68vh, 760px);
+  padding: clamp(28px, 5vw, 56px);
+  display: grid;
+  gap: 28px;
+  align-content: center;
+}
+
+.phrase-board-meta-row {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.phrase-board-content {
+  display: grid;
+  gap: 12px;
+  text-align: center;
+}
+
+.phrase-board-label {
+  margin-top: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.phrase-board-lesson-title {
+  margin: 0;
+  font-size: clamp(1.6rem, 4vw, 2.6rem);
+  letter-spacing: -0.03em;
+}
+
+.phrase-board-script,
+.phrase-board-translation {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.phrase-board-script {
+  font-size: clamp(1.75rem, 4.4vw, 2.5rem);
+  line-height: 1.35;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+}
+
+.phrase-board-translation {
+  color: #3a3a3c;
+  font-size: clamp(1.18rem, 2.8vw, 1.65rem);
+  line-height: 1.5;
+}
+
+.phrase-board-controls {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.phrase-board-controls .btn {
+  min-width: 128px;
+}
+
+.phrase-board-audio {
+  max-width: 560px;
+  width: 100%;
+  justify-self: center;
+}
+
+.phrase-board-empty {
+  min-height: 320px;
+  display: grid;
+  place-content: center;
+}
+
+@media (max-width: 640px) {
+  .phrase-board-header,
+  .phrase-board-filter-card {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .phrase-board-filter-card {
+    display: grid;
+  }
+
+  .phrase-board-slide {
+    min-height: 62vh;
+    padding: 24px 18px;
+  }
+
+  .phrase-board-controls .btn {
+    width: 100%;
+  }
+}

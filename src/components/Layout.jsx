@@ -90,6 +90,9 @@ export default function Layout({ children }) {
                       <Link className="header-menu-item" onClick={() => setIsMenuOpen(false)} role="menuitem" to="/youtube-study">
                         YouTube Study
                       </Link>
+                      <Link className="header-menu-item" onClick={() => setIsMenuOpen(false)} role="menuitem" to="/phrase-board">
+                        Phrase Board
+                      </Link>
                       <Link className="header-menu-item" onClick={() => setIsMenuOpen(false)} role="menuitem" to="/analytics">
                         Analytics
                       </Link>
