@@ -1359,6 +1359,12 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
   font-size: clamp(2rem, 5vw, 3.2rem);
 }
 
+.phrase-board-header-meta {
+  display: grid;
+  gap: 6px;
+  text-align: right;
+}
+
 .phrase-board-interval {
   margin: 0;
   color: #6e6e73;
@@ -1420,6 +1426,46 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
   line-height: 1.5;
 }
 
+.phrase-board-settings,
+.phrase-board-controls {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.phrase-board-settings {
+  align-items: end;
+}
+
+.phrase-board-settings label {
+  color: #6e6e73;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.phrase-board-settings select {
+  min-width: 150px;
+}
+
+.phrase-board-repeat-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 45px;
+}
+
+.phrase-board-repeat-toggle input {
+  width: auto;
+  margin-top: 0;
+}
+
+.phrase-board-message {
+  margin: 0;
+  text-align: center;
+  font-weight: 700;
+}
+
 .phrase-board-controls {
   display: flex;
   justify-content: center;
@@ -1450,11 +1496,18 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
     align-items: stretch;
   }
 
+  .phrase-board-header-meta {
+    text-align: left;
+  }
+
   .phrase-board-slide {
     min-height: 62vh;
     padding: 24px 18px;
   }
 
+  .phrase-board-settings,
+  .phrase-board-settings label,
+  .phrase-board-settings select,
   .phrase-board-controls .btn {
     width: 100%;
   }

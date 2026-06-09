@@ -46,6 +46,20 @@ export const sortLessonsForMonthTraining = (lessons = []) =>
 export const sortLessonsByCreatedOrder = (lessons = []) =>
   [...lessons].sort(compareLessonsByCreatedOrder);
 
+export const compareLessonsByCreatedDescOrder = (a, b) => {
+  const aTime = getLessonMonthTrainingSortTime(a);
+  const bTime = getLessonMonthTrainingSortTime(b);
+  const aHasCreatedAt = Number.isFinite(aTime);
+  const bHasCreatedAt = Number.isFinite(bTime);
+
+  if (aHasCreatedAt && bHasCreatedAt && aTime !== bTime) return bTime - aTime;
+  if (aHasCreatedAt !== bHasCreatedAt) return aHasCreatedAt ? -1 : 1;
+  return String(a?.id || '').localeCompare(String(b?.id || ''));
+};
+
+export const sortLessonsByCreatedDescOrder = (lessons = []) =>
+  [...lessons].sort(compareLessonsByCreatedDescOrder);
+
 export const chunkLessons = (lessons = [], chunkSize = 10) => {
   const size = Math.max(1, Number(chunkSize) || 10);
   const chunks = [];

@@ -5,11 +5,20 @@ import { getAudioDownloadUrlByPath } from '../lib/storage';
 import {
   getLessonDisplayTitle,
   hasLessonAudio,
-  sortLessonsByCreatedOrder,
+  sortLessonsByCreatedDescOrder,
 } from '../utils/lessons';
 
 const PHRASE_INTERVAL_MS = 5000;
 const AUDIO_LOAD_TIMEOUT_MS = 7000;
+const DEFAULT_AUTO_STOP_VALUE = '30';
+const AUTO_STOP_OPTIONS = [
+  { value: '30', label: '30 min', durationMs: 30 * 60 * 1000 },
+  { value: '60', label: '60 min', durationMs: 60 * 60 * 1000 },
+  { value: 'none', label: 'No auto stop', durationMs: null },
+];
+
+const getAutoStopOption = (value) =>
+  AUTO_STOP_OPTIONS.find((option) => option.value === value) || AUTO_STOP_OPTIONS[0];
 
 const hasReadableEnglishScript = (lesson = {}) => Boolean(String(lesson.scriptEn || '').trim());
 
@@ -27,6 +36,7 @@ export default function PhraseBoardPage() {
   const userId = user?.uid || '';
   const audioRef = useRef(null);
   const advanceTimerRef = useRef(null);
+  const autoStopTimerRef = useRef(null);
   const [allLessons, setAllLessons] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [hasStarted, setHasStarted] = useState(false);
@@ -36,6 +46,10 @@ export default function PhraseBoardPage() {
   const [error, setError] = useState('');
   const [audioStatus, setAudioStatus] = useState('idle');
   const [audioMessage, setAudioMessage] = useState('');
+  const [autoStopValue, setAutoStopValue] = useState(DEFAULT_AUTO_STOP_VALUE);
+  const [autoStopped, setAutoStopped] = useState(false);
+  const [boardMessage, setBoardMessage] = useState('');
+  const [repeatAll, setRepeatAll] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -69,7 +83,7 @@ export default function PhraseBoardPage() {
   }, [userId]);
 
   const boardLessons = useMemo(
-    () => sortLessonsByCreatedOrder(allLessons.filter(hasReadableEnglishScript)),
+    () => sortLessonsByCreatedDescOrder(allLessons.filter(hasReadableEnglishScript)),
     [allLessons],
   );
 
@@ -85,11 +99,19 @@ export default function PhraseBoardPage() {
 
   const currentLesson = boardLessons[currentIndex] || null;
   const currentLessonHasAudio = hasLessonAudio(currentLesson);
+  const selectedAutoStopOption = getAutoStopOption(autoStopValue);
 
   const clearAdvanceTimer = () => {
     if (advanceTimerRef.current) {
       window.clearTimeout(advanceTimerRef.current);
       advanceTimerRef.current = null;
+    }
+  };
+
+  const clearAutoStopTimer = () => {
+    if (autoStopTimerRef.current) {
+      window.clearTimeout(autoStopTimerRef.current);
+      autoStopTimerRef.current = null;
     }
   };
 
@@ -101,13 +123,33 @@ export default function PhraseBoardPage() {
     audio.load();
   };
 
+  const stopBoardAfterOneRound = () => {
+    clearAdvanceTimer();
+    clearAutoStopTimer();
+    stopAudio();
+    setHasStarted(false);
+    setIsPaused(false);
+    setAutoStopped(false);
+    setBoardMessage('Stopped after one round.');
+    setAudioStatus(currentLessonHasAudio ? 'idle' : 'none');
+    setAudioMessage('');
+  };
+
   const advanceToNextLesson = () => {
     if (boardLessons.length === 0) return;
-    if (boardLessons.length === 1) {
-      setPlaybackKey((prev) => prev + 1);
+    const isLastLesson = currentIndex >= boardLessons.length - 1;
+
+    if (isLastLesson) {
+      if (!repeatAll) {
+        stopBoardAfterOneRound();
+        return;
+      }
+      setCurrentIndex(0);
+      if (boardLessons.length === 1) setPlaybackKey((prev) => prev + 1);
       return;
     }
-    setCurrentIndex((prev) => (prev + 1) % boardLessons.length);
+
+    setCurrentIndex((prev) => prev + 1);
   };
 
   const scheduleNextLesson = () => {
@@ -118,10 +160,36 @@ export default function PhraseBoardPage() {
     }, PHRASE_INTERVAL_MS);
   };
 
+  const stopBoardForAutoStop = (label) => {
+    clearAdvanceTimer();
+    clearAutoStopTimer();
+    stopAudio();
+    setHasStarted(true);
+    setIsPaused(true);
+    setAutoStopped(true);
+    setBoardMessage(`Auto stopped after ${label}.`);
+    setAudioStatus(currentLessonHasAudio ? 'idle' : 'none');
+    setAudioMessage('');
+  };
+
   useEffect(() => () => {
     clearAdvanceTimer();
+    clearAutoStopTimer();
     stopAudio();
   }, []);
+
+  useEffect(() => {
+    clearAutoStopTimer();
+
+    if (!hasStarted || isPaused || autoStopped || !selectedAutoStopOption.durationMs) return undefined;
+
+    autoStopTimerRef.current = window.setTimeout(() => {
+      autoStopTimerRef.current = null;
+      stopBoardForAutoStop(selectedAutoStopOption.label);
+    }, selectedAutoStopOption.durationMs);
+
+    return clearAutoStopTimer;
+  }, [hasStarted, isPaused, autoStopped, selectedAutoStopOption.durationMs, selectedAutoStopOption.label]);
 
   useEffect(() => {
     clearAdvanceTimer();
@@ -233,17 +301,23 @@ export default function PhraseBoardPage() {
       clearAdvanceTimer();
       stopAudio();
     };
-  }, [currentLesson, currentLessonHasAudio, hasStarted, isPaused, playbackKey]);
+  }, [currentLesson, currentLessonHasAudio, hasStarted, isPaused, playbackKey, repeatAll]);
 
   const startBoard = () => {
     if (!currentLesson) return;
     setHasStarted(true);
     setIsPaused(false);
+    setAutoStopped(false);
+    setBoardMessage('');
     setPlaybackKey((prev) => prev + 1);
   };
 
   const togglePause = () => {
     if (!hasStarted) return;
+    if (isPaused) {
+      setAutoStopped(false);
+      setBoardMessage('');
+    }
     setIsPaused((prev) => !prev);
     setPlaybackKey((prev) => prev + 1);
   };
@@ -265,11 +339,20 @@ export default function PhraseBoardPage() {
     setCurrentIndex(0);
     setHasStarted(true);
     setIsPaused(false);
+    setAutoStopped(false);
+    setBoardMessage('');
     setPlaybackKey((prev) => prev + 1);
+  };
+
+  const handleAutoStopChange = (event) => {
+    setAutoStopValue(event.target.value);
+    setAutoStopped(false);
+    setBoardMessage('');
   };
 
   const boardStatusLabel = (() => {
     if (!hasStarted) return 'Ready';
+    if (autoStopped) return 'Auto stopped';
     if (isPaused) return 'Paused';
     if (audioStatus === 'playing') return 'Playing audio';
     if (audioStatus === 'loading') return 'Preparing audio';
@@ -283,7 +366,10 @@ export default function PhraseBoardPage() {
           <p className="section-subtle">Always-on lesson phrases</p>
           <h2 className="section-title phrase-board-title">Phrase Board</h2>
         </div>
-        <p className="phrase-board-interval">Audio, then 5 seconds before the next lesson</p>
+        <div className="phrase-board-header-meta">
+          <p className="phrase-board-interval">Audio, then 5 seconds before the next lesson</p>
+          <p className="phrase-board-interval">Auto stop: {selectedAutoStopOption.label}</p>
+        </div>
       </div>
 
       {error ? <p className="card error">{error}</p> : null}
@@ -301,6 +387,8 @@ export default function PhraseBoardPage() {
           <div className="phrase-board-meta-row">
             <span className="pill">{currentIndex + 1} / {boardLessons.length}</span>
             <span className="pill">{boardStatusLabel}</span>
+            <span className="pill">Auto stop: {selectedAutoStopOption.label}</span>
+            <span className="pill">Repeat All {repeatAll ? 'ON' : 'OFF'}</span>
           </div>
 
           <div className="phrase-board-content">
@@ -316,8 +404,29 @@ export default function PhraseBoardPage() {
             </p>
           </div>
 
+          <div className="phrase-board-settings">
+            <label>
+              Auto stop
+              <select onChange={handleAutoStopChange} value={autoStopValue}>
+                {AUTO_STOP_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
+            <label className="phrase-board-repeat-toggle">
+              <input
+                checked={repeatAll}
+                onChange={(event) => setRepeatAll(event.target.checked)}
+                type="checkbox"
+              />
+              Repeat All {repeatAll ? 'ON' : 'OFF'}
+            </label>
+          </div>
+
+          {boardMessage ? <p className="section-subtle phrase-board-message">{boardMessage}</p> : null}
+
           <div className="phrase-board-controls">
-            <button className="btn" disabled={hasStarted} onClick={startBoard} type="button">
+            <button className="btn" disabled={hasStarted && !autoStopped} onClick={startBoard} type="button">
               Start Board
             </button>
             <button className="btn ghost" disabled={!hasStarted} onClick={togglePause} type="button">
