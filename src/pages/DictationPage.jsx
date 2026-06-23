@@ -11,7 +11,6 @@ import {
   updateLessonStats,
 } from '../lib/firestore';
 import { normalizeForDictation } from '../utils/dictation';
-import { diffWords } from '../utils/diff';
 import { playDictationCompleteSound, playDictationWrongKeySound } from '../utils/feedbackSound';
 import {
   filterLessonsByCategoryAndMonth,
@@ -135,9 +134,6 @@ export default function DictationPage() {
     });
   }, [isMonthMode, userId, categoryId, registeredMonth, orderedLessonIds]);
 
-  const normalizedInput = useMemo(() => normalizeForDictation(inputText), [inputText]);
-  const normalizedScript = useMemo(() => normalizeForDictation(lesson?.scriptEn || ''), [lesson?.scriptEn]);
-  const diff = useMemo(() => diffWords(normalizedInput, normalizedScript), [normalizedInput, normalizedScript]);
   const monthIndex = useMemo(
     () => monthLessons.findIndex((monthLesson) => monthLesson.id === id),
     [monthLessons, id],
@@ -627,33 +623,11 @@ export default function DictationPage() {
         </button>
       </div>
       {hasChecked ? (
-        <article className={`card answer-result-card ${isCorrect ? 'correct' : 'incorrect'}`}>
-          <h3>{isCorrect ? 'Correct!' : 'Not quite yet'}</h3>
-          <p className="section-subtle">
-            {isCorrect ? 'Nice work. You matched the script.' : 'Check the differences below.'}
-          </p>
-        </article>
-      ) : null}
-      {hasChecked ? (
         <article className="card">
-          <h3>Correct Script</h3>
-          <pre>{lesson.scriptEn}</pre>
-        </article>
-      ) : null}
-      {hasChecked ? (
-        <article className="card">
-          <h3>Difference (Simple)</h3>
-          <div className="diff-wrap">
-            {diff.every((item) => item.match) ? (
-              <span className="diff-match">No differences.</span>
-            ) : (
-              diff.map((item) => (
-                <span className={item.match ? 'diff-match' : 'diff-miss'} key={item.index}>
-                  {item.match ? item.correctWord : `[${item.inputWord || '∅'} → ${item.correctWord || '∅'}]`}
-                </span>
-              ))
-            )}
-          </div>
+          <h3>Translation</h3>
+          <pre>{lesson.scriptJa || '-'}</pre>
+          <h3>Notes</h3>
+          <pre>{lesson.memo || '-'}</pre>
         </article>
       ) : null}
     </section>
