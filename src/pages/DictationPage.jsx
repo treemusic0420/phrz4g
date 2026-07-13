@@ -19,6 +19,7 @@ import {
   sortLessonsByIdOrder,
   sortLessonsForMonthTraining,
 } from '../utils/lessons';
+import { formatDateTime } from '../utils/format';
 import { getRegisteredMonthLabel } from '../utils/registeredMonth';
 
 const splitToChars = (text) => Array.from(text || '');
@@ -142,6 +143,11 @@ export default function DictationPage() {
   const isLastLesson = monthLessons.length > 0 && monthIndex === monthLessons.length - 1;
   const hasValidProgress = monthIndex >= 0 && monthLessons.length > 0;
   const monthLabel = useMemo(() => getRegisteredMonthLabel(registeredMonth), [registeredMonth]);
+  const trainingMetaItems = [
+    monthLabel,
+    `${hasValidProgress ? monthIndex + 1 : '-'} / ${monthLessons.length || '-'}`,
+    lesson?.lastStudiedAt ? `Last studied: ${formatDateTime(lesson.lastStudiedAt)}` : null,
+  ].filter(Boolean);
   const completedLessonTitles = useMemo(
     () => monthLessons.map((monthLesson) => getLessonDisplayTitle(monthLesson)),
     [monthLessons],
@@ -546,7 +552,7 @@ export default function DictationPage() {
         ) : null}
       </div>
       <p className="section-subtle">
-        {monthLabel} ・ {hasValidProgress ? monthIndex + 1 : '-'} / {monthLessons.length || '-'}
+        {trainingMetaItems.join('  |  ')}
       </p>
       <article className="card dictation-input-card">
         <div
