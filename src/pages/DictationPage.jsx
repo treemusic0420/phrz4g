@@ -535,7 +535,7 @@ export default function DictationPage() {
   return (
     <section className="stack" onKeyDownCapture={onDictationSectionKeyDownCapture}>
       <div className="training-page-header">
-        <h2 className="section-title training-page-title">Dictation: {lesson.title}</h2>
+        <h2 className="section-title training-page-title">{lesson.title}</h2>
         {lesson.imageUrl ? (
           <LessonImageThumbnail
             imageUrl={lesson.imageUrl}
@@ -588,7 +588,7 @@ export default function DictationPage() {
                 const slotStatus = getCharStatus(slot.expectedIndex);
                 return (
                   <span key={slot.id} className={`dictation-slot ${slotStatus}`}>
-                    {actualChar || ''}
+                    {actualChar ? <span className="dictation-slot-character">{actualChar}</span> : ''}
                   </span>
                 );
               })}
@@ -596,21 +596,23 @@ export default function DictationPage() {
           ))}
         </div>
       </article>
-      <AudioControls
-        key={lesson.id}
-        lessonId={lesson.id}
-        audioUrl={lesson.audioUrl}
-        audioContentType={lesson.audioContentType || fallbackAudioContentType}
-        shouldAutoPlay={canPlayAudio}
-        isAutoPlaySuppressed={isAutoPlaySuppressed}
-        autoPlayToken={autoPlayToken}
-        onAutoPlayBlocked={setAutoPlayMessage}
-        onAutoPlaySettled={focusDictationInput}
-        onRegisterControls={(controls) => {
-          audioToggleRef.current = controls?.togglePlayback || null;
-          lessonAudioStopAndUnloadRef.current = controls?.stopAndUnloadCurrentAudio || null;
-        }}
-      />
+      <div className="dictation-audio-panel">
+        <AudioControls
+          key={lesson.id}
+          lessonId={lesson.id}
+          audioUrl={lesson.audioUrl}
+          audioContentType={lesson.audioContentType || fallbackAudioContentType}
+          shouldAutoPlay={canPlayAudio}
+          isAutoPlaySuppressed={isAutoPlaySuppressed}
+          autoPlayToken={autoPlayToken}
+          onAutoPlayBlocked={setAutoPlayMessage}
+          onAutoPlaySettled={focusDictationInput}
+          onRegisterControls={(controls) => {
+            audioToggleRef.current = controls?.togglePlayback || null;
+            lessonAudioStopAndUnloadRef.current = controls?.stopAndUnloadCurrentAudio || null;
+          }}
+        />
+      </div>
       {autoPlayMessage ? <p className="section-subtle">{autoPlayMessage}</p> : null}
       <div className="row gap-sm wrap">
         <button
