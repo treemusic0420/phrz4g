@@ -248,6 +248,12 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
   border-color: #e7ddd3;
 }
 .dictation-input-card {
+  --dictation-study-panel-border: #d9def8;
+  --dictation-study-panel-shadow: 0 18px 38px rgba(67, 56, 202, 0.12);
+  background: linear-gradient(140deg, rgba(219, 234, 254, 0.95), rgba(224, 231, 255, 0.92), rgba(237, 233, 254, 0.95));
+  border-color: var(--dictation-study-panel-border);
+  border-radius: 20px;
+  box-shadow: var(--dictation-study-panel-shadow);
   display: grid;
   gap: 0;
   padding: 12px;
@@ -257,13 +263,18 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
   min-height: 96px;
   border: 1px solid #e5e7eb;
   border-radius: 14px;
-  background: #fbfbfd;
+  background: rgba(255, 255, 255, 0.74);
   padding: 10px;
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
   gap: 6px 4px;
   cursor: text;
+}
+.dictation-audio-panel .audio-box {
+  background: #f8f9ff;
+  border-color: #e2e7fb;
+  box-shadow: 0 10px 24px rgba(79, 70, 229, 0.07);
 }
 .dictation-slot-container:focus-within {
   border-color: #bfdbfe;
@@ -305,6 +316,10 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
   color: #111827;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 1rem;
+  line-height: 1;
+}
+.dictation-slot-character {
+  font-size: calc(1rem + 1pt);
   line-height: 1;
 }
 .dictation-slot-space {
@@ -673,6 +688,9 @@ pre { white-space: pre-wrap; background: #f7f7fa; border: 1px solid #ececf1; pad
     width: 1.2em;
     min-height: 1.8em;
     font-size: 0.95rem;
+  }
+  .dictation-slot-character {
+    font-size: calc(0.95rem + 1pt);
   }
   .dictation-slot-space {
     width: 1.6em;
