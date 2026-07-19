@@ -130,7 +130,7 @@ export default function MonthLessonsPage() {
             className="btn"
             to={
               firstTrainingLessonId
-                ? `/lessons/${firstTrainingLessonId}/dictation?mode=month&categoryId=${categoryId}&registeredMonth=${registeredMonth}&lessonIds=${encodeURIComponent(monthTrainingLessonIdsParam)}`
+                ? `/lessons/${firstTrainingLessonId}/dictation?mode=month&categoryId=${categoryId}&registeredMonth=${registeredMonth}&lessonIds=${encodeURIComponent(monthTrainingLessonIdsParam)}&overview=true`
                 : '#'
             }
             aria-disabled={!firstTrainingLessonId}
@@ -208,7 +208,7 @@ export default function MonthLessonsPage() {
                   <p className="section-subtle">Latest last studied: {set.latestLastStudiedAt ? formatDateTime(set.latestLastStudiedAt) : '—'}</p>
                 </div>
                 <div className="row gap-sm wrap month-action-buttons">
-                  <Link className="btn" to={audioFirstId ? `/lessons/${audioFirstId}/dictation?mode=month&categoryId=${categoryId}&registeredMonth=${registeredMonth}&lessonIds=${encodeURIComponent(audioLessonIdsParam)}` : '#'} aria-disabled={!audioFirstId} onClick={(event) => { if (!audioFirstId) event.preventDefault(); }}>Dictation</Link>
+                  <Link className="btn" to={audioFirstId ? `/lessons/${audioFirstId}/dictation?mode=month&categoryId=${categoryId}&registeredMonth=${registeredMonth}&lessonIds=${encodeURIComponent(audioLessonIdsParam)}&overview=true` : '#'} aria-disabled={!audioFirstId} onClick={(event) => { if (!audioFirstId) event.preventDefault(); }}>Dictation</Link>
                   <Link className="btn" to={audioFirstId ? `/lessons/${audioFirstId}/shadowing?mode=month&categoryId=${categoryId}&registeredMonth=${registeredMonth}&lessonIds=${encodeURIComponent(audioLessonIdsParam)}` : '#'} aria-disabled={!audioFirstId} onClick={(event) => { if (!audioFirstId) event.preventDefault(); }}>Shadowing</Link>
                   <Link className="btn" to={instantRecallFirstId ? `/lessons/${instantRecallFirstId}/instant-recall?mode=month&categoryId=${categoryId}&registeredMonth=${registeredMonth}&lessonIds=${encodeURIComponent(instantRecallLessonIdsParam)}` : '#'} aria-disabled={!instantRecallFirstId} onClick={(event) => { if (!instantRecallFirstId) event.preventDefault(); }}>Instant Recall</Link>
                 </div>

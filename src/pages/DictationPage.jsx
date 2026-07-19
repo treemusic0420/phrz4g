@@ -91,6 +91,7 @@ export default function DictationPage() {
   const categoryId = searchParams.get('categoryId') || '';
   const registeredMonth = searchParams.get('registeredMonth') || '';
   const lessonIdsParam = searchParams.get('lessonIds') || '';
+  const isOverview = searchParams.get('overview') === 'true';
   const orderedLessonIds = useMemo(() => lessonIdsParam.split(',').filter(Boolean), [lessonIdsParam]);
   const allowedLessonIds = orderedLessonIds.length > 0 ? new Set(orderedLessonIds) : null;
   const isMonthMode = mode === 'month' && categoryId && registeredMonth;
@@ -117,7 +118,7 @@ export default function DictationPage() {
       isActive = false;
       suppressAudioAutoplayRef.current = true;
     };
-  }, [id, navigate]);
+  }, [id, navigate, isOverview, userId]);
 
   useEffect(() => {
     if (!isMonthMode) {
@@ -376,9 +377,9 @@ export default function DictationPage() {
   }, []);
 
   useEffect(() => {
-    if (!lesson || isFinished) return;
+    if (!lesson || isFinished || isOverview) return;
     focusDictationInput();
-  }, [lesson?.id, isFinished]);
+  }, [lesson?.id, isFinished, isOverview, focusDictationInput]);
 
   useEffect(() => {
     if (!isFinished) return;
@@ -471,6 +472,12 @@ export default function DictationPage() {
     navigate(`/lessons/category/${categoryId}/month/${registeredMonth}`);
   };
 
+  const startDictation = () => {
+    navigate(
+      `/lessons/${id}/dictation?mode=month&categoryId=${categoryId}&registeredMonth=${registeredMonth}${lessonIdsParam ? `&lessonIds=${encodeURIComponent(lessonIdsParam)}` : ''}`,
+    );
+  };
+
 
 
 
@@ -483,6 +490,38 @@ export default function DictationPage() {
             <Link className="btn ghost" to="/lessons">
               Back to Lessons
             </Link>
+          </div>
+        </article>
+      </section>
+    );
+  }
+
+  if (isOverview) {
+    return (
+      <section className="stack">
+        <article className="card training-finished-card">
+          <h2 className="section-title">Study Overview</h2>
+          <p className="section-subtle">You are going to study the following lessons.</p>
+          <p className="training-finished-summary">Lessons to study: {completedLessonTitles.length}</p>
+          {completedLessonTitles.length > 0 ? (
+            <div className="training-finished-list-wrap">
+              <p className="training-finished-list-title">Today&apos;s lessons</p>
+              <ol className="training-finished-list">
+                {completedLessonTitles.map((title, index) => (
+                  <li key={`${title}-${index}`}>{title}</li>
+                ))}
+              </ol>
+            </div>
+          ) : null}
+          <div className="row gap-sm wrap training-finished-action">
+            <button
+              className="btn"
+              type="button"
+              onClick={startDictation}
+              disabled={monthLessons.length === 0}
+            >
+              Start Dictation
+            </button>
           </div>
         </article>
       </section>
