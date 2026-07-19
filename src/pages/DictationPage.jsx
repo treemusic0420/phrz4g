@@ -118,7 +118,7 @@ export default function DictationPage() {
       isActive = false;
       suppressAudioAutoplayRef.current = true;
     };
-  }, [id, navigate, isOverview, userId]);
+  }, [id, navigate, userId]);
 
   useEffect(() => {
     if (!isMonthMode) {
@@ -473,6 +473,18 @@ export default function DictationPage() {
   };
 
   const startDictation = () => {
+    // The overview and dictation screens share the same lesson route. Keep the
+    // already loaded first lesson intact while removing the overview query flag,
+    // so AudioControls mounts with a concrete URL instead of a reset audio node.
+    if (!lesson || !lesson.audioUrl) return;
+
+    setInputText('');
+    setHasChecked(false);
+    setIsCorrect(null);
+    setAutoPlayMessage('');
+    setWrongSlotIndex(-1);
+    suppressAudioAutoplayRef.current = false;
+    setAutoPlayToken((prev) => prev + 1);
     navigate(
       `/lessons/${id}/dictation?mode=month&categoryId=${categoryId}&registeredMonth=${registeredMonth}${lessonIdsParam ? `&lessonIds=${encodeURIComponent(lessonIdsParam)}` : ''}`,
     );
@@ -518,7 +530,7 @@ export default function DictationPage() {
               className="btn"
               type="button"
               onClick={startDictation}
-              disabled={monthLessons.length === 0}
+              disabled={monthLessons.length === 0 || !lesson?.audioUrl}
             >
               Start Dictation
             </button>
