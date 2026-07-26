@@ -55,7 +55,7 @@ export const playDictationWrongKeySound = async () => {
     duration: 0.085,
     attack: 0.004,
     type: 'triangle',
-    gainValue: 0.052,
+    gainValue: 0.059,
   });
 };
 
