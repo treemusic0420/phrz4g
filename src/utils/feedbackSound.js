@@ -1,8 +1,13 @@
+let audioContext;
+
 const createAudioContext = () => {
   if (typeof window === 'undefined') return null;
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
   if (!AudioContextClass) return null;
-  return new AudioContextClass();
+  if (!audioContext || audioContext.state === 'closed') {
+    audioContext = new AudioContextClass();
+  }
+  return audioContext;
 };
 
 const playTone = async ({
@@ -37,11 +42,10 @@ const playTone = async ({
     oscillator.start(context.currentTime);
     oscillator.stop(context.currentTime + duration);
     oscillator.onended = () => {
-      context.close().catch(() => {});
+      oscillator.disconnect();
+      gain.disconnect();
     };
-  } catch (error) {
-    context.close().catch(() => {});
-  }
+  } catch {}
 };
 
 export const playDictationWrongKeySound = async () => {
@@ -56,8 +60,14 @@ export const playDictationWrongKeySound = async () => {
 };
 
 export const playDictationCompleteSound = async () => {
-  await playTone({ frequency: 784, duration: 0.08, type: 'sine', gainValue: 0.022 });
-  await playTone({ frequency: 988, duration: 0.12, type: 'sine', gainValue: 0.022 });
+  await playTone({
+    frequency: 1320,
+    endFrequency: 1175,
+    duration: 0.13,
+    attack: 0.003,
+    type: 'sine',
+    gainValue: 0.065,
+  });
 };
 
 export const playCorrectSound = async () => {
