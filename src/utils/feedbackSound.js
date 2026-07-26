@@ -5,7 +5,14 @@ const createAudioContext = () => {
   return new AudioContextClass();
 };
 
-const playTone = async ({ frequency = 440, duration = 0.12, type = 'sine', gainValue = 0.05 }) => {
+const playTone = async ({
+  frequency = 440,
+  endFrequency = frequency,
+  duration = 0.12,
+  attack = 0,
+  type = 'sine',
+  gainValue = 0.05,
+}) => {
   const context = createAudioContext();
   if (!context) return;
 
@@ -16,8 +23,12 @@ const playTone = async ({ frequency = 440, duration = 0.12, type = 'sine', gainV
     const gain = context.createGain();
 
     oscillator.type = type;
-    oscillator.frequency.value = frequency;
-    gain.gain.setValueAtTime(gainValue, context.currentTime);
+    oscillator.frequency.setValueAtTime(frequency, context.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(endFrequency, context.currentTime + duration);
+    gain.gain.setValueAtTime(attack > 0 ? 0.0001 : gainValue, context.currentTime);
+    if (attack > 0) {
+      gain.gain.linearRampToValueAtTime(gainValue, context.currentTime + attack);
+    }
     gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + duration);
 
     oscillator.connect(gain);
@@ -34,7 +45,14 @@ const playTone = async ({ frequency = 440, duration = 0.12, type = 'sine', gainV
 };
 
 export const playDictationWrongKeySound = async () => {
-  await playTone({ frequency: 210, duration: 0.09, type: 'triangle', gainValue: 0.02 });
+  await playTone({
+    frequency: 660,
+    endFrequency: 520,
+    duration: 0.085,
+    attack: 0.004,
+    type: 'triangle',
+    gainValue: 0.045,
+  });
 };
 
 export const playDictationCompleteSound = async () => {
